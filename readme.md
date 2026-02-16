@@ -1,0 +1,9 @@
+Nama : Aliyah Nahisa Sugiana
+NPM : 2306275405
+
+Fitur yang dikerjakan:
+1. Fitur 3: Manajemen Data Groomer
+Fitur ini memungkinkan staf operasional untuk mengelola data groomer yang terlibat dalam operasional layanan grooming PitPet. Melalui fitur ini, staf operasional dapat menambahkan, mengubah, atau menghapus data groomer, serta mengaktifkan atau menonaktifkan status groomer yang akan menentukan apakah groomer tersebut dapat menerima booking. Data groomer yang dikelola meliputi nama, nomor kontak, spesialisasi (cat/dog/both), dan area operasional (untuk home grooming). Fitur ini memastikan hanya groomer yang aktif dan sesuai dengan spesialisasi serta area layanan yang dapat dipilih oleh customer saat melakukan booking, serta membantu dalam pengelolaan jadwal grooming yang lebih efisien.
+
+2. Fitur 8: Laporan Operasional & Dashboard Manajemen
+Fitur ini menyediakan laporan dan dashboard ringkasan yang menampilkan gambaran umum aktivitas layanan grooming PitPet dalam periode tertentu. Informasi yang ditampilkan meliputi jumlah booking, jumlah layanan selesai (completed), jumlah booking yang dibatalkan, dan distribusi jenis layanan (home vs clinic). Data ini disajikan dalam bentuk grafik dan angka ringkasan (summary metrics) untuk membantu staf operasional dan manajer dalam memantau kinerja operasional grooming. Dengan adanya fitur ini, PitPet dapat menggantikan monitoring manual melalui spreadsheet dan mendukung pengambilan keputusan berbasis data yang lebih efisien. Laporan ini juga memungkinkan evaluasi performa grooming secara periodik dan membantu manajemen untuk melihat tren kinerja layanan grooming dari waktu ke waktu.
