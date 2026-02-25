@@ -1,0 +1,127 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="id">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>PITPET</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+:root {
+--orange: #F5A623;
+--teal: #2BBDBD;
+--cream: #FFF8ED;
+}
+
+body {
+font-family: 'DM Sans', sans-serif;
+}
+
+.heading-font {
+font-family: 'Syne', sans-serif;
+}
+
+</style>
+
+</head>
+
+<body class="bg-white min-h-screen flex flex-col">
+
+<!-- NAVBAR -->
+
+{% include 'navbar_customer.html' %}
+
+<!-- HERO SECTION -->
+
+<section class="max-w-7xl mx-auto px-8 py-20 grid md:grid-cols-2 gap-12 items-center flex-1">
+
+<!-- LEFT -->
+
+<div>
+
+<h1 class="heading-font text-6xl font-extrabold text-gray-900 leading-tight">
+
+One Pit Stop, For All<br>
+Around Animal Care
+
+</h1>
+
+<!-- WHY PITPET -->
+
+<h3 class="font-bold text-xl mt-8 mb-2">
+
+Why Pitpet?
+
+</h3>
+
+<p class="text-gray-500 max-w-md leading-relaxed">
+
+At PITPET, our skilled and caring groomers provide complete grooming
+services for your furry bestie. We focus on creating a safe, clean,
+and comfortable environment, making sure every session is handled
+with love, patience, and professional care.
+
+</p>
+
+<!-- BUTTON -->
+
+<a href="#"
+
+class="bg-[#2BBDBD] text-white font-bold px-10 py-4 rounded-full inline-block mt-8 hover:bg-teal-600 transition">
+
+Book Now !
+
+</a>
+
+</div>
+
+<!-- RIGHT IMAGE -->
+
+<div class="flex justify-center">
+
+<img src="{% static 'images/foto_hewan.png' %}"
+class="w-[480px] max-w-full">
+
+</div>
+
+</section>
+
+<!-- CONTACT US -->
+
+<footer class="bg-gray-100">
+
+<div class="max-w-7xl mx-auto px-8 py-12 rounded-lg">
+
+<span class="bg-[#F5A623] text-white px-4 py-1 rounded-md font-semibold text-sm">
+
+Contact Us
+
+</span>
+
+<div class="mt-6 space-y-2 text-gray-600">
+
+<p>Email: pitpet@gmail.com</p>
+
+<p>Phone: 0811 2222 3333</p>
+
+<p>Instagram: @pitpet.id</p>
+
+</div>
+
+</div>
+
+</footer>
+
+</body>
+
+</html>
