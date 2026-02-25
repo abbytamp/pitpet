@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sign Up - PITPET</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-200 min-h-screen flex items-center justify-center">
+
+
+<div class="bg-gray-100 rounded-3xl shadow-2xl w-[900px] h-[500px] flex overflow-hidden">
+
+
+    <!-- LEFT IMAGE -->
+    <div class="w-1/2 flex items-center justify-center">
+
+        <img src="{% static 'images/cat.png' %}"
+             class="h-[400px] object-contain">
+
+    </div>
+
+
+
+    <!-- RIGHT -->
+    <div class="w-1/2 flex flex-col justify-center px-12">
+
+
+        <!-- LOGO kanan atas -->
+        <div class="flex justify-end mb-4">
+
+            <img src="{% static 'images/logo_pitpet.png' %}"
+                 class="h-10 w-fit">
+
+        </div>
+
+
+
+        <h2 class="text-2xl font-bold text-cyan-500 mb-6 text-center">
+            Sign up
+        </h2>
+
+
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+
+            <input type="text"
+                   name="username"
+                   placeholder="Username"
+                   class="w-full mb-3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400">
+
+
+            <input type="text"
+                   name="full_name"
+                   placeholder="Full Name"
+                   class="w-full mb-3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400">
+
+
+            <input type="password"
+                   name="password"
+                   placeholder="Password"
+                   class="w-full mb-3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400">
+
+
+            <input type="text"
+                   name="phone"
+                   placeholder="Phone Number"
+                   class="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400">
+
+
+
+            <button
+                type="submit"
+                class="w-full bg-cyan-500 text-white py-2 rounded-lg hover:bg-cyan-600 transition">
+
+                Create account
+
+            </button>
+
+        </form>
+
+
+
+        <p class="text-sm text-gray-500 mt-4 text-center">
+
+            Already have an account?
+
+            <a href="{% url 'login' %}"
+               class="text-orange-400 font-semibold">
+
+                Login
+
+            </a>
+
+        </p>
+
+
+
+    </div>
+
+
+</div>
+
+</body>
+</html>
