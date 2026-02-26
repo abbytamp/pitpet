@@ -55,7 +55,7 @@ class RegisterStaffManagerForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(), min_length=6, error_messages={
         'min_length': 'Password harus minimal 6 karakter'
     })
-    role = forms.ChoiceField(choices=[('staff', 'Staff'), ('manager', 'Manager')], widget=forms.Select())
+    role = forms.ChoiceField(choices=[('staff', 'Staff'), ('manager', 'Manager'), ('superadmin', 'Superadmin')], widget=forms.Select())
 
     class Meta:
         model = User

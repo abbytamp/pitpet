@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.hashers import make_password, check_password
 
 class UserManager(models.Manager):
     def get_by_natural_key(self, username):
@@ -11,6 +10,7 @@ class User(models.Model):
         STAFF = 'staff', 'Staff'
         GROOMER = 'groomer', 'Groomer'
         MANAGER = 'manager', 'Manager'
+        SUPERADMIN = 'superadmin', 'Superadmin'
 
     username = models.CharField(max_length=255, unique=True) # Email login
     full_name = models.CharField(max_length=255)
@@ -29,12 +29,12 @@ class User(models.Model):
     def __str__(self):
         return f"{self.username} ({self.role})"
 
-    # Password management
+    # Password management (plain text)
     def set_password(self, raw_password):
-        self.password = make_password(raw_password)
+        self.password = raw_password
 
     def check_password(self, raw_password):
-        return check_password(raw_password, self.password)
+        return self.password == raw_password
 
     # Auth System compatibility properties
     USERNAME_FIELD = 'username'
@@ -50,11 +50,11 @@ class User(models.Model):
 
     @property
     def is_staff(self):
-        return self.role in [self.Role.STAFF, self.Role.MANAGER]
+        return self.role in [self.Role.STAFF, self.Role.MANAGER, self.Role.SUPERADMIN]
 
     @property
     def is_superuser(self):
-        return self.role == self.Role.MANAGER
+        return self.role in [self.Role.MANAGER, self.Role.SUPERADMIN]
 
     def has_perm(self, perm, obj=None):
         return self.is_superuser

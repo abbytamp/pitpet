@@ -5,6 +5,9 @@
 <html lang="en">
 <<<<<<< HEAD
 
+=======
+<<<<<<< HEAD
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,28 +21,31 @@
     {% block meta %}
     {% endblock meta %}
 =======
+>>>>>>> development
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-```
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PITPET{% endblock %}</title>
 
-<title>{% block title %}PITPET{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-<script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
 
-<link rel="stylesheet" href="{% static 'css/global.css' %}">
-
-{% block meta %}
-{% endblock meta %}
-```
-
+<<<<<<< HEAD
+    {% block meta %}
+    {% endblock meta %}
+=======
+>>>>>>> development
 >>>>>>> development
 </head>
 
 <body class="bg-white min-h-screen flex flex-col">
 
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> development
     {% include 'messages.html' %}
 
     <!-- Navbar -->
@@ -53,6 +59,13 @@
     {% include 'navbar_groomer.html' %}
     {% elif user.role == 'manager' %}
     {% include 'navbar_manager.html' %}
+<<<<<<< HEAD
+    {% elif user.role == 'superadmin' %}
+    {% include 'navbar_superadmin.html' %}
+    {% endif %}
+    {% endif %}
+    {% endblock navbar %}
+=======
     {% endif %}
     {% endif %}
     {% endblock navbar %}
@@ -74,17 +87,22 @@
 <!-- Navbar -->
 {% block navbar %}
 {% endblock navbar %}
+>>>>>>> development
 
 
-<!-- Content -->
-<main class="flex-1">
+    <!-- Content -->
+    <main class="flex-1">
 
-    {% block content %}
-    {% endblock content %}
+        {% block content %}
+        {% endblock content %}
 
-</main>
-```
+    </main>
 
 </body>
+<<<<<<< HEAD
+
 </html>
+=======
+</html>
+>>>>>>> development
 >>>>>>> development

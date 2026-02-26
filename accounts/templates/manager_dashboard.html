@@ -1,7 +1,5 @@
 {% extends 'base.html' %}
 
-{% block title %}Manager Dashboard - PitPet Admin{% endblock %}
-
 {% block content %}
 <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
     <div class="mb-10 flex justify-between items-center">
@@ -9,10 +7,6 @@
             <h1 class="text-4xl font-bold text-gray-900 mb-2">Manager Control Panel</h1>
             <p class="text-gray-600">Welcome, {{ user.full_name }}. Managing PitPet Clinic operations.</p>
         </div>
-        <a href="{% url 'register_staff_manager' %}"
-            class="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200">
-            + Register New Staff
-        </a>
     </div>
 
 

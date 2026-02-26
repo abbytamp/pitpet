@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="mb-10 flex justify-between items-center">
+        <div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Superadmin Dashboard</h1>
+            <p class="text-gray-600">Welcome, {{ user.full_name }}. Full system administration access.</p>
+        </div>
+        <a href="{% url 'register_staff_manager' %}"
+            class="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200">
+            + Register New User
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <div class="bg-white rounded-2xl shadow p-6 border-l-4 border-blue-500">
+            <p class="text-sm text-gray-500 mb-1">Total Customer</p>
+            <p class="text-3xl font-bold text-gray-900">{{ total_customers }}</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow p-6 border-l-4 border-green-500">
+            <p class="text-sm text-gray-500 mb-1">Total Groomer</p>
+            <p class="text-3xl font-bold text-gray-900">{{ total_groomers }}</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow p-6 border-l-4 border-yellow-500">
+            <p class="text-sm text-gray-500 mb-1">Total Staff</p>
+            <p class="text-3xl font-bold text-gray-900">{{ total_staff }}</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow p-6 border-l-4 border-purple-500">
+            <p class="text-sm text-gray-500 mb-1">Total Manager</p>
+            <p class="text-3xl font-bold text-gray-900">{{ total_managers }}</p>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-2xl shadow p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="{% url 'register_staff_manager' %}"
+                class="block p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition text-center">
+                <p class="font-semibold text-blue-700">Register Staff/Manager</p>
+                <p class="text-sm text-gray-500">Tambah user baru ke sistem</p>
+            </a>
+            <a href="#" class="block p-4 bg-green-50 rounded-xl hover:bg-green-100 transition text-center">
+                <p class="font-semibold text-green-700">Kelola Groomer</p>
+                <p class="text-sm text-gray-500">Manage data groomer</p>
+            </a>
+            <a href="#" class="block p-4 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition text-center">
+                <p class="font-semibold text-yellow-700">Lihat Riwayat</p>
+                <p class="text-sm text-gray-500">Riwayat seluruh transaksi</p>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

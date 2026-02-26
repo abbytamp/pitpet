@@ -22,6 +22,8 @@ def login_view(request):
                     return redirect('groomer_dashboard')
                 elif user.role == 'manager':
                     return redirect('manager_dashboard')
+                elif user.role == 'superadmin':
+                    return redirect('superadmin_dashboard')
             else:
                 messages.error(request, "Invalid username or password")
         else:
@@ -38,7 +40,7 @@ def register_customer(request):
         form = RegisterCustomerForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
+            user.password = form.cleaned_data['password']
             user.role = 'customer'
             user.save()
             messages.success(request, "Registration successful. Please login.")
@@ -52,15 +54,18 @@ def register_customer(request):
     return render(request, 'auth/register_customer.html', {'form': form})
 
 @login_required
-@user_passes_test(lambda u: u.role == 'manager' or u.is_superuser)
+@user_passes_test(lambda u: u.role in ['manager', 'superadmin'] or u.is_superuser)
 def register_staff_manager(request):
     if request.method == 'POST':
         form = RegisterStaffManagerForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
+            user.password = form.cleaned_data['password']
             user.save()
             messages.success(request, f"Successfully registered {user.role}.")
+            # Redirect based on current user's role
+            if request.user.role == 'superadmin':
+                return redirect('superadmin_dashboard')
             return redirect('manager_dashboard')
         else:
             for field, errors in form.errors.items():
@@ -97,3 +102,16 @@ def manager_dashboard(request):
     if request.user.role != 'manager':
         return redirect('login')
     return render(request, 'manager_dashboard.html', {'user': request.user})
+
+@login_required
+def superadmin_dashboard(request):
+    if request.user.role != 'superadmin':
+        return redirect('login')
+    context = {
+        'user': request.user,
+        'total_customers': User.objects.filter(role='customer').count(),
+        'total_groomers': User.objects.filter(role='groomer').count(),
+        'total_staff': User.objects.filter(role='staff').count(),
+        'total_managers': User.objects.filter(role='manager').count(),
+    }
+    return render(request, 'superadmin_dashboard.html', context)
