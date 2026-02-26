@@ -1,85 +1,73 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Login - PITPET</title>
-<script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <title>Login - PITPET</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-200 min-h-screen flex items-center justify-center">
+<body class="min-h-screen w-screen">
 
-<div class="bg-gray-100 rounded-3xl shadow-2xl w-[900px] h-[500px] flex overflow-hidden">
+    <div class="flex flex-col md:flex-row min-h-screen w-full">
 
-    <!-- LEFT -->
-    <div class="w-1/2 flex flex-col justify-center px-12">
+        <!-- LEFT SIDE (FORM) -->
+        <div class="w-full md:w-1/2 flex flex-col justify-center px-8 md:px-24 bg-gray-100 py-10 md:py-0">
 
-        <!-- LOGO -->
-        <img src="{% static 'images/logo_pitpet.png' %}"
-             class="h-10 w-fit mb-6">
+            {% include 'messages.html' %}
 
-
-        <h2 class="text-2xl font-bold text-cyan-500 mb-2">
-            Login
-        </h2>
-
-        <p class="text-gray-500 mb-6 text-sm">
-            Login to access your pitpet account
-        </p>
-
-
-        <form method="POST">
-
-            {% csrf_token %}
-
-            <input type="email"
-                   name="email"
-                   placeholder="Email"
-                   class="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400">
-
-
-            <input type="password"
-                   name="password"
-                   placeholder="Password"
-                   class="w-full mb-6 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400">
-
-
-            <button
-                type="submit"
-                class="w-full bg-cyan-500 text-white py-2 rounded-lg hover:bg-cyan-600 transition">
-
+            <h2 class="text-3xl md:text-4xl font-bold text-cyan-500 mb-3">
                 Login
+            </h2>
 
-            </button>
+            <p class="text-gray-500 mb-8">
+                Login to access your pitpet account
+            </p>
 
-        </form>
+            <form method="POST" class="w-full max-w-md">
+                {% csrf_token %}
 
+                <input type="email"
+                       name="username"
+                       placeholder="Email"
+                       required
+                       class="w-full mb-5 px-5 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400">
 
-        <p class="text-sm text-gray-500 mt-4 text-center">
+                <input type="password"
+                       name="password"
+                       placeholder="Password"
+                       required
+                       class="w-full mb-6 px-5 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400">
 
-            Don't have an account?
+                <button type="submit"
+                        class="w-full bg-cyan-500 text-white py-3 rounded-xl hover:bg-cyan-600 transition duration-300">
+                    Login
+                </button>
+            </form>
 
-            <a href="{% url 'register' %}"
-               class="text-orange-400 font-semibold">
+            <p class="text-sm text-gray-500 mt-6">
+                Don't have an account?
+                <a href="{% url 'register_customer' %}"
+                   class="text-orange-400 font-semibold hover:underline">
+                    Sign up
+                </a>
+            </p>
 
-                Sign up
+        </div>
 
-            </a>
+        <!-- RIGHT SIDE (IMAGE) -->
+        <div class="w-full md:w-1/2 bg-white flex items-center justify-center min-h-[300px] md:min-h-screen">
 
-        </p>
+            <img src="{% static 'images/dog.png' %}"
+                 class="h-[250px] md:h-[75%] object-contain"
+                 alt="Dog">
+
+        </div>
 
     </div>
-
-
-    <!-- RIGHT IMAGE -->
-    <div class="w-1/2 flex items-center justify-center">
-
-        <img src="{% static 'images/dog.png' %}"
-             class="h-[400px] object-contain">
-
-    </div>
-
-</div>
 
 </body>
+
 </html>

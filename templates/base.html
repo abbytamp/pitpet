@@ -3,6 +3,21 @@
 <!DOCTYPE html>
 
 <html lang="en">
+<<<<<<< HEAD
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}PITPET{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
+
+    {% block meta %}
+    {% endblock meta %}
+=======
 <head>
 
 ```
@@ -19,10 +34,42 @@
 {% endblock meta %}
 ```
 
+>>>>>>> development
 </head>
 
 <body class="bg-white min-h-screen flex flex-col">
 
+<<<<<<< HEAD
+    {% include 'messages.html' %}
+
+    <!-- Navbar -->
+    {% block navbar %}
+    {% if user.is_authenticated %}
+    {% if user.role == 'customer' %}
+    {% include 'navbar_customer.html' %}
+    {% elif user.role == 'staff' %}
+    {% include 'navbar_staff.html' %}
+    {% elif user.role == 'groomer' %}
+    {% include 'navbar_groomer.html' %}
+    {% elif user.role == 'manager' %}
+    {% include 'navbar_manager.html' %}
+    {% endif %}
+    {% endif %}
+    {% endblock navbar %}
+
+
+    <!-- Content -->
+    <main class="flex-1">
+
+        {% block content %}
+        {% endblock content %}
+
+    </main>
+
+</body>
+
+</html>
+=======
 ```
 <!-- Navbar -->
 {% block navbar %}
@@ -40,3 +87,4 @@
 
 </body>
 </html>
+>>>>>>> development

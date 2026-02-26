@@ -83,12 +83,12 @@ WSGI_APPLICATION = 'pitpet_clinic.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # ganti dari sqlite3
-        'NAME': 'pitpet_db',                        # nama database yang kamu buat
-        'USER': 'pitpet_user',                       # user PostgreSQL
-        'PASSWORD': 'pitpet123',                     # password user
-        'HOST': 'localhost',                         # database ada di komputer lokal
-        'PORT': '5432',                              # port default PostgreSQL
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'pitpet_db',
+        'USER': 'pitpet_user',
+        'PASSWORD': 'admin123',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -137,5 +137,12 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom User Model
+AUTH_USER_MODEL = 'accounts.User'
+
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.CustomAuthBackend',
+]
 
 

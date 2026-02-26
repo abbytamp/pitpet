@@ -4,53 +4,43 @@
 
   <div class="max-w-7xl mx-auto px-6 py-4 flex items-center">
 
-<!-- LOGO kiri -->
-<div class="flex items-center">
-  <a href="{% url 'customer_dashboard' %}">
-    <img 
-      src="{% static 'images/logo_pitpet.png' %}" 
-      alt="PITPET Logo"
-      class="h-12 w-auto"
-    >
-  </a>
-</div>
+    <!-- LOGO kiri -->
+    <div class="flex items-center">
+      <a href="{% url 'customer_dashboard' %}">
+        <img src="{% static 'images/logo_pitpet.png' %}" alt="PITPET Logo" class="h-12 w-auto">
+      </a>
+    </div>
 
+    <!-- MENU kanan -->
+    <div class="ml-auto flex items-center gap-8 font-semibold text-gray-700 text-lg">
 
+      <a href="{% url 'customer_dashboard' %}" class="hover:text-[#F5A623]">
+        Home
+      </a>
 
-<!-- MENU kanan -->
-<div class="ml-auto flex items-center gap-8 font-semibold text-gray-700 text-lg">
+      <a href="#" class="hover:text-[#F5A623]">
+        Katalog
+      </a>
 
-  <a href="{% url 'customer_dashboard' %}" class="hover:text-[#F5A623]">
-    Home
-  </a>
+      <a href="#" class="hover:text-[#F5A623]">
+        Booking
+      </a>
 
-  <a href="#" class="hover:text-[#F5A623]">
-    Katalog
-  </a>
+      <a href="#" class="hover:text-[#F5A623]">
+        Riwayat
+      </a>
 
-  <a href="#" class="hover:text-[#F5A623]">
-    Booking
-  </a>
+      <a href="#" class="hover:text-[#F5A623]">
+        Profile
+      </a>
 
-  <a href="#" class="hover:text-[#F5A623]">
-    Riwayat
-  </a>
+      <!-- LOGOUT BUTTON -->
+      <a href="{% url 'logout' %}"
+        class="bg-[#F5A623] text-white px-6 py-2 rounded-full hover:bg-orange-500 transition">
+        Log Out
+      </a>
 
-  <a href="#" class="hover:text-[#F5A623]">
-    Profile
-  </a>
-
-
-  <!-- LOGOUT BUTTON -->
-  <a href="#"
-     class="bg-[#F5A623] text-white px-6 py-2 rounded-full hover:bg-orange-500 transition">
-
-     Log Out
-
-  </a>
-
-
-</div>
+    </div>
 
   </div>
 
