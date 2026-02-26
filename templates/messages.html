@@ -1,0 +1,62 @@
+{% if messages %}
+<div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none">
+    {% for message in messages %}
+    <div class="toast-item pointer-events-auto transform transition-all duration-500 ease-out translate-x-full opacity-0 p-4 rounded-xl shadow-2xl flex items-center min-w-[320px] border-l-4 
+        {% if message.tags == 'error' %}bg-white border-red-500 text-red-800
+        {% elif message.tags == 'success' %}bg-white border-green-500 text-green-800
+        {% else %}bg-white border-cyan-500 text-cyan-800{% endif %}" role="alert">
+
+        <div class="mr-3">
+            {% if message.tags == 'success' %}
+            <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            {% elif message.tags == 'error' %}
+            <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            {% else %}
+            <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            {% endif %}
+        </div>
+
+        <div class="flex-1 font-semibold text-sm">{{ message }}</div>
+
+        <button onclick="dismissToast(this.parentElement)"
+            class="ml-4 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    function dismissToast(element) {
+        element.classList.add('opacity-0', 'translate-x-full');
+        setTimeout(() => element.remove(), 500);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const toasts = document.querySelectorAll('.toast-item');
+        toasts.forEach((toast, index) => {
+            // Munculkan toast dengan delay bertahap
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-x-full');
+                toast.classList.add('opacity-100', 'translate-x-0');
+            }, index * 150);
+
+            // Hilang otomatis setelah 5 detik
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    dismissToast(toast);
+                }
+            }, 5000 + (index * 150));
+        });
+    });
+</script>
+{% endif %}
