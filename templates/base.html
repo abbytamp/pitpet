@@ -1,13 +1,6 @@
 {% load static %}
-
 <!DOCTYPE html>
-
 <html lang="en">
-<<<<<<< HEAD
-
-=======
-<<<<<<< HEAD
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,94 +8,36 @@
     <title>{% block title %}PITPET{% endblock %}</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-
     <link rel="stylesheet" href="{% static 'css/global.css' %}">
 
-    {% block meta %}
-    {% endblock meta %}
-=======
->>>>>>> development
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>{% block title %}PITPET{% endblock %}</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <link rel="stylesheet" href="{% static 'css/global.css' %}">
-
-<<<<<<< HEAD
-    {% block meta %}
-    {% endblock meta %}
-=======
->>>>>>> development
->>>>>>> development
+    {% block meta %}{% endblock meta %}
 </head>
 
 <body class="bg-white min-h-screen flex flex-col">
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> development
     {% include 'messages.html' %}
 
     <!-- Navbar -->
     {% block navbar %}
     {% if user.is_authenticated %}
-    {% if user.role == 'customer' %}
-    {% include 'navbar_customer.html' %}
-    {% elif user.role == 'staff' %}
-    {% include 'navbar_staff.html' %}
-    {% elif user.role == 'groomer' %}
-    {% include 'navbar_groomer.html' %}
-    {% elif user.role == 'manager' %}
-    {% include 'navbar_manager.html' %}
-<<<<<<< HEAD
-    {% elif user.role == 'superadmin' %}
-    {% include 'navbar_superadmin.html' %}
-    {% endif %}
-    {% endif %}
-    {% endblock navbar %}
-=======
-    {% endif %}
+        {% if user.role == 'customer' %}
+            {% include 'navbar_customer.html' %}
+        {% elif user.role == 'staff' %}
+            {% include 'navbar_staff.html' %}
+        {% elif user.role == 'groomer' %}
+            {% include 'navbar_groomer.html' %}
+        {% elif user.role == 'manager' %}
+            {% include 'navbar_manager.html' %}
+        {% elif user.role == 'superadmin' %}
+            {% include 'navbar_superadmin.html' %}
+        {% endif %}
     {% endif %}
     {% endblock navbar %}
 
-
     <!-- Content -->
     <main class="flex-1">
-
-        {% block content %}
-        {% endblock content %}
-
+        {% block content %}{% endblock content %}
     </main>
 
 </body>
-
 </html>
-=======
-```
-<!-- Navbar -->
-{% block navbar %}
-{% endblock navbar %}
->>>>>>> development
-
-
-    <!-- Content -->
-    <main class="flex-1">
-
-        {% block content %}
-        {% endblock content %}
-
-    </main>
-
-</body>
-<<<<<<< HEAD
-
-</html>
-=======
-</html>
->>>>>>> development
->>>>>>> development
