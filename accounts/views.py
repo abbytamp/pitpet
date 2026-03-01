@@ -76,7 +76,11 @@ def register_staff_manager(request):
     return render(request, 'auth/register_staff_manager.html', {'form': form})
 
 def logout_view(request):
+    """Handle user logout for all roles.
+    Clears the session and redirects to the login page with a success message.
+    """
     logout(request)
+    messages.success(request, 'Anda berhasil logout.')
     return redirect('login')
 
 @login_required
