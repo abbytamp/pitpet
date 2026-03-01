@@ -2,13 +2,109 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-    <div class="mb-10 flex justify-between items-center">
-        <div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-2">Manager Control Panel</h1>
-            <p class="text-gray-600">Welcome, {{ user.full_name }}. Managing PitPet Clinic operations.</p>
+    <div class="mb-10">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">Manager Control Panel</h1>
+        <p class="text-gray-600">Welcome, {{ user.full_name }}. Monitoring PitPet Clinic operations.</p>
+    </div>
+
+    <!-- Fitur 8: Laporan Operasional & Dashboard Manajemen (R) -->
+    <!-- Overview Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <div class="bg-white rounded-2xl shadow p-6 border-l-4 border-blue-500">
+            <p class="text-sm text-gray-500 mb-1">Total Booking</p>
+            <p class="text-3xl font-bold text-gray-900">0</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow p-6 border-l-4 border-green-500">
+            <p class="text-sm text-gray-500 mb-1">Layanan Selesai</p>
+            <p class="text-3xl font-bold text-gray-900">0</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow p-6 border-l-4 border-yellow-500">
+            <p class="text-sm text-gray-500 mb-1">Rating Rata-rata</p>
+            <p class="text-3xl font-bold text-gray-900">-</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow p-6 border-l-4 border-purple-500">
+            <p class="text-sm text-gray-500 mb-1">Total Review</p>
+            <p class="text-3xl font-bold text-gray-900">0</p>
         </div>
     </div>
 
+    <!-- Quick Access -->
+    <div class="bg-white rounded-2xl shadow p-6 mb-10">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Menu Utama</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Fitur 8: Laporan Operasional -->
+            <a href="#" class="block p-5 bg-blue-50 rounded-xl hover:bg-blue-100 transition text-center">
+                <svg class="w-8 h-8 mx-auto mb-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <p class="font-semibold text-blue-700">Laporan Operasional</p>
+                <p class="text-sm text-gray-500">Lihat statistik dan laporan kinerja klinik</p>
+            </a>
+            <!-- Fitur 9: Review & Rating -->
+            <a href="#" class="block p-5 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition text-center">
+                <svg class="w-8 h-8 mx-auto mb-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                <p class="font-semibold text-yellow-700">Review & Rating</p>
+                <p class="text-sm text-gray-500">Lihat review dan rating dari customer</p>
+            </a>
+        </div>
+    </div>
 
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Fitur 8: Laporan Operasional - Ringkasan -->
+        <div class="bg-white rounded-2xl shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Laporan Operasional</h3>
+                <a href="#" class="text-sm font-semibold text-[#F5A623] hover:text-orange-600 transition">
+                    Lihat Detail &rarr;
+                </a>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                    <span class="text-sm text-gray-600">Booking Bulan Ini</span>
+                    <span class="font-bold text-gray-900">0</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                    <span class="text-sm text-gray-600">Layanan Selesai Bulan Ini</span>
+                    <span class="font-bold text-gray-900">0</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                    <span class="text-sm text-gray-600">Pembatalan Bulan Ini</span>
+                    <span class="font-bold text-gray-900">0</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                    <span class="text-sm text-gray-600">Pendapatan Bulan Ini</span>
+                    <span class="font-bold text-gray-900">Rp 0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fitur 9: Review & Rating - Terbaru -->
+        <div class="bg-white rounded-2xl shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Review Terbaru</h3>
+                <a href="#" class="text-sm font-semibold text-[#F5A623] hover:text-orange-600 transition">
+                    Lihat Semua &rarr;
+                </a>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-4 bg-yellow-50 rounded-xl border border-yellow-100">
+                    <div>
+                        <p class="font-bold text-gray-800">Belum ada review</p>
+                        <p class="text-sm text-gray-500">Review dan rating dari customer akan muncul di sini</p>
+                    </div>
+                    <div class="flex items-center gap-1 text-yellow-500">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span class="font-bold text-gray-700">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
