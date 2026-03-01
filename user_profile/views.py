@@ -181,6 +181,55 @@ def edit_pet(request, pet_id):
 
 @login_required
 def delete_pet(request, pet_id):
+    """Menghapus data hewan peliharaan milik customer.
+    - Customer hanya dapat menghapus hewan miliknya sendiri.
+    - Hewan tidak dapat dihapus jika masih memiliki booking aktif (scheduled/on the way).
+    """
     pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
-    pet.delete()
-    return redirect('profile')
+
+    # TODO: Uncomment when model Booking udh ada
+    # from booking.models import Booking
+    # active_bookings = Booking.objects.filter(
+    #     pet=pet,
+    #     status__in=['scheduled', 'on_the_way', 'in_progress']
+    # )
+    # if active_bookings.exists():
+    #     messages.error(request, "Hewan tidak dapat dihapus karena masih memiliki booking aktif.")
+    #     return redirect('user_profile:profile')
+
+    if request.method == 'POST':
+        pet.soft_delete()
+        messages.success(request, "Hewan peliharaan berhasil dihapus.")
+        return redirect('user_profile:profile')
+
+    # GET request — shouldn't happen normally, redirect back
+    return redirect('user_profile:profile')
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def delete_pet_api(request, pet_id):
+    """API endpoint DELETE /api/pets/{pet_id} untuk menghapus data hewan peliharaan.
+    - Customer hanya dapat menghapus hewan miliknya sendiri.
+    - Mengembalikan 400 jika hewan masih terikat booking aktif.
+    - Mengembalikan 200 jika berhasil dihapus.
+    """
+    try:
+        pet = Pet.objects.get(id=pet_id, owner=request.user)
+    except Pet.DoesNotExist:
+        return JsonResponse({"error": "Hewan tidak ditemukan."}, status=404)
+
+    # TODO: Uncomment when model Booking udh ada
+    # from booking.models import Booking
+    # active_bookings = Booking.objects.filter(
+    #     pet=pet,
+    #     status__in=['scheduled', 'on_the_way', 'in_progress']
+    # )
+    # if active_bookings.exists():
+    #     return JsonResponse(
+    #         {"error": "Hewan tidak dapat dihapus karena masih memiliki booking aktif."},
+    #         status=400
+    #     )
+
+    pet.soft_delete()
+    return JsonResponse({"message": "Hewan peliharaan berhasil dihapus."}, status=200)
