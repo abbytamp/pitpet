@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>data groomer</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 24px; }
+      .header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; }
+      .btn { padding:10px 14px; border:1px solid #111; border-radius:10px; text-decoration:none; color:#111; }
+      table { width: 100%; border-collapse: collapse; }
+      thead th { border-bottom: 2px solid #111; padding: 12px 10px; text-align:left; }
+      tbody td { border-bottom: 1px solid #ddd; padding: 12px 10px; }
+      .aksi { display:flex; gap:10px; }
+      .icon { text-decoration:none; font-size:18px; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2>data groomer</h2>
+      <a class="btn" href="#">tambah groomer</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>username</th>
+          <th>nama lengkap</th>
+          <th>no hp</th>
+          <th>jenis layanan</th>
+          <th>aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for groomer in groomers %}
+          <tr>
+            <td>{{ groomer.user.username }}</td>
+            <td>{{ groomer.user.full_name }}</td>
+            <td>{{ groomer.user.phone_number }}</td>
+            <td>{{ groomer.get_service_type_display }}</td>
+            <td>
+              <div class="aksi">
+                <a class="icon" href="#" title="edit">✏️</a>
+                <a class="icon" href="#" title="delete">🗑️</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">belum ada data groomer</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>
