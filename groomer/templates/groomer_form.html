@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            {% if mode == 'create' %}
+                Tambah Groomer Baru
+            {% else %}
+                Edit Groomer
+            {% endif %}
+        </h1>
+        <p class="text-gray-600">
+            {% if mode == 'create' %}
+                Tambahkan groomer baru ke sistem
+            {% else %}
+                Ubah data groomer {{ groomer.user.full_name }}
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow p-8">
+        <form method="POST" class="space-y-6" action="{% if mode == 'create' %}{% url 'groomer:groomer_create' %}{% else %}{% url 'groomer:groomer_update' groomer.id %}{% endif %}">
+            {% csrf_token %}
+            {% if mode == 'create' %}
+            <!-- Create fields: username, full_name, phone_number, password, service_type -->
+            <div>
+                <label for="id_username" class="block text-sm font-semibold text-gray-900 mb-2">Username (email) <span class="text-red-500">*</span></label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <p class="text-sm text-red-600">{{ form.username.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="id_full_name" class="block text-sm font-semibold text-gray-900 mb-2">Nama Lengkap <span class="text-red-500">*</span></label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}
+                    <p class="text-sm text-red-600">{{ form.full_name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="id_phone_number" class="block text-sm font-semibold text-gray-900 mb-2">No HP <span class="text-red-500">*</span></label>
+                {{ form.phone_number }}
+                {% if form.phone_number.errors %}
+                    <p class="text-sm text-red-600">{{ form.phone_number.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="id_password" class="block text-sm font-semibold text-gray-900 mb-2">Password <span class="text-red-500">*</span></label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <p class="text-sm text-red-600">{{ form.password.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">Jenis Layanan <span class="text-red-500">*</span></label>
+                {{ form.service_type }}
+                {% if form.service_type.errors %}
+                    <p class="text-sm text-red-600">{{ form.service_type.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-1 text-sm text-gray-500"><strong>Home:</strong> Groomer melayani di rumah pelanggan • <strong>Clinic:</strong> Groomer melayani di klinik</p>
+            </div>
+            {% else %}
+            <!-- Edit: show username & service type as info, editable fields: full_name, phone_number -->
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-900 mb-1">Username</label>
+                <p class="text-sm text-gray-700">{{ groomer.user.username }}</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-900 mb-1">Jenis Layanan</label>
+                <p class="text-sm text-gray-700">{{ groomer.get_service_type_display }}</p>
+            </div>
+
+            <div>
+                <label for="id_full_name" class="block text-sm font-semibold text-gray-900 mb-2">Nama Lengkap <span class="text-red-500">*</span></label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}
+                    <p class="text-sm text-red-600">{{ form.full_name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="id_phone_number" class="block text-sm font-semibold text-gray-900 mb-2">No HP <span class="text-red-500">*</span></label>
+                {{ form.phone_number }}
+                {% if form.phone_number.errors %}
+                    <p class="text-sm text-red-600">{{ form.phone_number.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Info Box -->
+
+            <!-- Buttons -->
+            <div class="flex items-center gap-3 pt-6">
+                <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                    {% if mode == 'create' %}
+                        Tambah Groomer
+                    {% else %}
+                        Simpan Perubahan
+                    {% endif %}
+                </button>
+                <a href="{% url 'groomer:groomer_list' %}" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition">
+                    Batal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
