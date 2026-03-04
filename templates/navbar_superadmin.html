@@ -1,78 +1,38 @@
 {% load static %}
 
 <nav class="bg-white shadow-sm">
-
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center">
-
+        
         <!-- LOGO kiri -->
         <div class="flex items-center">
             <a href="{% url 'superadmin_dashboard' %}">
-                <img src="{% static 'images/logo_pitpet.png' %}" alt="PITPET Logo" class="h-12 w-auto">
+                <img src="{% static 'images/logo_pitpet.png' %}" 
+                     alt="PITPET Logo" 
+                     class="h-12 w-auto">
             </a>
         </div>
 
         <!-- MENU kanan -->
         <div class="ml-auto flex items-center gap-8 font-semibold text-gray-700 text-lg">
 
-            <a href="{% url 'superadmin_dashboard' %}" class="hover:text-[#F5A623]">
+            <!-- HOME -->
+            <a href="{% url 'superadmin_dashboard' %}" 
+               class="hover:text-[#F5A623]">
                 Home
             </a>
 
-            <!-- DROPDOWN DATA -->
-            <div class="relative group">
-
-                <button class="hover:text-[#F5A623] flex items-center gap-1">
-                    Data
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-
-                <!-- Dropdown menu -->
-                <div class="absolute right-0 hidden group-hover:block bg-white shadow-md rounded-lg mt-2 w-48">
-                    <a href="#" class="block px-4 py-2 hover:bg-gray-100">
-                        Data Customer
-                    </a>
-                    <a href="#" class="block px-4 py-2 hover:bg-gray-100">
-                        Data Groomer
-                    </a>
-                    <a href="#" class="block px-4 py-2 hover:bg-gray-100">
-                        Data Staff
-                    </a>
-                    <a href="#" class="block px-4 py-2 hover:bg-gray-100">
-                        Data Manager
-                    </a>
-                    <a href="#" class="block px-4 py-2 hover:bg-gray-100">
-                        Data Paket
-                    </a>
-                </div>
-
-            </div>
-
-            <!-- RIWAYAT -->
-            <a href="#" class="hover:text-[#F5A623]">
-                Riwayat
-            </a>
-
-            <!-- JADWAL -->
-            <a href="#" class="hover:text-[#F5A623]">
-                Jadwal
-            </a>
-
-            <!-- REGISTER -->
-            <a href="{% url 'register_staff_manager' %}" class="hover:text-[#F5A623]">
+            <!-- REGISTER USER -->
+            <a href="{% url 'register_staff_manager' %}" 
+               class="hover:text-[#F5A623]">
                 Register User
             </a>
 
-            <!-- LOGOUT BUTTON -->
+            <!-- LOGOUT -->
             <a href="{% url 'logout' %}"
-                class="bg-[#F5A623] text-white px-6 py-2 rounded-full hover:bg-orange-500 transition">
+               class="bg-[#F5A623] text-white px-6 py-2 rounded-full hover:bg-orange-500 transition">
                 Log Out
             </a>
 
         </div>
-
     </div>
-
 </nav>
