@@ -12,5 +12,5 @@ urlpatterns = [
     path('pet/delete/<int:pet_id>/', views.delete_pet, name='delete_pet'),
     path('api/profile/', views.update_profile_api, name='update_profile_api'),
     path('api/pets/<int:pet_id>/', update_pet_api, name='update_pet_api'),
-    # path('api/pets/<int:pet_id>/', views.update_pet_api, name='update_pet_api'),
+    path('api/pets/<int:pet_id>/delete/', views.delete_pet_api, name='delete_pet_api'),
 ]

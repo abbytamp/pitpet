@@ -1,7 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
+from django.http import JsonResponse
+from django.db.models import Q
 from .forms import LoginForm, RegisterCustomerForm, RegisterStaffManagerForm
 from .models import User
 
@@ -76,7 +78,11 @@ def register_staff_manager(request):
     return render(request, 'auth/register_staff_manager.html', {'form': form})
 
 def logout_view(request):
+    """Handle user logout for all roles.
+    Clears the session and redirects to the login page with a success message.
+    """
     logout(request)
+    messages.success(request, 'Anda berhasil logout.')
     return redirect('login')
 
 @login_required
@@ -115,3 +121,98 @@ def superadmin_dashboard(request):
         'total_managers': User.objects.filter(role='manager').count(),
     }
     return render(request, 'superadmin_dashboard.html', context)
+
+
+# =============================================
+# Staff: Melihat Data Customer dan Hewan (Read-Only)
+# Endpoint: GET /accounts/staff/customers/
+# Endpoint: GET /accounts/staff/customers/<customer_id>/
+# =============================================
+
+@login_required
+def staff_customer_list(request):
+    """Menampilkan daftar seluruh customer.
+    Hanya dapat diakses oleh Staff Operasional.
+    Mendukung pencarian berdasarkan nama atau username.
+    """
+    if request.user.role != 'staff':
+        messages.error(request, 'Anda tidak memiliki akses ke halaman ini.')
+        return redirect('login')
+
+    query = request.GET.get('q', '').strip()
+    customers = User.objects.filter(role='customer')
+
+    if query:
+        customers = customers.filter(
+            Q(full_name__icontains=query) | Q(username__icontains=query)
+        )
+
+    customers = customers.order_by('full_name')
+
+    return render(request, 'staff/customer_list.html', {
+        'customers': customers,
+        'query': query,
+        'user': request.user,
+    })
+
+
+@login_required
+def staff_customer_detail(request, customer_id):
+    """Menampilkan detail customer beserta daftar hewan peliharaannya.
+    Hanya dapat diakses oleh Staff Operasional. Data bersifat read-only.
+    """
+    if request.user.role != 'staff':
+        messages.error(request, 'Anda tidak memiliki akses ke halaman ini.')
+        return redirect('login')
+
+    customer = get_object_or_404(User, id=customer_id, role='customer')
+    pets = customer.pets.all()
+
+    return render(request, 'staff/customer_detail.html', {
+        'customer': customer,
+        'pets': pets,
+        'user': request.user,
+    })
+
+
+@login_required
+def staff_customer_list_api(request):
+    """API endpoint GET /api/admin/customers
+    Mengembalikan daftar seluruh customer. Hanya untuk Staff Operasional.
+    """
+    if request.user.role != 'staff':
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    customers = User.objects.filter(role='customer').values(
+        'id', 'full_name', 'username', 'phone_number'
+    )
+    return JsonResponse({"customers": list(customers)}, status=200)
+
+
+@login_required
+def staff_customer_detail_api(request, customer_id):
+    """API endpoint GET /api/admin/customers/<customer_id>
+    Mengembalikan detail customer beserta daftar hewan peliharaannya.
+    Hanya untuk Staff Operasional.
+    """
+    if request.user.role != 'staff':
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    try:
+        customer = User.objects.get(id=customer_id, role='customer')
+    except User.DoesNotExist:
+        return JsonResponse({"error": "Customer tidak ditemukan."}, status=404)
+
+    pets = list(customer.pets.values(
+        'id', 'name', 'jenis', 'ras', 'umur', 'berat'
+    ))
+
+    return JsonResponse({
+        "customer": {
+            "id": customer.id,
+            "full_name": customer.full_name,
+            "username": customer.username,
+            "phone_number": customer.phone_number,
+        },
+        "pets": pets,
+    }, status=200)

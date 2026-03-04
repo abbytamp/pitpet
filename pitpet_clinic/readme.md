@@ -1,13 +1,17 @@
-<<<<<<< HEAD
-Nama : Aliyah Nahisa Sugiana
-NPM : 2306275405
+## Fitur 2 Manajemen Paket Grooming (Salsa)
 
-Fitur yang dikerjakan:
-1. Fitur 3: Manajemen Data Groomer
-Fitur ini memungkinkan staf operasional untuk mengelola data groomer yang terlibat dalam operasional layanan grooming PitPet. Melalui fitur ini, staf operasional dapat menambahkan, mengubah, atau menghapus data groomer, serta mengaktifkan atau menonaktifkan status groomer yang akan menentukan apakah groomer tersebut dapat menerima booking. Data groomer yang dikelola meliputi nama, nomor kontak, spesialisasi (cat/dog/both), dan area operasional (untuk home grooming). Fitur ini memastikan hanya groomer yang aktif dan sesuai dengan spesialisasi serta area layanan yang dapat dipilih oleh customer saat melakukan booking, serta membantu dalam pengelolaan jadwal grooming yang lebih efisien.
+Fitur ini memungkinkan Staf Operasional mengelola katalog paket grroming PitPet. Staf dapat menambah, mengubah, menghapus, ataupun mengatur status aktif/nonaktif suatu paket. Paket yang Aktif akan tampil untuk Customer (katalog/booking) dan bisa muncul di fitur rekomendasi, paket Nonaktif tidak muncul dan tidak bisa dipilih.
 
-2. Fitur 8: Laporan Operasional & Dashboard Manajemen
-Fitur ini menyediakan laporan dan dashboard ringkasan yang menampilkan gambaran umum aktivitas layanan grooming PitPet dalam periode tertentu. Informasi yang ditampilkan meliputi jumlah booking, jumlah layanan selesai (completed), jumlah booking yang dibatalkan, dan distribusi jenis layanan (home vs clinic). Data ini disajikan dalam bentuk grafik dan angka ringkasan (summary metrics) untuk membantu staf operasional dan manajer dalam memantau kinerja operasional grooming. Dengan adanya fitur ini, PitPet dapat menggantikan monitoring manual melalui spreadsheet dan mendukung pengambilan keputusan berbasis data yang lebih efisien. Laporan ini juga memungkinkan evaluasi performa grooming secara periodik dan membantu manajemen untuk melihat tren kinerja layanan grooming dari waktu ke waktu.
+Role pengguna:
+- Staf Operasional: CRUD
+- Customer: R(Melihat katalog)
+
+## Fitur 10 Rekomendasi Layanan untuk Customer (Salsa)
+
+Fitur ini memungkinkan Customer untuk mendapatkan rrekomendasi paket grooming berdasarkan kondisi hewan. Customer dapat memilih jenis hewan peliharaan, lalu mengisi beberapa pertanyaan kondisi hewan tersebut. Berdasarkan kondisi hewan tersebut, sistem menampilkan rekomendasi paket grooming yang paling sesuai.
+
+Role pengguna:
+- Customer: Mengisi kondisi hewan dan melihat hasil rekomendasi
 =======
 Nama : Abby Shelley Tampubolon
 NPM : 2306275254
@@ -94,4 +98,3 @@ Setiap review akan terhubung dengan:
 3. Paket Layanan
 4. Tanggal Layanan
 Review dapat diakses oleh staff operasional dan manajer sesuai hak akses.
->>>>>>> b146c8fbfa7ae300c29941e8c5af82a15bc89196

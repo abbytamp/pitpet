@@ -7,25 +7,99 @@
         <p class="text-gray-600">Hello, {{ user.full_name }}. Ready to help our furry friends today?</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div class="glass p-8 rounded-3xl shadow-sm">
-            <h3 class="text-xl font-bold mb-4">Grooming Queue</h3>
-            <p class="text-gray-500 text-sm mb-6">Manage today's grooming appointments and assignments.</p>
-            <button
-                class="w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl">View
-                Queue</button>
+    <!-- Quick Actions (aligned with navbar Data dropdown) -->
+    <div class="bg-white rounded-2xl shadow p-6 mb-10">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Data Management</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="{% url 'staff_customer_list' %}" class="block p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition text-center">
+                <svg class="w-8 h-8 mx-auto mb-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <p class="font-semibold text-blue-700">Data Customer</p>
+                <p class="text-sm text-gray-500">Lihat dan kelola data customer</p>
+            </a>
+            <a href="#" class="block p-4 bg-green-50 rounded-xl hover:bg-green-100 transition text-center">
+                <svg class="w-8 h-8 mx-auto mb-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <p class="font-semibold text-green-700">Data Groomer</p>
+                <p class="text-sm text-gray-500">Lihat data groomer yang tersedia</p>
+            </a>
+            <a href="#" class="block p-4 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition text-center">
+                <svg class="w-8 h-8 mx-auto mb-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <p class="font-semibold text-yellow-700">Data Paket</p>
+                <p class="text-sm text-gray-500">Kelola paket grooming</p>
+            </a>
         </div>
-        <div class="glass p-8 rounded-3xl shadow-sm">
-            <h3 class="text-xl font-bold mb-4">Customer Support</h3>
-            <p class="text-gray-600 mb-6 text-sm">Respond to inquiries and update customer details.</p>
-            <button class="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl">Open
-                Tickets</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+        <!-- Jadwal Section (aligned with navbar Jadwal) -->
+        <div class="bg-white rounded-2xl shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Jadwal Hari Ini</h3>
+                <a href="#" class="text-sm font-semibold text-[#F5A623] hover:text-orange-600 transition">
+                    Lihat Semua &rarr;
+                </a>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <div>
+                        <p class="font-bold text-gray-800">Belum ada jadwal</p>
+                        <p class="text-sm text-gray-500">Jadwal booking grooming akan muncul di sini</p>
+                    </div>
+                    <span class="px-3 py-1 bg-blue-200 text-blue-800 text-xs font-bold rounded-full">SCHEDULED</span>
+                </div>
+            </div>
         </div>
-        <div class="glass p-8 rounded-3xl shadow-sm">
-            <h3 class="text-xl font-bold mb-4">Inventory</h3>
-            <p class="text-gray-500 text-sm mb-6">Check and update supplies for the clinic.</p>
-            <button class="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl">Manage
-                Stock</button>
+
+        <!-- Riwayat Section (aligned with navbar Riwayat) -->
+        <div class="bg-white rounded-2xl shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Riwayat Layanan Terbaru</h3>
+                <a href="#" class="text-sm font-semibold text-[#F5A623] hover:text-orange-600 transition">
+                    Lihat Semua &rarr;
+                </a>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div>
+                        <p class="font-bold text-gray-800">Belum ada riwayat</p>
+                        <p class="text-sm text-gray-500">Riwayat layanan grooming yang selesai akan muncul di sini</p>
+                    </div>
+                    <span class="px-3 py-1 bg-green-200 text-green-800 text-xs font-bold rounded-full">COMPLETED</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Management (aligned with readme: staff can view, update, cancel bookings) -->
+    <div class="bg-white rounded-2xl shadow p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Manajemen Booking</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl p-4 border-l-4 border-blue-500">
+                <p class="text-sm text-gray-500 mb-1">Scheduled</p>
+                <p class="text-3xl font-bold text-gray-900">0</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 border-l-4 border-orange-500">
+                <p class="text-sm text-gray-500 mb-1">In Progress</p>
+                <p class="text-3xl font-bold text-gray-900">0</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 border-l-4 border-green-500">
+                <p class="text-sm text-gray-500 mb-1">Completed</p>
+                <p class="text-3xl font-bold text-gray-900">0</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 border-l-4 border-red-500">
+                <p class="text-sm text-gray-500 mb-1">Cancelled</p>
+                <p class="text-3xl font-bold text-gray-900">0</p>
+            </div>
         </div>
     </div>
 </div>
