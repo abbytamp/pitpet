@@ -1,6 +1,12 @@
 from django.db import models
+from django.utils import timezone
 
-# Create your models here. 
+
+class ActivePackageManager(models.Manager):
+    """Manager yang hanya mengembalikan paket yang belum di-soft-delete."""
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
 
 class Package(models.Model):
     class AnimalType(models.TextChoices):
@@ -18,9 +24,15 @@ class Package(models.Model):
     description = models.TextField()
     duration_min = models.IntegerField(choices=Duration.choices)
     is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Default manager: hanya paket aktif
+    objects = ActivePackageManager()
+    # Semua paket termasuk yang soft-deleted
+    all_objects = models.Manager()
 
     class Meta:
         db_table = "packages"
@@ -63,8 +75,19 @@ class Package(models.Model):
         return {pp.size: pp.price for pp in qs}
 
     def get_price_by_size(self, size: str):
-        return self.dog_prices.get(size)    
-    
+        return self.dog_prices.get(size)
+
+    def soft_delete(self):
+        """Soft delete: tandai paket sebagai dihapus tanpa menghapus dari database."""
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save()
+
+    def restore(self):
+        """Restore: batalkan soft delete."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
 
 
 class PackagePrice(models.Model):
