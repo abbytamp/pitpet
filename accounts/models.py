@@ -66,6 +66,10 @@ class User(models.Model):
     def pk(self):
         return self.id
 
+class ActiveGroomerManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
 class Groomer(models.Model):
     class ServiceType(models.TextChoices):
         HOME = 'home', 'Home'
@@ -73,7 +77,23 @@ class Groomer(models.Model):
         
     user = models.OneToOneField(User, on_delete=models.CASCADE, limit_choices_to={'role': 'groomer'}, related_name='groomer_profile')
     service_type = models.CharField(max_length=10, choices=ServiceType.choices)
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    objects = ActiveGroomerManager()
+    all_objects = models.Manager()
 
     def __str__(self):
         return f"{self.user.full_name} - {self.service_type}"
+
+    def soft_delete(self):
+        from django.utils import timezone
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save()
+
+    def restore(self):
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
 

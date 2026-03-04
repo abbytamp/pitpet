@@ -8,7 +8,7 @@ from .forms import GroomerForm, GroomerCreateForm, GroomerEditForm
 
 @staff_required
 def groomer_list(request):
-    """Read: Display list of all groomers"""
+    """Read: Display list of all active groomers"""
     groomers = Groomer.objects.select_related("user").all()
     return render(request, "groomer_list.html", {"groomers": groomers})
 
@@ -102,5 +102,32 @@ def groomer_update(request, groomer_id: int):
     
     messages.success(request, "Data groomer berhasil diperbarui")
     return redirect("groomer:groomer_list")
+
+
+@staff_required
+def groomer_delete(request, groomer_id: int):
+    """Soft delete a groomer"""
+    if request.method != "POST":
+        return HttpResponseBadRequest("Bad Request")
+
+    groomer = get_object_or_404(
+        Groomer.objects.select_related("user"), id=groomer_id
+    )
+
+    # TODO: check for active bookings when booking feature is implemented
+    # if groomer has active bookings, deny deletion
+    # has_active_booking = Booking.objects.filter(
+    #     groomer=groomer, status__in=['scheduled', 'in_progress']
+    # ).exists()
+    # if has_active_booking:
+    #     messages.error(
+    #         request,
+    #         f'Tidak dapat menghapus groomer yang memiliki booking aktif.'
+    #     )
+    #     return redirect('groomer:groomer_list')
+
+    groomer.soft_delete()
+    messages.success(request, f'Groomer {groomer.user.full_name} berhasil dihapus.')
+    return redirect('groomer:groomer_list')
 
 
