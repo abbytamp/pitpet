@@ -159,3 +159,40 @@ def package_update(request, package_id: int):
 
     messages.success(request, "Paket berhasil diperbarui")
     return redirect("package_list")
+
+
+@staff_required
+def package_delete(request, package_id: int):
+    if request.method != "POST":
+        return HttpResponseBadRequest("Bad Request")
+
+    pkg = get_object_or_404(Package, id=package_id, is_deleted=False)
+
+    if _has_scheduled_booking(pkg):
+        messages.error(request, "Paket tidak bisa dihapus karena masih ada booking yang terjadwal.")
+        return redirect("package_list")
+
+    pkg.soft_delete()
+    messages.success(request, f'Paket "{pkg.name}" berhasil dihapus.')
+    return redirect("package_list")
+
+
+def package_catalog(request):
+    """Customer: lihat katalog paket grooming (read-only, hanya paket aktif)."""
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    packages = (
+        Package.objects
+        .filter(is_deleted=False)
+        .prefetch_related("prices")
+        .order_by("animal_type", "name")
+    )
+
+    cat_packages = [p for p in packages if p.animal_type == "cat"]
+    dog_packages = [p for p in packages if p.animal_type == "dog"]
+
+    return render(request, "packages/catalog.html", {
+        "cat_packages": cat_packages,
+        "dog_packages": dog_packages,
+    })
