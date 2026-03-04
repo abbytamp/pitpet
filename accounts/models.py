@@ -76,3 +76,4 @@ class Groomer(models.Model):
 
     def __str__(self):
         return f"{self.user.full_name} - {self.service_type}"
+

@@ -1,55 +1,71 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>data groomer</title>
-    <style>
-      body { font-family: Arial, sans-serif; padding: 24px; }
-      .header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; }
-      .btn { padding:10px 14px; border:1px solid #111; border-radius:10px; text-decoration:none; color:#111; }
-      table { width: 100%; border-collapse: collapse; }
-      thead th { border-bottom: 2px solid #111; padding: 12px 10px; text-align:left; }
-      tbody td { border-bottom: 1px solid #ddd; padding: 12px 10px; }
-      .aksi { display:flex; gap:10px; }
-      .icon { text-decoration:none; font-size:18px; }
-    </style>
-  </head>
-  <body>
-    <div class="header">
-      <h2>data groomer</h2>
-      <a class="btn" href="#">tambah groomer</a>
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-10">
+        <div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Data Groomer</h1>
+            <p class="text-gray-600">Daftar groomer PitPet Clinic.</p>
+        </div>
+
+        <a href="{% url 'groomer:groomer_create' %}"
+            class="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200">
+            + Tambah Groomer
+        </a>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>username</th>
-          <th>nama lengkap</th>
-          <th>no hp</th>
-          <th>jenis layanan</th>
-          <th>aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for groomer in groomers %}
-          <tr>
-            <td>{{ groomer.user.username }}</td>
-            <td>{{ groomer.user.full_name }}</td>
-            <td>{{ groomer.user.phone_number }}</td>
-            <td>{{ groomer.get_service_type_display }}</td>
-            <td>
-              <div class="aksi">
-                <a class="icon" href="#" title="edit">✏️</a>
-                <a class="icon" href="#" title="delete">🗑️</a>
-              </div>
-            </td>
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="5">belum ada data groomer</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </body>
-</html>
+    <!-- Groomer Table -->
+    <div class="bg-white rounded-2xl shadow overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">No</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Username</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">No HP</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Jenis Layanan</th>
+                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% if groomers %}
+                    {% for groomer in groomers %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ forloop.counter }}</td>
+                        <td class="px-6 py-4">
+                            <p class="font-semibold text-gray-900">{{ groomer.user.full_name }}</p>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ groomer.user.username }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ groomer.user.phone_number }}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if groomer.service_type == 'home' %}bg-blue-100 text-blue-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                {{ groomer.get_service_type_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{% url 'groomer:groomer_edit' groomer.id %}"
+                                    class="inline-block px-4 py-2 bg-blue-50 text-blue-700 font-semibold text-sm rounded-lg hover:bg-blue-100 transition">
+                                    Edit
+                                </a>
+                                <!-- Hapus: non-functional for now (CRU only) -->
+                                <button type="button" disabled
+                                    class="inline-block px-4 py-2 bg-red-50 text-red-400 font-semibold text-sm rounded-lg cursor-not-allowed">
+                                    Hapus
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-400">
+                            Belum ada data groomer.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
