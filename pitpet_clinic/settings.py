@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     'user_profile',
     'pet',
     'groomer',
-    'packet',
 ]
 
 MIDDLEWARE = [

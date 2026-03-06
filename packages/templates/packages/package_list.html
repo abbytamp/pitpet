@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<<<<<<< HEAD
 <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
   <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
 
@@ -19,10 +18,9 @@
       </a>
     </div>
 
-    <!-- Sections wrapper -->
     <div class="space-y-10">
 
-      <!-- ===================== Paket Kucing ===================== -->
+      <!-- Paket Kucing -->
       <section class="rounded-3xl border border-orange-100 bg-orange-100/70 shadow-sm">
         <div class="px-6 pt-6 pb-4 flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -37,9 +35,9 @@
 
         <div class="px-6 pb-6">
           {% if cat_packages %}
-            <!-- Scrollable area -->
+            <!-- Scrollable -->
             <div class="max-h-[520px] overflow-auto pr-2">
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for p in cat_packages %}
                   <div class="rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition p-4">
                     <div class="flex items-start justify-between gap-3 mb-2">
@@ -92,7 +90,7 @@
         </div>
       </section>
 
-      <!-- ===================== Paket Anjing ===================== -->
+      <!-- Paket Anjing -->
       <section class="rounded-3xl border border-sky-100 bg-sky-100/70 shadow-sm">
         <div class="px-6 pt-6 pb-4 flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -107,9 +105,9 @@
 
         <div class="px-6 pb-6">
           {% if dog_packages %}
-            <!-- Scrollable area -->
+            <!-- Scrollable -->
             <div class="max-h-[520px] overflow-auto pr-2">
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for p in dog_packages %}
                   <div class="rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition p-4">
                     <div class="flex items-start justify-between gap-3 mb-2">
@@ -175,13 +173,12 @@
 
     </div>
 
-    <!-- Footer actions -->
-  <div class="mt-10">
+  {% comment %} <div class="mt-10">
     <a href="javascript:history.back()"
        class="inline-flex items-center justify-center py-3 px-6 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-gray-800 transition">
       Back
     </a>
-  </div>
+  </div> {% endcomment %}
 
 </div>
 
