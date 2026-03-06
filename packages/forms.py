@@ -10,17 +10,17 @@ class PackageForm(forms.Form):
     duration_min = forms.ChoiceField(required=True, choices=DURATION_CHOICES)
 
     # price fields (declare semua, nanti validasinya conditional)
-    price_cat = forms.IntegerField(required=False, min_value=0)
-    price_s = forms.IntegerField(required=False, min_value=0)
-    price_m = forms.IntegerField(required=False, min_value=0)
-    price_l = forms.IntegerField(required=False, min_value=0)
-    price_xl = forms.IntegerField(required=False, min_value=0)
+    price_cat = forms.IntegerField(required=False, min_value=1)
+    price_s = forms.IntegerField(required=False, min_value=1)
+    price_m = forms.IntegerField(required=False, min_value=1)
+    price_l = forms.IntegerField(required=False, min_value=1)
+    price_xl = forms.IntegerField(required=False, min_value=1)
 
     def __init__(self, *args, locked_animal_type=None, **kwargs):
         
         # locked_animal_type:
         # None -> create biasa
-        # "cat"/"dog" -> update, animal_type harus segitu dan tidak boleh berubah
+        # "cat"/"dog" -> update, animal_type tetap sama, tidak bisa diubah
         
         super().__init__(*args, **kwargs)
         self.locked_animal_type = locked_animal_type
@@ -39,7 +39,7 @@ class PackageForm(forms.Form):
             cleaned["animal_type"] = self.locked_animal_type
         animal = cleaned.get("animal_type")
 
-        # duration positive (choice udah fixed, tapi kita jaga-jaga)
+        # duration positive (choice udah fixed)
         duration = cleaned.get("duration_min")
         if duration:
             try:

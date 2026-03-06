@@ -11,12 +11,8 @@ def _has_scheduled_booking(package: Package) -> bool:
     # return package.bookings.filter(status="scheduled").exists()
     return False
 
-# Create your views here.
 @staff_required
 def package_list(request):
-    # if request.method == "POST":
-    #     return package_store(request)
-    
     # Prefetch prices biar gak N+1
     packages = (
         Package.objects
@@ -127,27 +123,27 @@ def package_update(request, package_id: int):
     data = form.cleaned_data
 
     with transaction.atomic():
-        # update table packages
+        # Update table packages
         pkg.name = data["name"]
         pkg.description = data["description"]
         pkg.duration_min = int(data["duration_min"])
         # animal_type tidak diubah
         pkg.save()
 
-        # update prices
+        # Update prices
         if pkg.animal_type == "cat":
-            # upsert cat price (size NULL)
+            # Upsert cat price (size NULL)
             PackagePrice.objects.update_or_create(
                 package=pkg,
                 size=None,
                 defaults={"price": int(data["price_cat"])},
             )
-            # safety: kalau sebelumnya ada dog prices (harusnya nggak), hapus
+            # Safety: hapus kalau sebelumnya ada dog prices
             PackagePrice.objects.filter(package=pkg).exclude(size__isnull=True).delete()
 
         else:  
             # dog
-            # safety: hapus cat price kalau ada
+            # Safety: hapus cat price kalau ada
             PackagePrice.objects.filter(package=pkg, size__isnull=True).delete()
 
             for size_key, field in [("S", "price_s"), ("M", "price_m"), ("L", "price_l"), ("XL", "price_xl")]:

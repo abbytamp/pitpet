@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.core.validators import MinValueValidator
 
 
 class ActivePackageManager(models.Manager):
@@ -105,7 +106,7 @@ class PackagePrice(models.Model):
     # cat: size = NULL
     # dog: size in S/M/L/XL
     size = models.CharField(max_length=2, choices=Size.choices, null=True, blank=True)
-    price = models.PositiveIntegerField()
+    price = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
