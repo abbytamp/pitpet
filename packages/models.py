@@ -14,6 +14,10 @@ class Package(models.Model):
         CAT = "cat", "Cat"
         DOG = "dog", "Dog"
         
+    class PackageType(models.TextChoices):
+        GROOMING = "grooming", "Grooming"
+        ADDITIONAL = "additional", "Additional"
+        
     class Duration(models.IntegerChoices):
         D30 = 30, "30 menit"
         D60 = 60, "60 menit"
@@ -22,8 +26,10 @@ class Package(models.Model):
 
     name = models.CharField(max_length=120)
     animal_type = models.CharField(max_length=10, choices=AnimalType.choices)
+    package_type = models.CharField(max_length=10, choices=PackageType.choices, default=PackageType.GROOMING)
     description = models.TextField()
     duration_min = models.IntegerField(choices=Duration.choices)
+    is_all_size = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
@@ -39,7 +45,7 @@ class Package(models.Model):
         db_table = "packages"
 
     def __str__(self):
-        return f"{self.name} ({self.animal_type})"
+        return f"{self.name} ({self.animal_type} - {self.package_type})"
     
     @property
     def price_s(self):
