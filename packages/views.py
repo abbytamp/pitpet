@@ -46,11 +46,14 @@ def package_store(request):
     data = form.cleaned_data
 
     with transaction.atomic():
+        is_all_size = data["animal_type"] == "dog" and data["package_type"] == "additional"
         pkg = Package.objects.create(
             name=data["name"],
             animal_type=data["animal_type"],
+            package_type=data["package_type"],
             description=data["description"],
             duration_min=int(data["duration_min"]),
+            is_all_size=is_all_size,
             is_deleted=False,
         )
 
@@ -60,6 +63,16 @@ def package_store(request):
                 size=None,
                 price=int(data["price_cat"]),
             )
+        elif data["animal_type"] == "dog" and data["package_type"] == "additional":
+
+            price = int(data["price_all_size"])
+
+            PackagePrice.objects.bulk_create([
+                PackagePrice(package=pkg, size="S", price=price),
+                PackagePrice(package=pkg, size="M", price=price),
+                PackagePrice(package=pkg, size="L", price=price),
+                PackagePrice(package=pkg, size="XL", price=price),
+            ])
         else:
             PackagePrice.objects.bulk_create([
                 PackagePrice(package=pkg, size="S", price=int(data["price_s"])),
@@ -79,16 +92,18 @@ def package_edit(request, package_id: int):
     initial = {
         "name": pkg.name,
         "animal_type": pkg.animal_type,
+        "package_type": pkg.package_type,
         "description": pkg.description,
         "duration_min": str(pkg.duration_min),
         "price_cat": pkg.cat_price if pkg.animal_type == "cat" else None,
-        "price_s": pkg.price_s if pkg.animal_type == "dog" else None,
-        "price_m": pkg.price_m if pkg.animal_type == "dog" else None,
-        "price_l": pkg.price_l if pkg.animal_type == "dog" else None,
-        "price_xl": pkg.price_xl if pkg.animal_type == "dog" else None,
+        "price_all_size": pkg.price_s if pkg.is_all_size else None,
+        "price_s": pkg.price_s if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+        "price_m": pkg.price_m if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+        "price_l": pkg.price_l if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+        "price_xl": pkg.price_xl if pkg.animal_type == "dog" and not pkg.is_all_size else None,
     }
 
-    form = PackageForm(initial=initial, locked_animal_type=pkg.animal_type)
+    form = PackageForm(initial=initial, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type)
 
     return render(request, "packages/package_form.html", {
         "form": form,
@@ -106,13 +121,13 @@ def package_update(request, package_id: int):
     if _has_scheduled_booking(pkg):
         # 409 Conflict
         return render(request, "packages/package_form.html", {
-            "form": PackageForm(initial={}, locked_animal_type=pkg.animal_type),
+            "form": PackageForm(initial={}, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type),
             "mode": "edit",
             "pkg": pkg,
             "conflict": True,
         }, status=409)
 
-    form = PackageForm(request.POST, locked_animal_type=pkg.animal_type)
+    form = PackageForm(request.POST, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type)
     if not form.is_valid():
         return render(request, "packages/package_form.html", {
             "form": form,
@@ -127,7 +142,7 @@ def package_update(request, package_id: int):
         pkg.name = data["name"]
         pkg.description = data["description"]
         pkg.duration_min = int(data["duration_min"])
-        # animal_type tidak diubah
+        pkg.is_all_size = pkg.animal_type == "dog" and pkg.package_type == "additional"
         pkg.save()
 
         # Update prices
@@ -141,6 +156,20 @@ def package_update(request, package_id: int):
             # Safety: hapus kalau sebelumnya ada dog prices
             PackagePrice.objects.filter(package=pkg).exclude(size__isnull=True).delete()
 
+        elif pkg.animal_type == "dog" and pkg.package_type == "additional":
+            # dog
+            # Safety: hapus cat price kalau ada
+            PackagePrice.objects.filter(package=pkg, size__isnull=True).delete()
+            
+            price = int(data["price_all_size"])
+
+            for size_key in ["S","M","L","XL"]:
+                PackagePrice.objects.update_or_create(
+                    package=pkg,
+                    size=size_key,
+                    defaults={"price": price},
+                )
+                
         else:  
             # dog
             # Safety: hapus cat price kalau ada
