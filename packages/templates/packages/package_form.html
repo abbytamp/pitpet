@@ -33,7 +33,7 @@
         {% endif %}
         <select id="animal_type" name="{% if mode == 'edit' %}animal_type_disabled{% else %}animal_type{% endif %}"
                 {% if mode == "edit" %}disabled{% endif %}
-                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:bg-gray-100 disabled:text-gray-500">
           <option value="">Pilih...</option>
           <option value="cat" {% if form.animal_type.value == "cat" %}selected{% endif %}>Kucing</option>
           <option value="dog" {% if form.animal_type.value == "dog" %}selected{% endif %}>Anjing</option>
