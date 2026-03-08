@@ -11,6 +11,12 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import dj_database_url
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,7 +48,6 @@ INSTALLED_APPS = [
     'user_profile',
     'pet',
     'groomer',
-    'packet',
 ]
 
 MIDDLEWARE = [
@@ -86,15 +91,13 @@ WSGI_APPLICATION = 'pitpet_clinic.wsgi.application'
     #}
 #}
 
+# Use DATABASE_URL from .env or environment variables
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'pitpet_db',
-        'USER': 'pitpet_user',
-        'PASSWORD': 'admin123',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=f"postgres://{os.getenv('DB_USER', 'postgres')}:{os.getenv('DB_PASSWORD', 'admin123')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME', 'pitpet_db')}",
+        conn_max_age=600,
+        ssl_require=True if os.getenv('DATABASE_URL') and 'neon.tech' in os.getenv('DATABASE_URL') else False
+    )
 }
 
 
