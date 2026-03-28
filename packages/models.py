@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django.core.validators import MinValueValidator
 
@@ -43,6 +44,13 @@ class Package(models.Model):
 
     class Meta:
         db_table = "packages"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "animal_type"],
+                condition=Q(is_deleted=False),
+                name="unique_active_package_name_per_animal",
+            )
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.animal_type} - {self.package_type})"

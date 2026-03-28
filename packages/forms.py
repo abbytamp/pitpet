@@ -1,4 +1,5 @@
 from django import forms
+from .models import Package
 
 DURATION_CHOICES = [(30, "30 menit"), (60, "60 menit"), (90, "90 menit"), (120, "120 menit")]
 ANIMAL_CHOICES = [("cat", "Kucing"), ("dog", "Anjing")]
@@ -19,16 +20,18 @@ class PackageForm(forms.Form):
     price_l = forms.IntegerField(required=False, min_value=1)
     price_xl = forms.IntegerField(required=False, min_value=1)
 
-    def __init__(self, *args, locked_animal_type=None, locked_package_type=None, **kwargs):
+    def __init__(self, *args, locked_animal_type=None, locked_package_type=None, package_instance=None, **kwargs):
         
         # locked_animal_type & locked_package_type:
         # None -> create biasa
         # "cat"/"dog" -> update, animal_type tetap sama, tidak bisa diubah
         # "grooming"/"additional" -> update, package_type tetap sama, tidak bisa diubah
+        # package_instance: instance Package yang sedang diedit, untuk validasi unique name per animal_type saat edit (exclude dirinya sendiri, tidak menganggap dirinya sendiri duplikat)
 
         super().__init__(*args, **kwargs)
         self.locked_animal_type = locked_animal_type
         self.locked_package_type = locked_package_type
+        self.package_instance = package_instance
 
         if locked_animal_type:
             self.fields["animal_type"].disabled = True
@@ -49,6 +52,21 @@ class PackageForm(forms.Form):
         animal = cleaned.get("animal_type")
         package_type = cleaned.get("package_type")
 
+        # unique name per animal_type
+        name = cleaned.get("name")
+        if name and animal:
+            duplicate_qs = Package.all_objects.filter(
+                name=name,
+                animal_type=animal,
+                is_deleted=False,
+            )
+
+            if self.package_instance:
+                duplicate_qs = duplicate_qs.exclude(id=self.package_instance.id)
+
+            if duplicate_qs.exists():
+                self.add_error("name", "Nama paket sudah digunakan untuk jenis hewan ini.")
+                
         # duration positive (choice udah fixed)
         duration = cleaned.get("duration_min")
         if duration:
