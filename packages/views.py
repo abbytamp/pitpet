@@ -103,7 +103,7 @@ def package_edit(request, package_id: int):
         "price_xl": pkg.price_xl if pkg.animal_type == "dog" and not pkg.is_all_size else None,
     }
 
-    form = PackageForm(initial=initial, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type)
+    form = PackageForm(initial=initial, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type, package_instance=pkg)
 
     return render(request, "packages/package_form.html", {
         "form": form,
@@ -121,13 +121,13 @@ def package_update(request, package_id: int):
     if _has_scheduled_booking(pkg):
         # 409 Conflict
         return render(request, "packages/package_form.html", {
-            "form": PackageForm(initial={}, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type),
+            "form": PackageForm(initial={}, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type, package_instance=pkg),
             "mode": "edit",
             "pkg": pkg,
             "conflict": True,
         }, status=409)
 
-    form = PackageForm(request.POST, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type)
+    form = PackageForm(request.POST, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type, package_instance=pkg)
     if not form.is_valid():
         return render(request, "packages/package_form.html", {
             "form": form,
