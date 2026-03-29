@@ -32,6 +32,8 @@ class GroomerCreateForm(forms.Form):
 
     def clean_username(self):
         username = self.cleaned_data.get('username')
+        if username and not username.lower().endswith('@gmail.com'):
+            raise forms.ValidationError('Hanya alamat email @gmail.com yang diperbolehkan')
         from accounts.models import User
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError('Username sudah digunakan')
