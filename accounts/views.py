@@ -1,3 +1,4 @@
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -6,6 +7,18 @@ from django.http import JsonResponse
 from django.db.models import Q
 from .forms import LoginForm, RegisterCustomerForm, RegisterStaffManagerForm
 from .models import User
+
+@login_required
+@user_passes_test(lambda u: u.role == 'superadmin')
+def superadmin_staff_list(request):
+    staffs = User.objects.filter(role='staff').order_by('full_name')
+    return render(request, 'superadmin/staff_list.html', {'staffs': staffs})
+
+@login_required
+@user_passes_test(lambda u: u.role == 'superadmin')
+def superadmin_manager_list(request):
+    managers = User.objects.filter(role='manager').order_by('full_name')
+    return render(request, 'superadmin/manager_list.html', {'managers': managers})
 
 def login_view(request):
     if request.method == 'POST':
