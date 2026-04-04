@@ -11,41 +11,37 @@
                 Administrative account creation
             </p>
         </div>
-        <form class="mt-8 space-y-4" method="POST" action="{% url 'register_staff_manager' %}">
-            {% csrf_token %}
-            <div class="space-y-4">
+                <form class="mt-8 space-y-4" method="POST" action="{% url 'register_staff_manager' %}">
+                        {% csrf_token %}
+                        <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Username (Email)</label>
                     <input name="username" type="email" required
                         class="appearance-none rounded-xl block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        placeholder="staff@gmail.com">
+                        placeholder="staff@gmail.com"
+                        value="{{ form.username.value|default:'' }}">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                     <input name="full_name" type="text" required
                         class="appearance-none rounded-xl block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        placeholder="Full Name">
+                        placeholder="Full Name"
+                        value="{{ form.full_name.value|default:'' }}">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <input name="phone_number" type="text" required
                         class="appearance-none rounded-xl block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        placeholder="08123456789">
+                        placeholder="08123456789"
+                        value="{{ form.phone_number.value|default:'' }}">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
                     <select name="role" required
                         class="appearance-none rounded-xl block w-full px-4 py-3 border border-gray-300 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white">
-                        <option value="staff">Staff</option>
-                        <option value="manager">Manager</option>
+                        <option value="staff" {% if form.role.value == 'staff' %}selected{% endif %}>Staff</option>
+                        <option value="manager" {% if form.role.value == 'manager' %}selected{% endif %}>Manager</option>
                     </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input name="password" type="password" required
-                        class="appearance-none rounded-xl block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        placeholder="••••••••">
-                    <p class="mt-1 text-xs text-gray-500 italic">Minimal 6 karakter</p>
                 </div>
             </div>
 

@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
-import dj_database_url
+#import dj_database_url
 from dotenv import load_dotenv
 
 # Load .env file
@@ -90,15 +90,25 @@ WSGI_APPLICATION = 'pitpet_clinic.wsgi.application'
         #'NAME': BASE_DIR / 'db.sqlite3',
     #}
 #}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'pitpet_db'),
+        'USER': os.getenv('DB_USER', 'pitpet_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'password_kamu'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+    }
+}
 
 # Use DATABASE_URL from .env or environment variables
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"postgres://{os.getenv('DB_USER', 'postgres')}:{os.getenv('DB_PASSWORD', 'admin123')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME', 'pitpet_db')}",
-        conn_max_age=600,
-        ssl_require=True if os.getenv('DATABASE_URL') and 'neon.tech' in os.getenv('DATABASE_URL') else False
-    )
-}
+#DATABASES = {
+    #'default': dj_database_url.config(
+        #default=f"postgres://{os.getenv('DB_USER', 'postgres')}:{os.getenv('DB_PASSWORD', 'admin123')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME', 'pitpet_db')}",
+        #conn_max_age=600,
+        #ssl_require=True if os.getenv('DATABASE_URL') and 'neon.tech' in os.getenv('DATABASE_URL') else False
+    #)
+#}
 
 
 # Password validation

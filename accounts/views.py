@@ -29,7 +29,6 @@ def login_view(request):
             else:
                 messages.error(request, "Invalid username or password")
         else:
-            # Re-matching the specific error message requirement
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, error)
@@ -62,7 +61,8 @@ def register_staff_manager(request):
         form = RegisterStaffManagerForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.password = form.cleaned_data['password']
+            # Set password default untuk staff/manager
+            user.password = 'password123'
             user.save()
             messages.success(request, f"Successfully registered {user.role}.")
             # Redirect based on current user's role
