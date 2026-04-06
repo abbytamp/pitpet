@@ -1,3 +1,4 @@
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -6,6 +7,18 @@ from django.http import JsonResponse
 from django.db.models import Q
 from .forms import LoginForm, RegisterCustomerForm, RegisterStaffManagerForm
 from .models import User
+
+@login_required
+@user_passes_test(lambda u: u.role == 'superadmin')
+def superadmin_staff_list(request):
+    staffs = User.objects.filter(role='staff').order_by('full_name')
+    return render(request, 'superadmin/staff_list.html', {'staffs': staffs})
+
+@login_required
+@user_passes_test(lambda u: u.role == 'superadmin')
+def superadmin_manager_list(request):
+    managers = User.objects.filter(role='manager').order_by('full_name')
+    return render(request, 'superadmin/manager_list.html', {'managers': managers})
 
 def login_view(request):
     if request.method == 'POST':
@@ -29,7 +42,6 @@ def login_view(request):
             else:
                 messages.error(request, "Invalid username or password")
         else:
-            # Re-matching the specific error message requirement
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, error)
@@ -62,7 +74,8 @@ def register_staff_manager(request):
         form = RegisterStaffManagerForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.password = form.cleaned_data['password']
+            # Set password default untuk staff/manager
+            user.password = 'password123'
             user.save()
             messages.success(request, f"Successfully registered {user.role}.")
             # Redirect based on current user's role

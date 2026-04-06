@@ -1,7 +1,10 @@
+
 from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('superadmin/staff/', views.superadmin_staff_list, name='superadmin_staff_list'),
+    path('superadmin/manager/', views.superadmin_manager_list, name='superadmin_manager_list'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),  # Logout: clears session & redirects to login
     path('register/', views.register_customer, name='register_customer'),

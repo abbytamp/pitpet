@@ -11,12 +11,8 @@ def _has_scheduled_booking(package: Package) -> bool:
     # return package.bookings.filter(status="scheduled").exists()
     return False
 
-# Create your views here.
 @staff_required
 def package_list(request):
-    # if request.method == "POST":
-    #     return package_store(request)
-    
     # Prefetch prices biar gak N+1
     packages = (
         Package.objects
@@ -50,11 +46,14 @@ def package_store(request):
     data = form.cleaned_data
 
     with transaction.atomic():
+        is_all_size = data["animal_type"] == "dog" and data["package_type"] == "additional"
         pkg = Package.objects.create(
             name=data["name"],
             animal_type=data["animal_type"],
+            package_type=data["package_type"],
             description=data["description"],
             duration_min=int(data["duration_min"]),
+            is_all_size=is_all_size,
             is_deleted=False,
         )
 
@@ -64,6 +63,16 @@ def package_store(request):
                 size=None,
                 price=int(data["price_cat"]),
             )
+        elif data["animal_type"] == "dog" and data["package_type"] == "additional":
+
+            price = int(data["price_all_size"])
+
+            PackagePrice.objects.bulk_create([
+                PackagePrice(package=pkg, size="S", price=price),
+                PackagePrice(package=pkg, size="M", price=price),
+                PackagePrice(package=pkg, size="L", price=price),
+                PackagePrice(package=pkg, size="XL", price=price),
+            ])
         else:
             PackagePrice.objects.bulk_create([
                 PackagePrice(package=pkg, size="S", price=int(data["price_s"])),
@@ -83,16 +92,18 @@ def package_edit(request, package_id: int):
     initial = {
         "name": pkg.name,
         "animal_type": pkg.animal_type,
+        "package_type": pkg.package_type,
         "description": pkg.description,
         "duration_min": str(pkg.duration_min),
         "price_cat": pkg.cat_price if pkg.animal_type == "cat" else None,
-        "price_s": pkg.price_s if pkg.animal_type == "dog" else None,
-        "price_m": pkg.price_m if pkg.animal_type == "dog" else None,
-        "price_l": pkg.price_l if pkg.animal_type == "dog" else None,
-        "price_xl": pkg.price_xl if pkg.animal_type == "dog" else None,
+        "price_all_size": pkg.price_s if pkg.is_all_size else None,
+        "price_s": pkg.price_s if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+        "price_m": pkg.price_m if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+        "price_l": pkg.price_l if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+        "price_xl": pkg.price_xl if pkg.animal_type == "dog" and not pkg.is_all_size else None,
     }
 
-    form = PackageForm(initial=initial, locked_animal_type=pkg.animal_type)
+    form = PackageForm(initial=initial, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type, package_instance=pkg)
 
     return render(request, "packages/package_form.html", {
         "form": form,
@@ -110,13 +121,13 @@ def package_update(request, package_id: int):
     if _has_scheduled_booking(pkg):
         # 409 Conflict
         return render(request, "packages/package_form.html", {
-            "form": PackageForm(initial={}, locked_animal_type=pkg.animal_type),
+            "form": PackageForm(initial={}, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type, package_instance=pkg),
             "mode": "edit",
             "pkg": pkg,
             "conflict": True,
         }, status=409)
 
-    form = PackageForm(request.POST, locked_animal_type=pkg.animal_type)
+    form = PackageForm(request.POST, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type, package_instance=pkg)
     if not form.is_valid():
         return render(request, "packages/package_form.html", {
             "form": form,
@@ -127,27 +138,41 @@ def package_update(request, package_id: int):
     data = form.cleaned_data
 
     with transaction.atomic():
-        # update table packages
+        # Update table packages
         pkg.name = data["name"]
         pkg.description = data["description"]
         pkg.duration_min = int(data["duration_min"])
-        # animal_type tidak diubah
+        pkg.is_all_size = pkg.animal_type == "dog" and pkg.package_type == "additional"
         pkg.save()
 
-        # update prices
+        # Update prices
         if pkg.animal_type == "cat":
-            # upsert cat price (size NULL)
+            # Upsert cat price (size NULL)
             PackagePrice.objects.update_or_create(
                 package=pkg,
                 size=None,
                 defaults={"price": int(data["price_cat"])},
             )
-            # safety: kalau sebelumnya ada dog prices (harusnya nggak), hapus
+            # Safety: hapus kalau sebelumnya ada dog prices
             PackagePrice.objects.filter(package=pkg).exclude(size__isnull=True).delete()
 
+        elif pkg.animal_type == "dog" and pkg.package_type == "additional":
+            # dog
+            # Safety: hapus cat price kalau ada
+            PackagePrice.objects.filter(package=pkg, size__isnull=True).delete()
+            
+            price = int(data["price_all_size"])
+
+            for size_key in ["S","M","L","XL"]:
+                PackagePrice.objects.update_or_create(
+                    package=pkg,
+                    size=size_key,
+                    defaults={"price": price},
+                )
+                
         else:  
             # dog
-            # safety: hapus cat price kalau ada
+            # Safety: hapus cat price kalau ada
             PackagePrice.objects.filter(package=pkg, size__isnull=True).delete()
 
             for size_key, field in [("S", "price_s"), ("M", "price_m"), ("L", "price_l"), ("XL", "price_xl")]:
@@ -159,3 +184,40 @@ def package_update(request, package_id: int):
 
     messages.success(request, "Paket berhasil diperbarui")
     return redirect("package_list")
+
+
+@staff_required
+def package_delete(request, package_id: int):
+    if request.method != "POST":
+        return HttpResponseBadRequest("Bad Request")
+
+    pkg = get_object_or_404(Package, id=package_id, is_deleted=False)
+
+    if _has_scheduled_booking(pkg):
+        messages.error(request, "Paket tidak bisa dihapus karena masih ada booking yang terjadwal.")
+        return redirect("package_list")
+
+    pkg.soft_delete()
+    messages.success(request, f'Paket "{pkg.name}" berhasil dihapus.')
+    return redirect("package_list")
+
+
+def package_catalog(request):
+    """Customer: lihat katalog paket grooming (read-only, hanya paket aktif)."""
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    packages = (
+        Package.objects
+        .filter(is_deleted=False)
+        .prefetch_related("prices")
+        .order_by("animal_type", "name")
+    )
+
+    cat_packages = [p for p in packages if p.animal_type == "cat"]
+    dog_packages = [p for p in packages if p.animal_type == "dog"]
+
+    return render(request, "packages/catalog.html", {
+        "cat_packages": cat_packages,
+        "dog_packages": dog_packages,
+    })

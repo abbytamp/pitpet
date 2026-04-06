@@ -1,11 +1,23 @@
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
+from django.core.validators import MinValueValidator
 
-# Create your models here. 
+
+class ActivePackageManager(models.Manager):
+    """Manager yang hanya mengembalikan paket yang belum di-soft-delete."""
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
 
 class Package(models.Model):
     class AnimalType(models.TextChoices):
         CAT = "cat", "Cat"
         DOG = "dog", "Dog"
+        
+    class PackageType(models.TextChoices):
+        GROOMING = "grooming", "Grooming"
+        ADDITIONAL = "additional", "Additional"
         
     class Duration(models.IntegerChoices):
         D30 = 30, "30 menit"
@@ -15,18 +27,33 @@ class Package(models.Model):
 
     name = models.CharField(max_length=120)
     animal_type = models.CharField(max_length=10, choices=AnimalType.choices)
+    package_type = models.CharField(max_length=10, choices=PackageType.choices, default=PackageType.GROOMING)
     description = models.TextField()
     duration_min = models.IntegerField(choices=Duration.choices)
+    is_all_size = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Default manager: hanya paket aktif
+    objects = ActivePackageManager()
+    # Semua paket termasuk yang soft-deleted
+    all_objects = models.Manager()
+
     class Meta:
         db_table = "packages"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "animal_type"],
+                condition=Q(is_deleted=False),
+                name="unique_active_package_name_per_animal",
+            )
+        ]
 
     def __str__(self):
-        return f"{self.name} ({self.animal_type})"
+        return f"{self.name} ({self.animal_type} - {self.package_type})"
     
     @property
     def price_s(self):
@@ -63,8 +90,19 @@ class Package(models.Model):
         return {pp.size: pp.price for pp in qs}
 
     def get_price_by_size(self, size: str):
-        return self.dog_prices.get(size)    
-    
+        return self.dog_prices.get(size)
+
+    def soft_delete(self):
+        """Soft delete: tandai paket sebagai dihapus tanpa menghapus dari database."""
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save()
+
+    def restore(self):
+        """Restore: batalkan soft delete."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
 
 
 class PackagePrice(models.Model):
@@ -82,7 +120,7 @@ class PackagePrice(models.Model):
     # cat: size = NULL
     # dog: size in S/M/L/XL
     size = models.CharField(max_length=2, choices=Size.choices, null=True, blank=True)
-    price = models.PositiveIntegerField()
+    price = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

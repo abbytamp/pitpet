@@ -18,6 +18,14 @@ class LoginForm(forms.Form):
         password = cleaned_data.get('password')
         if not username or not password:
             raise forms.ValidationError("Semua field wajib diisi")
+        # Cek format gmail hanya untuk customer, staff, manager (bukan superadmin/groomer)
+        from .models import User
+        try:
+            user = User.objects.get(username=username)
+            if user.role in ['customer', 'manager', 'staff'] and not username.endswith('@gmail.com'):
+                raise forms.ValidationError("Username hanya bisa format @gmail.com")
+        except User.DoesNotExist:
+            pass
         return cleaned_data
 
 class RegisterCustomerForm(forms.ModelForm):
@@ -46,20 +54,20 @@ class RegisterCustomerForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        for field in self.fields:
-            if not cleaned_data.get(field):
-                raise forms.ValidationError("Semua field wajib diisi")
+        username = cleaned_data.get('username')
+        if username and not username.endswith('@gmail.com'):
+            raise forms.ValidationError("Username hanya bisa format @gmail.com")
+        empty_fields = [field for field in self.fields if not cleaned_data.get(field)]
+        if empty_fields:
+            raise forms.ValidationError("Semua field wajib diisi")
         return cleaned_data
 
 class RegisterStaffManagerForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput(), min_length=6, error_messages={
-        'min_length': 'Password harus minimal 6 karakter'
-    })
-    role = forms.ChoiceField(choices=[('staff', 'Staff'), ('manager', 'Manager'), ('superadmin', 'Superadmin')], widget=forms.Select())
+    role = forms.ChoiceField(choices=[('staff', 'Staff'), ('manager', 'Manager')], widget=forms.Select())
 
     class Meta:
         model = User
-        fields = ['username', 'full_name', 'phone_number', 'password', 'role']
+        fields = ['username', 'full_name', 'phone_number', 'role']
         error_messages = {
             'username': {
                 'invalid': 'Username harus berupa format email',
@@ -75,7 +83,11 @@ class RegisterStaffManagerForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        for field in self.fields:
-            if not cleaned_data.get(field):
-                raise forms.ValidationError("Semua field wajib diisi")
+        username = cleaned_data.get('username')
+        role = cleaned_data.get('role')
+        if username and role in ['manager', 'staff'] and not username.endswith('@gmail.com'):
+            raise forms.ValidationError("Username hanya bisa format @gmail.com")
+        empty_fields = [field for field in self.fields if not cleaned_data.get(field)]
+        if empty_fields:
+            raise forms.ValidationError("Semua field wajib diisi")
         return cleaned_data

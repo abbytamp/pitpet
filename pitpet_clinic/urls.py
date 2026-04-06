@@ -8,4 +8,5 @@ urlpatterns = [
     path('packages/', include('packages.urls')),
     path('', lambda request: redirect('login')),
     path('user-profile/', include('user_profile.urls')),
+    path('groomer/', include('groomer.urls')),
 ]
