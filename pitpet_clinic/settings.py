@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'user_profile',
     'pet',
     'groomer',
+    'groomer_jobs',
 ]
 
 MIDDLEWARE = [

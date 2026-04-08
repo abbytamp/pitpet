@@ -9,4 +9,5 @@ urlpatterns = [
     path('', lambda request: redirect('login')),
     path('user-profile/', include('user_profile.urls')),
     path('groomer/', include('groomer.urls')),
+    path('groomer-jobs/', include('groomer_jobs.urls')),
 ]

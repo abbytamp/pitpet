@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+{% comment %} {% include "navbar_groomer.html" %} {% endcomment %}
+
+<style>
+  .jobs-page {
+    max-width: 1180px;
+    margin: 40px auto 60px;
+    padding: 0 24px;
+  }
+
+  .page-title {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #0d1b3d;
+    margin-bottom: 8px;
+  }
+
+  .page-subtitle {
+    font-size: 18px;
+    color: #4b5563;
+    margin-bottom: 28px;
+  }
+
+  .summary-row {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .summary-pill {
+    border: 1px solid #d9d9d9;
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px 20px;
+    font-weight: 700;
+    color: #1f2937;
+    min-width: 220px;
+    text-align: center;
+  }
+
+  .info-card,
+  .section-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 24px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  }
+
+  .info-card {
+    padding: 28px;
+    margin-bottom: 28px;
+  }
+
+  .section-card {
+    padding: 28px;
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 18px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  .info-box {
+    border-radius: 18px;
+    padding: 18px 20px;
+  }
+
+  .info-box.blue {
+    background: #edf4ff;
+  }
+
+  .info-box.green {
+    background: #edf8f1;
+  }
+
+  .info-box.yellow {
+    background: #f9f6df;
+  }
+
+  .info-label {
+    font-size: 14px;
+    color: #5b6472;
+    margin-bottom: 6px;
+  }
+
+  .info-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #111827;
+  }
+
+  .section-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 28px 0;
+  }
+
+  .jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+
+  .job-item {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid #dfe3ea;
+    border-radius: 18px;
+    padding: 18px 20px;
+    background: #fff;
+    transition: 0.2s ease;
+  }
+
+  .job-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+  }
+
+  .job-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .job-time {
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+  }
+
+  .job-pets,
+  .job-owner,
+  .job-service {
+    font-size: 17px;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .status-scheduled {
+    background: #dce9ff;
+    color: #2563eb;
+  }
+
+  .status-started {
+    background: #fff1d6;
+    color: #d97706;
+  }
+
+  .status-completed {
+    background: #dff6e5;
+    color: #16a34a;
+  }
+
+  .empty-box {
+    border: 1px dashed #d7dce3;
+    border-radius: 18px;
+    padding: 28px;
+    text-align: center;
+    color: #6b7280;
+    background: #fafafa;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  @media (max-width: 992px) {
+    .info-grid,
+    .jobs-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .page-title {
+      font-size: 42px;
+    }
+  }
+</style>
+
+<div class="jobs-page">
+  <h1 class="page-title">{{ page_title }}</h1>
+  <p class="page-subtitle">
+    {{ today|date:"l, d F Y" }}
+  </p>
+
+  <div class="summary-row">
+    <div class="summary-pill">SELESAI {{ completed_count }} BOOKINGS</div>
+    <div class="summary-pill">BELUM SELESAI {{ unfinished_count }} BOOKINGS</div>
+  </div>
+
+  {% comment %} <div class="info-card">
+    <div class="section-title">Informasi Saya</div>
+    <div class="info-grid">
+      <div class="info-box blue">
+        <div class="info-label">Nama</div>
+        <div class="info-value">{{ groomer_name }}</div>
+      </div>
+      <div class="info-box green">
+        <div class="info-label">Jenis Layanan</div>
+        <div class="info-value">{{ groomer_service_type }}</div>
+      </div>
+      <div class="info-box yellow">
+        <div class="info-label">No. HP</div>
+        <div class="info-value">{{ groomer_phone }}</div>
+      </div>
+    </div>
+  </div> {% endcomment %}
+
+  <div class="section-card">
+    <div class="section-title">Tugas Hari Ini</div>
+
+    {% if today_tasks %}
+      <div class="jobs-grid">
+        {% for booking in today_tasks %}
+          <a href="#" class="job-item">
+            <div class="job-top">
+              <div class="job-time">{{ booking.time_range }}</div>
+
+              <span class="status-badge
+                {% if booking.status == 'scheduled' %}status-scheduled{% endif %}
+                {% if booking.status == 'service_started' %}status-started{% endif %}
+                {% if booking.status == 'service_completed' %}status-completed{% endif %}
+              ">
+                {{ booking.status_label }}
+              </span>
+            </div>
+
+            <div class="job-pets">{{ booking.pet_names }}</div>
+            <div class="job-owner">Owner: {{ booking.owner_name }}</div>
+            <div class="job-service">{{ booking.service_type_label }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-box">
+        Belum ada pekerjaan grooming hari ini
+      </div>
+    {% endif %}
+
+    <div class="section-divider"></div>
+
+    <div class="section-title">Riwayat Hari Ini</div>
+
+    {% if today_history %}
+      <div class="jobs-grid">
+        {% for booking in today_history %}
+          <a href="#" class="job-item">
+            <div class="job-top">
+              <div class="job-time">{{ booking.time_range }}</div>
+
+              <span class="status-badge
+                {% if booking.status == 'scheduled' %}status-scheduled{% endif %}
+                {% if booking.status == 'service_started' %}status-started{% endif %}
+                {% if booking.status == 'service_completed' %}status-completed{% endif %}
+              ">
+                {{ booking.status_label }}
+              </span>
+            </div>
+
+            <div class="job-pets">{{ booking.pet_names }}</div>
+            <div class="job-owner">Owner: {{ booking.owner_name }}</div>
+            <div class="job-service">{{ booking.service_type_label }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-box">
+        Belum ada riwayat pekerjaan grooming hari ini
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
