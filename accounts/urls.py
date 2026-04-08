@@ -1,4 +1,3 @@
-
 from django.urls import path
 from . import views
 
@@ -22,4 +21,8 @@ urlpatterns = [
     # API endpoints
     path('api/admin/customers/', views.staff_customer_list_api, name='staff_customer_list_api'),
     path('api/admin/customers/<int:customer_id>/', views.staff_customer_detail_api, name='staff_customer_detail_api'),
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.edit_profile_view, name='edit_profile'),
+    path('profile/change-password/', views.change_password_view, name='change_password'),
+    path('api/profile/', views.ProfileAPIView.as_view(), name='api_profile'),
 ]

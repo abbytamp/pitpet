@@ -91,3 +91,30 @@ class RegisterStaffManagerForm(forms.ModelForm):
         if empty_fields:
             raise forms.ValidationError("Semua field wajib diisi")
         return cleaned_data
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['full_name', 'phone_number']
+        widgets = {
+            'full_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Full Name'
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nomor Telepon'
+            }),
+        }
+
+    def clean_full_name(self):
+        full_name = self.cleaned_data.get('full_name')
+        if not full_name or full_name.strip() == '':
+            raise forms.ValidationError('Full Name tidak boleh kosong.')
+        return full_name
+
+    def clean_phone_number(self):
+        phone_number = self.cleaned_data.get('phone_number')
+        if not phone_number or phone_number.strip() == '':
+            raise forms.ValidationError('Nomor Telepon tidak boleh kosong.')
+        return phone_number

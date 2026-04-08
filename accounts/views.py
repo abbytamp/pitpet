@@ -1,12 +1,15 @@
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
-from .forms import LoginForm, RegisterCustomerForm, RegisterStaffManagerForm
-from .models import User
+from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
+from django.views import View
+import json
+from .forms import LoginForm, RegisterCustomerForm, RegisterStaffManagerForm, ProfileForm
+from .models import User, Groomer
 
 @login_required
 @user_passes_test(lambda u: u.role == 'superadmin')
@@ -229,3 +232,113 @@ def staff_customer_detail_api(request, customer_id):
         },
         "pets": pets,
     }, status=200)
+
+# API Views
+@method_decorator(login_required(login_url='login'), name='dispatch')
+class ProfileAPIView(View):
+    """API endpoint for GET and PUT profile"""
+    
+    def get(self, request):
+        """Get user profile data"""
+        user = request.user
+        data = {
+            'id': user.id,
+            'full_name': user.full_name,
+            'username': user.username,
+            'phone_number': user.phone_number,
+            'role': user.role,
+        }
+        if user.role == 'groomer':
+            try:
+                groomer_profile = user.groomer_profile
+                data.update({
+                    'service_type': groomer_profile.service_type,
+                    'status': 'Aktif' if not groomer_profile.is_deleted else 'Nonaktif',
+                })
+            except Groomer.DoesNotExist:
+                data.update({
+                    'service_type': None,
+                    'status': 'Nonaktif',
+                })
+        return JsonResponse(data, status=200)
+
+    def put(self, request):
+        """Update user profile data"""
+        user = request.user
+        try:
+            data = json.loads(request.body)
+            
+            # Validate required fields
+            full_name = data.get('full_name', '').strip()
+            phone_number = data.get('phone_number', '').strip()
+            
+            if not full_name:
+                return JsonResponse({'error': 'Full Name tidak boleh kosong.'}, status=400)
+            if not phone_number:
+                return JsonResponse({'error': 'Nomor Telepon tidak boleh kosong.'}, status=400)
+            
+            user.full_name = full_name
+            user.phone_number = phone_number
+            user.save()
+            
+            return JsonResponse({
+                'message': 'Profil berhasil diperbarui',
+                'user': {
+                    'full_name': user.full_name,
+                    'phone_number': user.phone_number,
+                }
+            }, status=200)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+@login_required(login_url='login')
+def profile_view(request):
+    """Display user profile"""
+    user = request.user
+    is_groomer = user.role == 'groomer'
+    groomer_profile = None
+    
+    if is_groomer:
+        try:
+            groomer_profile = user.groomer_profile
+        except Groomer.DoesNotExist:
+            groomer_profile = None
+    
+    context = {
+        'user': user,
+        'is_groomer': is_groomer,
+        'groomer_profile': groomer_profile,
+    }
+    return render(request, 'accounts/profile.html', context)
+
+@login_required(login_url='login')
+def edit_profile_view(request):
+    """Edit user profile (Full Name and Phone)"""
+    user = request.user
+    
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profil berhasil diperbarui')
+            return redirect('profile')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = ProfileForm(instance=user)
+    
+    context = {
+        'form': form,
+        'user': user,
+    }
+    return render(request, 'accounts/edit_profile.html', context)
+
+@login_required(login_url='login')
+@require_http_methods(["GET"])
+def change_password_view(request):
+    """Redirect to change password page"""
+    return render(request, 'accounts/change_password.html')
