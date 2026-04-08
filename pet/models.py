@@ -1,10 +1,10 @@
 from django.db import models
-from django.conf import settings  # WAJIB untuk custom user
+from django.conf import settings
 from django.utils import timezone
 
 
 class ActivePetManager(models.Manager):
-    """Manager yang hanya mengembalikan pet yang belum di-soft-delete."""
+    """Manager untuk hanya mengambil pet yang belum dihapus (soft delete)."""
     def get_queryset(self):
         return super().get_queryset().filter(is_deleted=False)
 
@@ -16,7 +16,7 @@ class Pet(models.Model):
     ]
 
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,  # pakai custom user
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='pets'
     )
@@ -26,25 +26,34 @@ class Pet(models.Model):
     umur = models.IntegerField(help_text="Umur dalam bulan")
     berat = models.FloatField(help_text="Berat dalam kg")
 
-    # Soft delete fields
+    # Soft delete
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Default manager returns only active (non-deleted) pets
-    objects = ActivePetManager()
-    # Use all_objects to include soft-deleted pets if needed
-    all_objects = models.Manager()
+    # Manager
+    objects = ActivePetManager()      # hanya yang aktif
+    all_objects = models.Manager()    # semua termasuk yang dihapus
+
+    # 🔥 ANTI DUPLIKAT (INI YANG KAMU BUTUH)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['owner', 'name'],
+                condition=models.Q(is_deleted=False),  # hanya cek yang belum dihapus
+                name='unique_active_pet_per_user'
+            )
+        ]
 
     def soft_delete(self):
-        """Soft delete: tandai hewan sebagai dihapus tanpa menghapus dari database."""
+        """Soft delete (tidak benar-benar dihapus dari DB)."""
         self.is_deleted = True
         self.deleted_at = timezone.now()
         self.save()
 
     def restore(self):
-        """Restore: batalkan soft delete."""
+        """Mengembalikan data yang sudah dihapus."""
         self.is_deleted = False
         self.deleted_at = None
         self.save()

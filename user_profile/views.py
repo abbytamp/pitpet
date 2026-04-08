@@ -6,6 +6,8 @@ from pet.models import Pet
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from django.db import IntegrityError  # 🔥 TAMBAHAN
+
 
 @login_required
 def profile_view(request):
@@ -29,26 +31,15 @@ def update_profile_api(request):
     full_name = data.get("full_name", "").strip()
     phone_number = data.get("phone_number", "").strip()
 
-    # VALIDASI
     if not full_name:
-        return JsonResponse(
-            {"error": "Nama lengkap wajib diisi."},
-            status=400
-        )
+        return JsonResponse({"error": "Nama lengkap wajib diisi."}, status=400)
 
     if not phone_number:
-        return JsonResponse(
-            {"error": "No HP wajib diisi."},
-            status=400
-        )
+        return JsonResponse({"error": "No HP wajib diisi."}, status=400)
 
     if not phone_number.isdigit():
-        return JsonResponse(
-            {"error": "No HP hanya boleh berisi angka."},
-            status=400
-        )
+        return JsonResponse({"error": "No HP hanya boleh berisi angka."}, status=400)
 
-    # Update hanya field yang boleh diubah
     user = request.user
     user.full_name = full_name
     user.phone_number = phone_number
@@ -63,6 +54,7 @@ def update_profile_api(request):
         }
     }, status=200)
 
+
 @login_required
 def edit_profile_view(request):
     user = request.user
@@ -71,7 +63,6 @@ def edit_profile_view(request):
         full_name = request.POST.get("full_name", "").strip()
         phone_number = request.POST.get("phone_number", "").strip()
 
-        # VALIDASI
         if not full_name:
             messages.error(request, "Nama lengkap wajib diisi.")
             return render(request, "user_profile/edit_profile.html")
@@ -94,19 +85,26 @@ def edit_profile_view(request):
     return render(request, "user_profile/edit_profile.html")
 
 
+# 🔥 FIX UTAMA DI SINI
 @login_required
 def add_pet(request):
     if request.method == 'POST':
-        Pet.objects.create(
-            owner=request.user,
-            name=request.POST.get('name'),
-            jenis=request.POST.get('jenis'),
-            ras=request.POST.get('ras'),
-            berat=request.POST.get('berat'),
-            umur=request.POST.get('umur'),
-        )
+        try:
+            Pet.objects.create(
+                owner=request.user,
+                name=request.POST.get('name'),
+                jenis=request.POST.get('jenis'),
+                ras=request.POST.get('ras'),
+                berat=request.POST.get('berat'),
+                umur=request.POST.get('umur'),
+            )
 
-        return redirect('user_profile:profile')
+            messages.success(request, "Hewan berhasil ditambahkan!")
+            return redirect('user_profile:profile')
+
+        except IntegrityError:
+            messages.error(request, "Nama hewan sudah ada!")
+            return render(request, 'user_profile/add_pet.html')
 
     return render(request, 'user_profile/add_pet.html')
 
@@ -123,14 +121,9 @@ def update_pet_api(request, pet_id):
         umur = data.get("umur")
         berat = data.get("berat")
 
-        # Validasi wajib
         if not all([name, ras, umur, berat]):
-            return JsonResponse(
-                {"error": "Field ini wajib diisi."},
-                status=400
-            )
+            return JsonResponse({"error": "Field ini wajib diisi."}, status=400)
 
-        # Update tanpa mengubah jenis
         pet.name = name
         pet.ras = ras
         pet.umur = umur
@@ -152,8 +145,8 @@ def update_pet_api(request, pet_id):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
+
 def edit_pet(request, pet_id):
-    # Hanya boleh edit hewan milik sendiri
     pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
 
     if request.method == "POST":
@@ -162,12 +155,10 @@ def edit_pet(request, pet_id):
         umur = request.POST.get("umur")
         berat = request.POST.get("berat")
 
-        # Validasi field wajib (sesuai acceptance criteria)
         if not name or not ras or not umur or not berat:
             messages.error(request, "Field ini wajib diisi.")
             return render(request, "edit_pet.html", {"pet": pet})
 
-        # Update (jenis TIDAK diubah)
         pet.name = name
         pet.ras = ras
         pet.umur = umur
@@ -179,57 +170,26 @@ def edit_pet(request, pet_id):
 
     return render(request, "user_profile/edit_pet.html", {"pet": pet})
 
+
 @login_required
 def delete_pet(request, pet_id):
-    """Menghapus data hewan peliharaan milik customer.
-    - Customer hanya dapat menghapus hewan miliknya sendiri.
-    - Hewan tidak dapat dihapus jika masih memiliki booking aktif (scheduled/on the way).
-    """
     pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
-
-    # TODO: Uncomment when model Booking udh ada
-    # from booking.models import Booking
-    # active_bookings = Booking.objects.filter(
-    #     pet=pet,
-    #     status__in=['scheduled', 'on_the_way', 'in_progress']
-    # )
-    # if active_bookings.exists():
-    #     messages.error(request, "Hewan tidak dapat dihapus karena masih memiliki booking aktif.")
-    #     return redirect('user_profile:profile')
 
     if request.method == 'POST':
         pet.soft_delete()
         messages.success(request, "Hewan peliharaan berhasil dihapus.")
         return redirect('user_profile:profile')
 
-    # GET request — shouldn't happen normally, redirect back
     return redirect('user_profile:profile')
 
 
 @login_required
 @require_http_methods(["DELETE"])
 def delete_pet_api(request, pet_id):
-    """API endpoint DELETE /api/pets/{pet_id} untuk menghapus data hewan peliharaan.
-    - Customer hanya dapat menghapus hewan miliknya sendiri.
-    - Mengembalikan 400 jika hewan masih terikat booking aktif.
-    - Mengembalikan 200 jika berhasil dihapus.
-    """
     try:
         pet = Pet.objects.get(id=pet_id, owner=request.user)
     except Pet.DoesNotExist:
         return JsonResponse({"error": "Hewan tidak ditemukan."}, status=404)
-
-    # TODO: Uncomment when model Booking udh ada
-    # from booking.models import Booking
-    # active_bookings = Booking.objects.filter(
-    #     pet=pet,
-    #     status__in=['scheduled', 'on_the_way', 'in_progress']
-    # )
-    # if active_bookings.exists():
-    #     return JsonResponse(
-    #         {"error": "Hewan tidak dapat dihapus karena masih memiliki booking aktif."},
-    #         status=400
-    #     )
 
     pet.soft_delete()
     return JsonResponse({"message": "Hewan peliharaan berhasil dihapus."}, status=200)
