@@ -1,0 +1,589 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Grooming{% endblock title %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-4 py-8">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Buat Booking Grooming</h1>
+        <p class="text-gray-600 mt-1">Pilih layanan, hewan, paket, groomer, dan slot waktu.</p>
+    </div>
+
+    <form method="post" id="bookingForm" class="space-y-6">
+        {% csrf_token %}
+
+        <input type="hidden" id="bookingPayload" name="booking_payload" value="{{ old.booking_payload|default:'' }}">
+        <input type="hidden" id="waktuMulaiInput" name="waktu_mulai" value="{{ old.waktu_mulai|default:'' }}">
+
+        <div class="bg-white border rounded-xl p-5">
+            <h2 class="font-semibold text-lg">1. Jenis Layanan</h2>
+            <div class="mt-3 flex flex-wrap gap-3">
+                <label class="inline-flex items-center gap-2">
+                    <input type="radio" name="service_type" value="clinic" class="service-type" {% if old.service_type == 'clinic' %}checked{% endif %}>
+                    <span>Clinic</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="radio" name="service_type" value="home" class="service-type" {% if old.service_type == 'home' %}checked{% endif %}>
+                    <span>Home</span>
+                </label>
+            </div>
+            {% if errors.service_type %}
+            <p class="text-sm text-red-600 mt-2">{{ errors.service_type }}</p>
+            {% endif %}
+
+            <div id="clinicInfo" class="mt-4 p-3 rounded-lg bg-blue-50 text-sm hidden">
+                <p class="font-medium text-blue-900">Alamat Klinik PitPet</p>
+                <p class="text-blue-800">{{ clinic_address }}</p>
+            </div>
+
+            <div id="homeInfo" class="mt-4 p-3 rounded-lg bg-amber-50 text-sm hidden space-y-3">
+                <div>
+                    <p class="font-medium text-amber-900">Tabel Ongkir Home Service</p>
+                    <ul class="mt-2 space-y-1 text-amber-800">
+                        {% for fee in transport_fees %}
+                        <li>{{ fee.range }}: Rp {{ fee.fee|floatformat:0 }}</li>
+                        {% endfor %}
+                    </ul>
+                    <p class="text-xs text-amber-700 mt-2">Ongkir tidak dihitung di total harga booking.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Alamat Home Service</label>
+                    <textarea name="alamat" id="alamatInput" rows="3" class="mt-1 w-full border rounded-lg px-3 py-2">{{ old.alamat|default:'' }}</textarea>
+                    {% if errors.alamat %}
+                    <p class="text-sm text-red-600 mt-1">{{ errors.alamat }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border rounded-xl p-5">
+            <h2 class="font-semibold text-lg">2. Pilih Hewan</h2>
+            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {% for pet in pets %}
+                <label class="border rounded-lg p-3 flex items-start gap-2">
+                    <input type="checkbox" class="pet-checkbox mt-1" value="{{ pet.id }}" data-pet-name="{{ pet.name }}" data-pet-jenis="{{ pet.jenis|lower }}" data-pet-berat="{{ pet.berat }}">
+                    <span class="text-sm">
+                        <span class="font-medium block">{{ pet.name }}</span>
+                        <span class="text-gray-600">{{ pet.jenis }} | {{ pet.berat }} kg</span>
+                    </span>
+                </label>
+                {% empty %}
+                <p class="text-sm text-gray-600">Belum ada data hewan. Tambahkan dulu di profile.</p>
+                {% endfor %}
+            </div>
+            {% if errors.booking_payload %}
+            <p class="text-sm text-red-600 mt-2">{{ errors.booking_payload }}</p>
+            {% endif %}
+        </div>
+
+        <div id="perPetContainer" class="space-y-4"></div>
+
+        <div class="bg-white border rounded-xl p-5 space-y-4">
+            <h2 class="font-semibold text-lg">4. Groomer & Jadwal</h2>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Groomer</label>
+                <select name="groomer_id" id="groomerSelect" class="mt-1 w-full border rounded-lg px-3 py-2">
+                    <option value="">Pilih groomer</option>
+                </select>
+                {% if errors.groomer_id %}
+                <p class="text-sm text-red-600 mt-1">{{ errors.groomer_id }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Tanggal</label>
+                <input type="date" name="tanggal" id="tanggalInput" class="mt-1 w-full border rounded-lg px-3 py-2" min="{{ min_date }}" max="{{ max_date }}" value="{{ old.tanggal|default:'' }}">
+                {% if errors.tanggal %}
+                <p class="text-sm text-red-600 mt-1">{{ errors.tanggal }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Slot Tersedia</label>
+                <div id="slotContainer" class="mt-2 flex flex-wrap gap-2"></div>
+                <p id="slotMessage" class="text-sm text-gray-600 mt-2">Pilih layanan, hewan, groomer, dan tanggal untuk melihat slot.</p>
+                {% if errors.waktu_mulai %}
+                <p class="text-sm text-red-600 mt-1">{{ errors.waktu_mulai }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Catatan (opsional)</label>
+                <textarea name="catatan" id="catatanInput" rows="3" class="mt-1 w-full border rounded-lg px-3 py-2">{{ old.catatan|default:'' }}</textarea>
+            </div>
+        </div>
+
+        <div class="bg-white border rounded-xl p-5">
+            <h2 class="font-semibold text-lg">9. Ringkasan</h2>
+            <div id="summaryContainer" class="mt-3 space-y-3 text-sm text-gray-700"></div>
+            <p id="homePriceNote" class="mt-2 text-xs text-amber-700 hidden">*Harga belum termasuk ongkir</p>
+            <div class="mt-3 border-t pt-3 flex justify-between font-semibold">
+                <span>Total Harga</span>
+                <span id="summaryTotalPrice">Rp 0</span>
+            </div>
+            <div class="mt-1 flex justify-between text-sm text-gray-600">
+                <span>Total Durasi</span>
+                <span id="summaryTotalDuration">0 menit</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button type="submit" id="submitBtn" class="px-5 py-2 rounded-lg bg-indigo-600 text-white disabled:bg-gray-400" disabled>
+                Konfirmasi Booking
+            </button>
+            <a href="{% url 'customer_dashboard' %}" class="px-5 py-2 rounded-lg border">Kembali</a>
+        </div>
+    </form>
+</section>
+
+<script>
+(function () {
+    const perPetContainer = document.getElementById('perPetContainer');
+    const summaryContainer = document.getElementById('summaryContainer');
+    const summaryTotalPrice = document.getElementById('summaryTotalPrice');
+    const summaryTotalDuration = document.getElementById('summaryTotalDuration');
+    const homePriceNote = document.getElementById('homePriceNote');
+    const slotContainer = document.getElementById('slotContainer');
+    const slotMessage = document.getElementById('slotMessage');
+    const groomerSelect = document.getElementById('groomerSelect');
+    const tanggalInput = document.getElementById('tanggalInput');
+    const serviceTypeInputs = Array.from(document.querySelectorAll('.service-type'));
+    const petCheckboxes = Array.from(document.querySelectorAll('.pet-checkbox'));
+    const submitBtn = document.getElementById('submitBtn');
+    const bookingPayloadInput = document.getElementById('bookingPayload');
+    const waktuMulaiInput = document.getElementById('waktuMulaiInput');
+    const alamatInput = document.getElementById('alamatInput');
+    const catatanInput = document.getElementById('catatanInput');
+    const bookingForm = document.getElementById('bookingForm');
+
+    const state = {
+        selectedServiceType: getSelectedServiceType(),
+        selectedPetIds: new Set(),
+        petConfigs: {},
+        selectedSlot: null,
+        totalDuration: 0,
+        totalPrice: 0
+    };
+
+    const oldPayload = bookingPayloadInput.value;
+    if (oldPayload) {
+        try {
+            const parsed = JSON.parse(oldPayload);
+            (parsed.items || []).forEach((item) => {
+                const checkbox = petCheckboxes.find((c) => Number(c.value) === Number(item.pet_id));
+                if (checkbox) {
+                    checkbox.checked = true;
+                    state.selectedPetIds.add(Number(item.pet_id));
+                    state.petConfigs[item.pet_id] = {
+                        package_id: item.package_id,
+                        additional_ids: item.additional_ids || []
+                    };
+                }
+            });
+        } catch (e) {
+            console.warn('Invalid old payload', e);
+        }
+    }
+
+    initializePanels();
+    onServiceTypeChange();
+    rebuildPetSections().then(() => {
+        recalculateSummary();
+        maybeLoadSlots();
+    });
+
+    serviceTypeInputs.forEach((input) => {
+        input.addEventListener('change', () => {
+            state.selectedServiceType = getSelectedServiceType();
+            state.selectedSlot = null;
+            waktuMulaiInput.value = '';
+            onServiceTypeChange();
+            loadGroomers();
+            recalculateSummary();
+            maybeLoadSlots();
+            validateSubmit();
+        });
+    });
+
+    petCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', async () => {
+            const petId = Number(checkbox.value);
+            if (checkbox.checked) {
+                state.selectedPetIds.add(petId);
+                if (!state.petConfigs[petId]) {
+                    state.petConfigs[petId] = { package_id: null, additional_ids: [] };
+                }
+            } else {
+                state.selectedPetIds.delete(petId);
+                delete state.petConfigs[petId];
+            }
+
+            state.selectedSlot = null;
+            waktuMulaiInput.value = '';
+
+            await rebuildPetSections();
+            recalculateSummary();
+            maybeLoadSlots();
+            validateSubmit();
+        });
+    });
+
+    groomerSelect.addEventListener('change', () => {
+        state.selectedSlot = null;
+        waktuMulaiInput.value = '';
+        maybeLoadSlots();
+        validateSubmit();
+    });
+
+    tanggalInput.addEventListener('change', () => {
+        state.selectedSlot = null;
+        waktuMulaiInput.value = '';
+        maybeLoadSlots();
+        validateSubmit();
+    });
+
+    bookingForm.addEventListener('submit', (event) => {
+        recalculateSummary();
+        if (!isFormValid()) {
+            event.preventDefault();
+            return;
+        }
+
+        const payload = buildPayload();
+        bookingPayloadInput.value = JSON.stringify(payload);
+
+        const lines = [];
+        lines.push('Konfirmasi Booking Grooming');
+        lines.push('--------------------------------');
+        lines.push(`Layanan: ${state.selectedServiceType}`);
+        lines.push(`Groomer ID: ${groomerSelect.value}`);
+        lines.push(`Tanggal: ${tanggalInput.value}`);
+        lines.push(`Jam Mulai: ${state.selectedSlot ? state.selectedSlot.start : ''}`);
+        lines.push(`Total Durasi: ${state.totalDuration} menit`);
+        lines.push(`Total Harga: Rp ${formatRupiah(state.totalPrice)}`);
+        if (state.selectedServiceType === 'home') {
+            lines.push(`Alamat: ${alamatInput.value.trim() || '-'}`);
+        }
+        lines.push(`Catatan: ${catatanInput.value.trim() || '-'}`);
+
+        const ok = window.confirm(lines.join('\n'));
+        if (!ok) {
+            event.preventDefault();
+        }
+    });
+
+    function initializePanels() {
+        loadGroomers();
+    }
+
+    function getSelectedServiceType() {
+        const checked = serviceTypeInputs.find((el) => el.checked);
+        return checked ? checked.value : '';
+    }
+
+    function onServiceTypeChange() {
+        const clinicInfo = document.getElementById('clinicInfo');
+        const homeInfo = document.getElementById('homeInfo');
+        const serviceType = getSelectedServiceType();
+
+        clinicInfo.classList.toggle('hidden', serviceType !== 'clinic');
+        homeInfo.classList.toggle('hidden', serviceType !== 'home');
+        homePriceNote.classList.toggle('hidden', serviceType !== 'home');
+    }
+
+    async function loadGroomers() {
+        const serviceType = getSelectedServiceType();
+        groomerSelect.innerHTML = '<option value="">Pilih groomer</option>';
+        if (!serviceType) {
+            return;
+        }
+
+        const response = await fetch(`/booking/api/groomers/?service_type=${encodeURIComponent(serviceType)}`);
+        const data = await response.json();
+        if (!response.ok) {
+            return;
+        }
+
+        data.groomers.forEach((groomer) => {
+            const option = document.createElement('option');
+            option.value = groomer.id;
+            option.textContent = `${groomer.name} (${groomer.phone})`;
+            if (String(groomer.id) === '{{ old.groomer_id|default:"" }}') {
+                option.selected = true;
+            }
+            groomerSelect.appendChild(option);
+        });
+    }
+
+    async function rebuildPetSections() {
+        perPetContainer.innerHTML = '';
+
+        for (const petId of state.selectedPetIds) {
+            const checkbox = petCheckboxes.find((el) => Number(el.value) === Number(petId));
+            if (!checkbox) {
+                continue;
+            }
+
+            const section = document.createElement('div');
+            section.className = 'bg-white border rounded-xl p-5';
+            section.dataset.petId = String(petId);
+            section.innerHTML = `
+                <h2 class="font-semibold text-lg">3. Paket untuk ${checkbox.dataset.petName}</h2>
+                <p class="text-sm text-gray-600 mt-1">Jenis hewan: ${checkbox.dataset.petJenis}</p>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700">Paket Grooming</label>
+                    <select class="mt-1 w-full border rounded-lg px-3 py-2 pet-package-select">
+                        <option value="">Pilih paket</option>
+                    </select>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700">Additional Service (opsional)</label>
+                    <div class="mt-2 space-y-2 additional-list"></div>
+                </div>
+            `;
+
+            perPetContainer.appendChild(section);
+
+            const packageSelect = section.querySelector('.pet-package-select');
+            const additionalList = section.querySelector('.additional-list');
+
+            const response = await fetch(`/booking/api/options/pet/?pet_id=${petId}`);
+            const data = await response.json();
+            if (!response.ok) {
+                additionalList.innerHTML = '<p class="text-sm text-red-600">Gagal memuat opsi paket.</p>';
+                continue;
+            }
+
+            data.packages.forEach((pkg) => {
+                const option = document.createElement('option');
+                option.value = pkg.id;
+                option.textContent = pkg.label;
+                if (Number(state.petConfigs[petId]?.package_id) === Number(pkg.id)) {
+                    option.selected = true;
+                }
+                packageSelect.appendChild(option);
+            });
+
+            if (data.additionals.length === 0) {
+                additionalList.innerHTML = '<p class="text-sm text-gray-500">Tidak ada additional service.</p>';
+            } else {
+                data.additionals.forEach((add) => {
+                    const wrapper = document.createElement('label');
+                    wrapper.className = 'flex items-start gap-2 border rounded-lg p-2';
+                    const checked = (state.petConfigs[petId]?.additional_ids || []).map(Number).includes(Number(add.id));
+                    wrapper.innerHTML = `
+                        <input type="checkbox" class="additional-checkbox mt-1" value="${add.id}" ${checked ? 'checked' : ''}>
+                        <span class="text-sm">${add.label}</span>
+                    `;
+                    additionalList.appendChild(wrapper);
+                });
+            }
+
+            packageSelect.addEventListener('change', () => {
+                const config = state.petConfigs[petId] || { package_id: null, additional_ids: [] };
+                config.package_id = packageSelect.value ? Number(packageSelect.value) : null;
+                state.petConfigs[petId] = config;
+                state.selectedSlot = null;
+                waktuMulaiInput.value = '';
+                recalculateSummary();
+                maybeLoadSlots();
+                validateSubmit();
+            });
+
+            additionalList.addEventListener('change', (event) => {
+                if (!event.target.classList.contains('additional-checkbox')) {
+                    return;
+                }
+
+                const selectedAdditional = Array.from(additionalList.querySelectorAll('.additional-checkbox:checked'))
+                    .map((input) => Number(input.value));
+
+                const config = state.petConfigs[petId] || { package_id: null, additional_ids: [] };
+                config.additional_ids = selectedAdditional;
+                state.petConfigs[petId] = config;
+                state.selectedSlot = null;
+                waktuMulaiInput.value = '';
+                recalculateSummary();
+                maybeLoadSlots();
+                validateSubmit();
+            });
+        }
+    }
+
+    async function recalculateSummary() {
+        const payload = buildPayload();
+        bookingPayloadInput.value = JSON.stringify(payload);
+
+        let totalDuration = 0;
+        let totalPrice = 0;
+
+        summaryContainer.innerHTML = '';
+
+        for (const item of payload.items) {
+            const response = await fetch(`/booking/api/options/pet/?pet_id=${item.pet_id}`);
+            const data = await response.json();
+            if (!response.ok) {
+                continue;
+            }
+
+            const pkg = data.packages.find((p) => Number(p.id) === Number(item.package_id));
+            if (!pkg) {
+                continue;
+            }
+
+            let itemDuration = Number(pkg.duration || 0);
+            let itemSubtotal = Number(pkg.price || 0);
+
+            const additionalLines = [];
+            item.additional_ids.forEach((id) => {
+                const add = data.additionals.find((a) => Number(a.id) === Number(id));
+                if (!add) {
+                    return;
+                }
+                itemDuration += Number(add.duration || 0);
+                itemSubtotal += Number(add.price || 0);
+                additionalLines.push(`<li class="text-gray-600">+ ${add.name} (${add.duration} menit) - Rp ${formatRupiah(add.price)}</li>`);
+            });
+
+            totalDuration += itemDuration;
+            totalPrice += itemSubtotal;
+
+            const petName = petCheckboxes.find((p) => Number(p.value) === Number(item.pet_id))?.dataset.petName || 'Pet';
+
+            const block = document.createElement('div');
+            block.className = 'border rounded-lg p-3';
+            block.innerHTML = `
+                <p class="font-medium">${petName}</p>
+                <ul class="mt-1 space-y-1">
+                    <li>${pkg.name} (${pkg.duration} menit) - Rp ${formatRupiah(pkg.price)}</li>
+                    ${additionalLines.join('')}
+                </ul>
+                <p class="mt-2 font-medium">Subtotal: Rp ${formatRupiah(itemSubtotal)}</p>
+            `;
+            summaryContainer.appendChild(block);
+        }
+
+        state.totalDuration = totalDuration;
+        state.totalPrice = totalPrice;
+
+        summaryTotalDuration.textContent = `${totalDuration} menit`;
+        summaryTotalPrice.textContent = `Rp ${formatRupiah(totalPrice)}`;
+
+        validateSubmit();
+    }
+
+    function buildPayload() {
+        const items = [];
+        state.selectedPetIds.forEach((petId) => {
+            const config = state.petConfigs[petId] || {};
+            if (!config.package_id) {
+                return;
+            }
+            items.push({
+                pet_id: petId,
+                package_id: config.package_id,
+                additional_ids: config.additional_ids || []
+            });
+        });
+
+        return { items };
+    }
+
+    async function maybeLoadSlots() {
+        const serviceType = getSelectedServiceType();
+        const groomerId = groomerSelect.value;
+        const tanggal = tanggalInput.value;
+
+        if (!serviceType || !groomerId || !tanggal || state.totalDuration <= 0) {
+            slotContainer.innerHTML = '';
+            slotMessage.textContent = 'Pilih layanan, hewan, groomer, dan tanggal untuk melihat slot.';
+            return;
+        }
+
+        const url = `/api/slots/?groomer_id=${encodeURIComponent(groomerId)}&date=${encodeURIComponent(tanggal)}&duration=${encodeURIComponent(state.totalDuration)}&service_type=${encodeURIComponent(serviceType)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        slotContainer.innerHTML = '';
+        state.selectedSlot = null;
+        waktuMulaiInput.value = '';
+
+        if (!response.ok) {
+            slotMessage.textContent = data.error || 'Gagal memuat slot.';
+            validateSubmit();
+            return;
+        }
+
+        if (!data.slots.length) {
+            slotMessage.textContent = data.message;
+            validateSubmit();
+            return;
+        }
+
+        slotMessage.textContent = 'Pilih salah satu slot berikut:';
+
+        data.slots.forEach((slot) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'px-3 py-2 border rounded-lg text-sm hover:bg-indigo-50';
+            button.textContent = slot.label;
+            button.addEventListener('click', () => {
+                Array.from(slotContainer.querySelectorAll('button')).forEach((b) => {
+                    b.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                });
+                button.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                state.selectedSlot = slot;
+                waktuMulaiInput.value = slot.start;
+                validateSubmit();
+            });
+            slotContainer.appendChild(button);
+        });
+
+        if ('{{ old.waktu_mulai|default:"" }}') {
+            const oldStart = '{{ old.waktu_mulai|default:"" }}';
+            const oldButton = Array.from(slotContainer.querySelectorAll('button')).find((btn) => btn.textContent.startsWith(oldStart));
+            if (oldButton) {
+                oldButton.click();
+            }
+        }
+
+        validateSubmit();
+    }
+
+    function isFormValid() {
+        const serviceType = getSelectedServiceType();
+        const payload = buildPayload();
+        if (!serviceType) {
+            return false;
+        }
+        if (!payload.items.length) {
+            return false;
+        }
+        if (!groomerSelect.value) {
+            return false;
+        }
+        if (!tanggalInput.value) {
+            return false;
+        }
+        if (!state.selectedSlot || !waktuMulaiInput.value) {
+            return false;
+        }
+        if (serviceType === 'home' && !alamatInput.value.trim()) {
+            return false;
+        }
+        return true;
+    }
+
+    function validateSubmit() {
+        submitBtn.disabled = !isFormValid();
+    }
+
+    function formatRupiah(num) {
+        const n = Number(num || 0);
+        return n.toLocaleString('id-ID');
+    }
+})();
+</script>
+{% endblock content %}
