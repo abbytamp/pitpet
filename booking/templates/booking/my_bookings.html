@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}My Booking{% endblock title %}
+
+{% block content %}
+<section class="max-w-5xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">My Booking</h1>
+        <a href="{% url 'booking:create' %}" class="px-4 py-2 rounded-lg bg-indigo-600 text-white"> + New Bookings</a>
+    </div>
+
+    <div class="space-y-3">
+        {% for booking in bookings %}
+        <div class="bg-white border rounded-xl p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <p class="font-medium">#{{ booking.id }} | {{ booking.tanggal }} | {{ booking.waktu_mulai }} - {{ booking.waktu_selesai }}</p>
+                <span class="px-2 py-1 rounded bg-gray-100">{{ booking.get_status_display }}</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1">
+                Layanan: {{ booking.get_service_type_display }} | Groomer: {{ booking.groomer.user.full_name }} | Total: Rp {{ booking.total_harga|floatformat:0 }}
+            </p>
+            <ul class="mt-2 text-sm text-gray-700 list-disc list-inside">
+                {% for item in booking.items.all %}
+                <li>{{ item.pet.name }} - {{ item.package.name }} ({{ item.durasi_paket }} menit)</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% empty %}
+        <p class="text-gray-600">Belum ada booking.</p>
+        {% endfor %}
+    </div>
+
+    <div class="mt-6">
+        <a href="{% url 'customer_dashboard' %}" class="px-4 py-2 rounded-lg border">Back</a>
+    </div>
+</section>
+{% endblock content %}
