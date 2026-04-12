@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load booking_extras %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <h1 class="text-3xl font-bold mb-6">Jadwal Slot Booking</h1>
+    <form method="get" class="mb-6 flex flex-wrap gap-4 items-end">
+        <div>
+            <label class="block text-sm font-semibold mb-1">Tipe Layanan</label>
+            <select name="service_type" class="border rounded px-3 py-2" required>
+                <option value="clinic" {% if service_type == 'clinic' %}selected{% endif %}>Clinic</option>
+                <option value="home" {% if service_type == 'home' %}selected{% endif %}>Home</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold mb-1">Tanggal</label>
+            <input type="date" name="tanggal" value="{{ tanggal }}" class="border rounded px-3 py-2" required>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700">Lihat Jadwal</button>
+    </form>
+    {% if groomers %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full border rounded-xl">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 border-b">Groomer</th>
+                    {% for slot in slot_times %}
+                    <th class="px-4 py-2 border-b">{{ slot }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for groomer in groomers %}
+                <tr>
+                    <td class="px-4 py-2 border-b font-semibold">{{ groomer.user.full_name }}</td>
+                    {% for slot in slot_times %}
+                        {% with booking=bookings_by_groomer|get_item:groomer.id|get_item:slot %}
+                            <td class="px-4 py-2 border-b text-center">
+                                {% if booking %}
+                                    <div class="font-bold text-blue-700">{{ booking.customer.full_name }}</div>
+                                    <div class="text-xs text-gray-600">{{ booking.package_name }}</div>
+                                    <div class="text-xs mt-1">Status: <span class="font-semibold">{{ booking.status_display }}</span></div>
+                                    <div class="text-xs">Pembayaran: <span class="font-semibold">{{ booking.payment_status_display }}</span></div>
+                                {% else %}
+                                    <span class="text-green-600 font-semibold">Available</span>
+                                {% endif %}
+                            </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="text-gray-500 mt-8">Tidak ada groomer untuk tipe layanan ini.</div>
+    {% endif %}
+</div>
+{% endblock %}
