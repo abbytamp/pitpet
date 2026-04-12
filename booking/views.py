@@ -1,8 +1,8 @@
+
+from django.contrib.auth.decorators import login_required
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-
-from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -23,6 +23,72 @@ from booking.utils import (
 )
 from packages.models import Package
 from pet.models import Pet
+
+
+@login_required
+def staff_booking_schedule(request):
+    # Hanya staff operasional yang boleh akses
+    if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
+        return redirect('login')
+
+    # Pilihan tipe layanan dan tanggal
+    service_type = request.GET.get('service_type', Booking.ServiceType.CLINIC)
+    tanggal_str = request.GET.get('tanggal')
+    if tanggal_str:
+        try:
+            tanggal = datetime.strptime(tanggal_str, "%Y-%m-%d").date()
+        except ValueError:
+            tanggal = timezone.localdate()
+    else:
+        tanggal = timezone.localdate()
+
+    # Ambil semua groomer aktif untuk tipe layanan
+    groomers = Groomer.objects.select_related('user').filter(service_type=service_type, is_deleted=False)
+
+    # Tentukan slot waktu per 30 menit (mengikuti aturan booking)
+    from booking.utils import WORK_START, WORK_END, SLOT_MINUTES
+    slot_times = []
+    current = datetime.combine(tanggal, WORK_START)
+    end = datetime.combine(tanggal, WORK_END)
+    while current < end:
+        slot_times.append(current.strftime('%H:%M'))
+        current += timedelta(minutes=SLOT_MINUTES)
+
+    # Ambil semua booking pada tanggal & tipe layanan
+    bookings = Booking.objects.filter(
+        tanggal=tanggal,
+        service_type=service_type,
+        groomer__in=groomers
+    ).select_related('customer', 'groomer')
+
+    # Mapping: {groomer_id: {slot_time: booking_info}}
+    bookings_by_groomer = {g.id: {} for g in groomers}
+    for booking in bookings:
+        slot = booking.waktu_mulai.strftime('%H:%M')
+        # Ambil nama hewan dan paket grooming utama (BookingItem pertama)
+        if booking.items.exists():
+            first_item = booking.items.first()
+            pet_name = first_item.pet.name
+            package_name = first_item.package.name
+        else:
+            pet_name = "-"
+            package_name = "-"
+        bookings_by_groomer[booking.groomer.id][slot] = {
+            'customer': booking.customer,
+            'pet_name': pet_name,
+            'package_name': package_name,
+            'status_display': booking.get_status_display(),
+            'payment_status_display': booking.get_payment_status_display(),
+        }
+
+    context = {
+        'groomers': groomers,
+        'slot_times': slot_times,
+        'bookings_by_groomer': bookings_by_groomer,
+        'service_type': service_type,
+        'tanggal': tanggal.strftime('%Y-%m-%d'),
+    }
+    return render(request, 'booking/staff_booking_schedule.html', context)
 
 
 def _is_customer(user) -> bool:
