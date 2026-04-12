@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+  <div class="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+
+    <!-- Title -->
+    <h1 class="text-3xl font-bold text-gray-900 text-center mb-4">
+      Detail Pekerjaan
+    </h1>
+
+    <!-- Informasi Booking -->
+    <div class="relative bg-white border border-gray-100 rounded-2xl shadow-sm p-6 mb-6">
+
+      <!-- Status -->
+      <span class="absolute top-4 right-4 text-xs font-semibold px-3 py-1 rounded-full
+        {% if status == 'scheduled' %}bg-blue-100 text-blue-700{% endif %}
+        {% if status == 'service_started' %}bg-yellow-100 text-yellow-700{% endif %}
+        {% if status == 'service_completed' %}bg-green-100 text-green-700{% endif %}
+      ">
+        {{ status_label }}
+      </span>
+
+      <h2 class="text-lg font-bold text-gray-900 mb-4">
+        Informasi Booking
+      </h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Nama Pemilik</p>
+          <p class="text-sm font-semibold text-gray-900">{{ owner_name }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Jenis Layanan</p>
+          <p class="text-sm font-semibold text-gray-900">{{ service_type_label }}</p>
+        </div>
+
+        {% if booking.service_type == "home" %}
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Nomor Telepon</p>
+          <p class="text-sm font-semibold text-gray-900">{{ owner_phone }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Alamat</p>
+          <p class="text-sm font-semibold text-gray-900">{{ address|default:"-" }}</p>
+        </div>
+        {% endif %}
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Jam Layanan</p>
+          <p class="text-sm font-semibold text-gray-900">{{ time_range }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Total Durasi</p>
+          <p class="text-sm font-semibold text-gray-900">{{ total_duration }} menit</p>
+        </div>
+      </div>
+      
+      <div class="mt-4">
+        <p class="text-xs text-gray-500 mb-2">Catatan Booking</p>
+        <div class="rounded-xl p-3 text-sm bg-yellow-50 border border-yellow-200 text-gray-700">
+            {{ booking_note|default:"-" }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Daftar Hewan -->
+    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+
+      <h2 class="text-lg font-bold text-gray-900 mb-4">
+        Daftar Layanan Hewan
+      </h2>
+
+      <div class="space-y-4">
+        {% for item in pet_items %}
+        <div class="flex flex-col sm:flex-row justify-between gap-4 border border-gray-100 rounded-xl p-4">
+
+          <!-- Left -->
+          <div>
+            <p class="text-base font-bold text-gray-900 mb-1">
+              {{ item.pet_name }} ({{ item.pet_type }}{% if item.pet_size %}, {{ item.pet_size }}{% endif %})
+            </p>
+
+            <div class="text-sm text-gray-800 space-y-1">
+              <p>{{ item.package_name }} ({{ item.package_duration }} min)</p>
+
+              {% if item.additionals %}
+                {% for additional in item.additionals %}
+                  <p class="text-gray-500">
+                    + {{ additional.name }} ({{ additional.duration }} min)
+                  </p>
+                {% endfor %}
+              {% endif %}
+
+              <p class="font-semibold mt-1">
+                Total {{ item.pet_name }}: {{ item.total_pet_duration }} min
+              </p>
+            </div>
+          </div>
+
+          <!-- Right -->
+          {% if can_show_pet_note_button %}
+          <div class="flex items-start sm:items-center">
+            <a href="#"
+               class="px-4 py-2 rounded-xl text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition">
+              Isi Form
+            </a>
+          </div>
+          {% endif %}
+
+        </div>
+        {% empty %}
+        <div class="border border-dashed border-gray-300 rounded-xl p-5 text-center text-gray-500 text-sm">
+          Belum ada data hewan pada booking ini.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+
+      <a href="{% url 'groomer_jobs:daily_job_list' %}"
+         class="px-6 py-2 rounded-xl bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200 transition">
+        Back
+      </a>
+
+      {% if can_start_service %}
+      <button type="button"
+            onclick="openStatusModal('start_service')"
+            class="bg-[#F5A623] text-white font-semibold px-6 py-2 rounded-full hover:bg-orange-500 transition">
+        Start Service
+      </button>
+      {% elif can_complete_service %}
+      <button type="button"
+            onclick="openStatusModal('complete_service')"
+            class="bg-[#F5A623] text-white font-semibold px-6 py-2 rounded-full hover:bg-orange-500 transition">
+        Complete Service
+      </button>
+      {% endif %}
+    
+    </div>
+
+  </div>
+</div>
+
+{% if request.GET.error == "incomplete_form" %}
+<div id="errorModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+
+    <h3 class="text-xl font-bold text-gray-900 mb-2">
+      Tidak dapat menyelesaikan layanan
+    </h3>
+
+    <p class="text-gray-600 mb-6">
+      Masih terdapat hewan yang belum memiliki catatan grooming.
+    </p>
+
+    <button onclick="closeErrorModal()"
+            class="w-full py-3 px-4 rounded-xl font-semibold bg-red-500 hover:bg-red-600 text-white transition">
+      OK
+    </button>
+
+  </div>
+</div>
+
+<script>
+function closeErrorModal() {
+  document.getElementById('errorModal').style.display = 'none';
+}
+</script>
+{% endif %}
+
+<!-- Status Confirmation Modal -->
+<div id="statusModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4">
+  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+    <h3 class="text-xl font-bold text-gray-900 mb-2">Konfirmasi Perubahan Status</h3>
+    <p id="statusModalMessage" class="text-gray-600 mb-6">
+      Apakah Anda yakin ingin mengubah status layanan?
+    </p>
+
+    <form method="POST" action="{% url 'groomer_jobs:update_booking_status' booking.id %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" id="statusActionInput">
+
+      <div class="flex items-center gap-3">
+        <button type="button"
+                onclick="closeStatusModal()"
+                class="w-full py-3 px-4 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-black transition">
+          Batal
+        </button>
+
+        <button type="submit"
+                class="w-full py-3 px-4 rounded-xl font-semibold bg-green-500 hover:bg-green-600 text-white transition">
+          Konfirmasi
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openStatusModal(action) {
+    const modal = document.getElementById('statusModal');
+    const actionInput = document.getElementById('statusActionInput');
+    const message = document.getElementById('statusModalMessage');
+
+    actionInput.value = action;
+
+    if (action === 'start_service') {
+      message.innerHTML = 'Apakah Anda yakin ingin mengubah status layanan menjadi <span class="font-semibold text-orange-600">Service started</span>?';
+    } else if (action === 'complete_service') {
+      message.innerHTML = 'Apakah Anda yakin ingin mengubah status layanan menjadi <span class="font-semibold text-orange-600">Service completed</span>?';
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeStatusModal() {
+    const modal = document.getElementById('statusModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+</script>
+{% endblock %}
