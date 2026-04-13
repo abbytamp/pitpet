@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+  <div class="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+
+    <h1 class="text-3xl font-bold text-gray-900 text-center mb-8">
+      Detail Jadwal Booking
+    </h1>
+
+    <!-- Informasi Booking -->
+    <div class="relative bg-white border border-gray-100 rounded-2xl shadow-sm p-6 mb-6">
+
+      <div class="absolute top-4 right-4 flex items-center gap-2">
+        <span class="text-xs font-semibold px-3 py-1 rounded-full
+            {% if status == 'scheduled' %}bg-yellow-100 text-yellow-800{% endif %}
+            {% if status == 'service_started' %}bg-blue-100 text-blue-700{% endif %}
+            {% if status == 'service_completed' %}bg-green-100 text-green-700{% endif %}
+            {% if status == 'cancelled' %}bg-red-100 text-red-700{% endif %}">
+            {{ status_label }}
+        </span>
+
+        <span class="text-xs font-semibold px-3 py-1 rounded-full
+            {% if payment_status == 'paid' %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-700 border border-red-200{% endif %}">
+            {{ payment_status_label }}
+        </span>
+      </div>
+
+      <h2 class="text-lg font-bold text-gray-900 mb-4">
+        Informasi Booking
+      </h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">ID Booking</p>
+          <p class="text-sm font-semibold text-gray-900">#{{ booking.id }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Nama Pemilik</p>
+          <p class="text-sm font-semibold text-gray-900">{{ owner_name }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Nomor Telepon</p>
+          <p class="text-sm font-semibold text-gray-900">{{ owner_phone }}</p>
+        </div>
+
+        {% if booking.service_type == "home" %}
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Alamat</p>
+          <p class="text-sm font-semibold text-gray-900">{{ address|default:"-" }}</p>
+        </div>
+        {% endif %}
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Jenis Layanan</p>
+          <p class="text-sm font-semibold text-gray-900">{{ service_type_label }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Nama Groomer</p>
+          <p class="text-sm font-semibold text-gray-900">{{ groomer_name }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Tanggal Layanan</p>
+          <p class="text-sm font-semibold text-gray-900">{{ booking.tanggal|date:"d M Y" }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Jam Layanan</p>
+          <p class="text-sm font-semibold text-gray-900">{{ time_range }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Total Durasi Booking</p>
+          <p class="text-sm font-semibold text-gray-900">{{ total_duration }} menit</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Catatan Booking</p>
+          <p class="text-sm font-semibold text-gray-900">
+            {{ booking.catatan|default:"-" }}
+          </p>
+        </div>
+
+        {% comment %} <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Status Pembayaran</p>
+          <p class="text-sm font-semibold text-gray-900">{{ payment_status_label }}</p>
+        </div> {% endcomment %}
+
+      </div>
+    </div>
+
+    <!-- Daftar Hewan -->
+    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+      <h2 class="text-lg font-bold text-gray-900 mb-4">
+        Daftar Hewan & Layanan
+      </h2>
+
+      <div class="space-y-4">
+        {% for item in pet_items %}
+        <div class="border border-gray-100 rounded-xl p-4 bg-white">
+          <p class="text-base font-bold text-gray-900 mb-1">
+            {{ item.pet_name }} ({{ item.pet_type }}{% if item.pet_size %}, {{ item.pet_size }}{% endif %})
+          </p>
+
+          <div class="text-sm text-gray-800 space-y-1">
+            <p>{{ item.package_name }} ({{ item.package_duration }} min)</p>
+
+            {% if item.additionals %}
+              {% for additional in item.additionals %}
+                <p>+ {{ additional.name }} ({{ additional.duration }} min)</p>
+              {% endfor %}
+            {% endif %}
+
+            <p class="font-semibold mt-1">
+              Total {{ item.pet_name }}: {{ item.total_pet_duration }} min
+            </p>
+          </div>
+        </div>
+        {% empty %}
+        <div class="border border-dashed border-gray-300 rounded-xl p-5 text-center text-gray-500 text-sm">
+          Belum ada data hewan pada booking ini.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+      <a href="{% url 'booking:staff_booking_schedule' %}?service_type={{ booking.service_type }}&tanggal={{ booking.tanggal|date:'Y-m-d' }}"
+         class="px-6 py-2 rounded-xl bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200 transition">
+        Back
+      </a>
+
+      <div class="flex gap-3">
+        {% if can_cancel %}
+        <button type="button"
+                class="px-6 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition">
+          Cancel Booking
+        </button>
+        {% endif %}
+
+        {% if can_mark_paid %}
+        <button type="button"
+                class="px-6 py-2 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition">
+          Mark as Paid
+        </button>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

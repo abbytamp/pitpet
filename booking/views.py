@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timedelta
 from decimal import Decimal
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET
@@ -55,16 +55,17 @@ def staff_booking_schedule(request):
         current += timedelta(minutes=SLOT_MINUTES)
 
     # Ambil semua booking pada tanggal & tipe layanan
-    bookings = Booking.objects.filter(
+    bookings = (Booking.objects.filter(
         tanggal=tanggal,
         service_type=service_type,
         groomer__in=groomers
-    ).select_related('customer', 'groomer')
+    ).select_related('customer', 'groomer', 'groomer__user')
+    .prefetch_related('items__pet', 'items__package')
+    )
 
     # Mapping: {groomer_id: {slot_time: booking_info}}
     bookings_by_groomer = {g.id: {} for g in groomers}
     for booking in bookings:
-        slot = booking.waktu_mulai.strftime('%H:%M')
         # Ambil nama hewan dan paket grooming utama (BookingItem pertama)
         if booking.items.exists():
             first_item = booking.items.first()
@@ -73,14 +74,21 @@ def staff_booking_schedule(request):
         else:
             pet_name = "-"
             package_name = "-"
-        bookings_by_groomer[booking.groomer.id][slot] = {
+            
+        booking_info = {
+            'booking_id': booking.id,
             'customer': booking.customer,
             'pet_name': pet_name,
             'package_name': package_name,
             'status_display': booking.get_status_display(),
             'payment_status_display': booking.get_payment_status_display(),
         }
-
+        
+        occupied_slots = _iter_booking_slots(booking, slot_minutes=SLOT_MINUTES)
+        
+        for slot in occupied_slots:
+            bookings_by_groomer[booking.groomer.id][slot] = booking_info
+            
     context = {
         'groomers': groomers,
         'slot_times': slot_times,
@@ -89,6 +97,101 @@ def staff_booking_schedule(request):
         'tanggal': tanggal.strftime('%Y-%m-%d'),
     }
     return render(request, 'booking/staff_booking_schedule.html', context)
+
+
+@login_required
+def staff_booking_detail(request, booking_id):
+    if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
+        return HttpResponseForbidden("403 Forbidden: hanya staff operasional yang dapat mengakses halaman ini.")
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("customer", "groomer", "groomer__user")
+        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
+        id=booking_id,
+    )
+
+    pet_items = []
+    for item in booking.items.all():
+        additionals = []
+        total_pet_duration = item.durasi_paket
+
+        for additional in item.additionals.all():
+            additionals.append({
+                "name": additional.additional.name,
+                "duration": additional.durasi,
+            })
+            total_pet_duration += additional.durasi
+
+        pet_items.append({
+            "pet_name": item.pet.name,
+            "pet_type": item.pet.jenis,
+            "pet_size": _get_pet_size_label(item.pet),
+            "package_name": item.package.name if item.package else "-",
+            "package_duration": item.durasi_paket,
+            "additionals": additionals,
+            "total_pet_duration": total_pet_duration,
+        })
+
+    context = {
+        "booking": booking,
+        "owner_name": booking.customer.full_name,
+        "owner_phone": booking.customer.phone_number,
+        "service_type_label": booking.get_service_type_display(),
+        "groomer_name": booking.groomer.user.full_name,
+        "address": booking.alamat,
+        "status": booking.status,
+        "status_label": booking.get_status_display(),
+        "payment_status": booking.payment_status,
+        "payment_status_label": booking.get_payment_status_display(),
+        "time_range": f"{booking.waktu_mulai.strftime('%H:%M')} - {booking.waktu_selesai.strftime('%H:%M')}",
+        "total_duration": booking.total_durasi,
+        "pet_items": pet_items,
+        "can_cancel": booking.status == Booking.Status.SCHEDULED,
+        "can_mark_paid": (
+            booking.payment_status == Booking.PaymentStatus.UNPAID
+            and booking.status == Booking.Status.SERVICE_COMPLETED
+        ),
+    }
+
+    return render(request, "booking/staff_booking_detail.html", context)
+
+
+def _iter_booking_slots(booking, slot_minutes=30):
+    """
+    Menghasilkan semua slot waktu yang dipakai booking:
+    contoh 08:00-09:30 -> 08:00, 08:30, 09:00
+    """
+    current = datetime.combine(booking.tanggal, booking.waktu_mulai)
+    end = datetime.combine(booking.tanggal, booking.waktu_selesai)
+    step = timedelta(minutes=slot_minutes)
+
+    slots = []
+    while current < end:
+        slots.append(current.strftime("%H:%M"))
+        current += step
+    return slots
+
+# Calculate size label (nanti ganti dengan defined method di model pet)
+def _get_pet_size_label(pet):
+    pet_type = (pet.jenis or "").lower()
+    weight = pet.berat
+
+    if pet_type == "cat":
+        return ""
+
+    if pet_type == "dog":
+        if weight is None:
+            return "-"
+        if 2 <= weight <= 10:
+            return "S"
+        if 11 <= weight <= 25:
+            return "M"
+        if 26 <= weight <= 45:
+            return "L"
+        if weight > 45:
+            return "XL"
+
+    return "-"
 
 
 def _is_customer(user) -> bool:

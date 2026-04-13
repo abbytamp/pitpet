@@ -15,7 +15,9 @@ def daily_job_list(request):
         return HttpResponseForbidden("Hanya groomer yang dapat mengakses halaman ini.")
 
     # testing, balikin ke date.today() aja nanti
-    today = date.today() + timedelta(days=1)
+    offset_days = int(request.GET.get("days", 0))
+    today = date.today() + timedelta(days=offset_days)
+    
     task_statuses = ["scheduled", "service_started"]
 
     bookings = (
