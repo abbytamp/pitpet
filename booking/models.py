@@ -13,8 +13,9 @@ class Booking(models.Model):
 
     class Status(models.TextChoices):
         SCHEDULED = "scheduled", "Scheduled"
-        ON_THE_WAY = "on_the_way", "On the way"
-        ARRIVED = "arrived", "Arrived"
+        # Status hanya SCHEDULED, SERVICE_STARTED, SERVICE_COMPLETED, dan CANCELLED 
+        # ON_THE_WAY = "on_the_way", "On the way"
+        # ARRIVED = "arrived", "Arrived"
         SERVICE_STARTED = "service_started", "Service started"
         SERVICE_COMPLETED = "service_completed", "Service completed"
         CANCELLED = "cancelled", "Cancelled"
