@@ -63,40 +63,67 @@ def staff_booking_schedule(request):
     .prefetch_related('items__pet', 'items__package')
     )
 
-    # Mapping: {groomer_id: {slot_time: booking_info}}
-    bookings_by_groomer = {g.id: {} for g in groomers}
-    for booking in bookings:
-        # Ambil nama hewan dan paket grooming utama (BookingItem pertama)
-        if booking.items.exists():
-            first_item = booking.items.first()
-            pet_name = first_item.pet.name
-            package_name = first_item.package.name
-        else:
-            pet_name = "-"
-            package_name = "-"
-            
-        booking_info = {
-            'booking_id': booking.id,
-            'customer': booking.customer,
-            'pet_name': pet_name,
-            'package_name': package_name,
-            'status_display': booking.get_status_display(),
-            'payment_status_display': booking.get_payment_status_display(),
-        }
-        
-        occupied_slots = _iter_booking_slots(booking, slot_minutes=SLOT_MINUTES)
-        
-        for slot in occupied_slots:
-            bookings_by_groomer[booking.groomer.id][slot] = booking_info
-            
+    # --- Untuk tampilan list: satu kotak per booking, slot kosong tetap muncul ---
+    from collections import defaultdict
+    groomer_schedules = {}
+    for groomer in groomers:
+        # Ambil semua booking untuk groomer ini, urutkan mulai
+        groomer_bookings = [b for b in bookings if b.groomer_id == groomer.id]
+        groomer_bookings.sort(key=lambda b: b.waktu_mulai)
+        schedule = []
+        slot_idx = 0
+        while slot_idx < len(slot_times):
+            slot_time = slot_times[slot_idx]
+            # Cek apakah ada booking yang mulai di slot ini
+            found = False
+            for booking in groomer_bookings:
+                start = booking.waktu_mulai.strftime('%H:%M')
+                end = booking.waktu_selesai.strftime('%H:%M')
+                if slot_time == start:
+                    # Hitung durasi dalam slot
+                    start_idx = slot_idx
+                    try:
+                        end_idx = slot_times.index(end)
+                    except ValueError:
+                        end_idx = len(slot_times)
+                    duration = end_idx - start_idx
+                    # Ambil info booking
+                    if booking.items.exists():
+                        first_item = booking.items.first()
+                        pet_name = first_item.pet.name
+                        package_name = first_item.package.name
+                    else:
+                        pet_name = "-"
+                        package_name = "-"
+                    schedule.append({
+                        'type': 'booking',
+                        'start': start,
+                        'end': end,
+                        'customer': booking.customer,
+                        'package_name': package_name,
+                        'status_display': booking.get_status_display(),
+                        'payment_status_display': booking.get_payment_status_display(),
+                        'booking_id': booking.id,
+                    })
+                    slot_idx += duration
+                    found = True
+                    break
+            if not found:
+                # Slot kosong
+                schedule.append({
+                    'type': 'available',
+                    'start': slot_time,
+                })
+                slot_idx += 1
+        groomer_schedules[groomer.id] = schedule
+
     context = {
         'groomers': groomers,
-        'slot_times': slot_times,
-        'bookings_by_groomer': bookings_by_groomer,
+        'groomer_schedules': groomer_schedules,
         'service_type': service_type,
         'tanggal': tanggal.strftime('%Y-%m-%d'),
     }
-    return render(request, 'booking/staff_booking_schedule.html', context)
+    return render(request, 'booking/staff_booking_schedule_list.html', context)
 
 
 @login_required

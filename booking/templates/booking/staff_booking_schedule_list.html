@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load booking_extras %}
+{% block content %}
+<div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <h1 class="text-3xl font-bold mb-6">Jadwal Slot Booking</h1>
+    <form method="get" class="mb-6 flex flex-wrap gap-4 items-end">
+        <div>
+            <label class="block text-sm font-semibold mb-1">Tipe Layanan</label>
+            <select name="service_type" class="border rounded px-3 py-2" required>
+                <option value="clinic" {% if service_type == 'clinic' %}selected{% endif %}>Clinic</option>
+                <option value="home" {% if service_type == 'home' %}selected{% endif %}>Home</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold mb-1">Tanggal</label>
+            <input type="date" name="tanggal" value="{{ tanggal }}" class="border rounded px-3 py-2" required>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700">Lihat Jadwal</button>
+    </form>
+    {% if groomers %}
+        {% for groomer in groomers %}
+        <div class="mb-10">
+            <h2 class="font-bold text-xl mb-4 flex items-center gap-2">
+                <span class="inline-block bg-blue-100 text-blue-700 rounded-full px-3 py-1 text-sm font-semibold mr-2">
+                    <svg class="inline w-5 h-5 mr-1 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.485 0 4.797.755 6.879 2.047M15 10a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    {{ groomer.user.full_name }}
+                </span>
+            </h2>
+            <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                {% for item in groomer_schedules|get_item:groomer.id %}
+                    {% if item.type == 'booking' %}
+                        <div class="rounded-lg border border-blue-300 bg-white shadow p-4 flex flex-col gap-2 hover:shadow-lg transition">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <span class="inline-block bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">
+                                    <svg class="inline w-4 h-4 mr-1 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                    {{ item.start }} - {{ item.end }}
+                                </span>
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold
+                                    {% if item.status_display == 'Scheduled' %}bg-yellow-100 text-yellow-800
+                                    {% elif item.status_display == 'Service started' %}bg-blue-100 text-blue-800
+                                    {% elif item.status_display == 'Service completed' %}bg-green-100 text-green-800
+                                    {% elif item.status_display == 'Cancelled' %}bg-red-100 text-red-800
+                                    {% else %}bg-gray-200 text-gray-700{% endif %}">
+                                    {{ item.status_display }}
+                                </span>
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold
+                                    {% if item.payment_status_display == 'Paid' %}bg-green-200 text-green-900
+                                    {% else %}bg-red-200 text-red-900{% endif %}">
+                                    {{ item.payment_status_display }}
+                                </span>
+                            </div>
+                            <div class="font-bold text-blue-700 text-base truncate">{{ item.customer.full_name }}</div>
+                            <div class="text-xs text-gray-600 truncate">{{ item.package_name }}</div>
+                            <div class="flex gap-2 mt-2">
+                                <a href="{% url 'booking:staff_booking_detail' item.booking_id %}" class="text-blue-600 hover:underline text-xs font-semibold">Lihat Detail</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="rounded-lg border border-green-200 bg-green-50 p-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4" /></svg>
+                            <span class="font-semibold text-green-700">{{ item.start }}</span>
+                            <span class="ml-2 text-green-600 text-xs">Available</span>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-gray-500 mt-8">Tidak ada groomer untuk tipe layanan ini.</div>
+    {% endif %}
+</div>
+{% endblock %}
