@@ -1,5 +1,31 @@
 
+# Cancel booking oleh staff (pastikan ada di bawah dan tidak error import)
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+@login_required
+def staff_cancel_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+    now = timezone.localtime()
+    # Hanya staff, status scheduled, dan waktu sekarang < waktu mulai
+    booking_start = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
+    if (
+        request.user.role == User.Role.STAFF and
+        booking.status == Booking.Status.SCHEDULED and
+        now < booking_start
+    ):
+        if request.method == "POST":
+            booking.status = Booking.Status.CANCELLED
+            booking.save()
+            messages.success(request, "Booking berhasil dibatalkan.")
+            return redirect('booking:staff_booking_detail', booking_id=booking_id)
+        # GET: tampilkan konfirmasi
+        return render(request, "booking/staff_cancel_confirm.html", {"booking": booking})
+    else:
+        messages.error(request, "Booking tidak dapat dibatalkan.")
+        return redirect('booking:staff_booking_detail', booking_id=booking_id)
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -68,7 +94,7 @@ def staff_booking_schedule(request):
     groomer_schedules = {}
     for groomer in groomers:
         # Ambil semua booking untuk groomer ini, urutkan mulai
-        groomer_bookings = [b for b in bookings if b.groomer_id == groomer.id]
+        groomer_bookings = [b for b in bookings if b.groomer_id == groomer.id and b.status == Booking.Status.SCHEDULED]
         groomer_bookings.sort(key=lambda b: b.waktu_mulai)
         schedule = []
         slot_idx = 0
@@ -89,18 +115,16 @@ def staff_booking_schedule(request):
                     duration = end_idx - start_idx
                     # Ambil info booking
                     if booking.items.exists():
-                        first_item = booking.items.first()
-                        pet_name = first_item.pet.name
-                        package_name = first_item.package.name
+                        pet_names = [item.pet.name for item in booking.items.all()]
+                        pet_name_display = ' + '.join(pet_names)
                     else:
-                        pet_name = "-"
-                        package_name = "-"
+                        pet_name_display = "-"
                     schedule.append({
                         'type': 'booking',
                         'start': start,
                         'end': end,
                         'customer': booking.customer,
-                        'package_name': package_name,
+                        'pet_name': pet_name_display,
                         'status_display': booking.get_status_display(),
                         'payment_status_display': booking.get_payment_status_display(),
                         'booking_id': booking.id,
@@ -530,6 +554,8 @@ def booking_success(request, booking_id: int):
     )
 
 
+
+# Halaman booking aktif (tidak cancelled)
 @login_required
 def my_bookings(request):
     if not _is_customer(request.user):
@@ -539,10 +565,32 @@ def my_bookings(request):
         Booking.objects.select_related("groomer", "groomer__user")
         .prefetch_related("items__pet")
         .filter(customer=request.user)
+        .exclude(status=Booking.Status.CANCELLED)
         .order_by("-tanggal", "-waktu_mulai")
     )
 
     return render(request, "booking/my_bookings.html", {"bookings": bookings})
+
+
+# Halaman riwayat booking (hanya milik sendiri, status Paid & Cancelled, filter status)
+@login_required
+def booking_history(request):
+    if not _is_customer(request.user):
+        return redirect("login")
+
+    status_filter = request.GET.get('status', 'all')
+    bookings = Booking.objects.select_related("groomer", "groomer__user") \
+        .prefetch_related("items__pet", "items__package") \
+        .filter(customer=request.user) \
+        .filter(status__in=[Booking.Status.CANCELLED, Booking.Status.SERVICE_COMPLETED], payment_status__in=[Booking.PaymentStatus.PAID, Booking.PaymentStatus.UNPAID]) \
+        .order_by("-tanggal", "-waktu_mulai")
+
+    if status_filter == 'paid':
+        bookings = bookings.filter(payment_status=Booking.PaymentStatus.PAID, status=Booking.Status.SERVICE_COMPLETED)
+    elif status_filter == 'cancelled':
+        bookings = bookings.filter(status=Booking.Status.CANCELLED)
+
+    return render(request, "booking/history.html", {"bookings": bookings, "status_filter": status_filter})
 
 
 @login_required

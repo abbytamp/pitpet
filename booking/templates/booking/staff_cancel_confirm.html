@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50">
+  <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+    <h2 class="text-xl font-bold mb-4">Konfirmasi Pembatalan Booking</h2>
+    <p class="mb-6">Apakah Anda yakin ingin melakukan pembatalan booking <span class="font-semibold">#{{ booking.id }}</span>?</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="flex justify-center gap-4">
+        <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded font-semibold hover:bg-red-700">Iya</button>
+        <a href="{% url 'booking:staff_booking_detail' booking.id %}" class="bg-gray-300 px-6 py-2 rounded font-semibold hover:bg-gray-400 text-gray-800">Tidak</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

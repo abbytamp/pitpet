@@ -137,10 +137,10 @@
 
       <div class="flex gap-3">
         {% if can_cancel %}
-        <button type="button"
-                class="px-6 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition">
+        <a href="{% url 'booking:staff_cancel_booking' booking.id %}"
+           class="px-6 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition">
           Cancel Booking
-        </button>
+        </a>
         {% endif %}
 
         {% if can_mark_paid %}

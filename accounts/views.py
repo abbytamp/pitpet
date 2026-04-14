@@ -110,7 +110,19 @@ def customer_dashboard(request):
 def staff_dashboard(request):
     if request.user.role != 'staff':
         return redirect('login')
-    return render(request, 'staff_dashboard.html', {'user': request.user})
+
+    scheduled_count = Booking.objects.filter(status='scheduled').count()
+    started_count = Booking.objects.filter(status='service_started').count()
+    completed_count = Booking.objects.filter(status='service_completed').count()
+    cancelled_count = Booking.objects.filter(status='cancelled').count()
+
+    return render(request, 'staff_dashboard.html', {
+        'user': request.user,
+        'scheduled_count': scheduled_count,
+        'started_count': started_count,
+        'completed_count': completed_count,
+        'cancelled_count': cancelled_count,
+    })
 
 @login_required
 def groomer_dashboard(request):
