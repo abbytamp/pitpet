@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+  <div class="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold text-gray-900 mb-2">
+        {{ page_title }}
+      </h1>
+      <p class="text-gray-600">
+        {{ today|date:"l, d F Y" }}
+      </p>
+    </div>
+
+    <!-- Summary -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 max-w-xl">
+      <!-- Selesai -->
+      <div class="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 shadow-sm hover:shadow transition">
+        <!-- Icon -->
+        <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-green-100 text-green-700 text-sm">
+          ✓
+        </div>
+        <!-- Text -->
+        <div>
+          <p class="text-xs font-semibold text-green-700">SELESAI</p>
+          <p class="text-2xl font-bold text-green-800 leading-tight">
+            {{ completed_count }}
+          </p>
+        </div>
+      </div>
+      <!-- Belum selesai -->
+      <div class="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-sm hover:shadow transition">
+        <!-- Icon -->
+        <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-100 text-red-700 text-sm">
+          !
+        </div>
+        <!-- Text -->
+        <div>
+          <p class="text-xs font-semibold text-red-700">BELUM SELESAI</p>
+          <p class="text-2xl font-bold text-red-700 leading-tight">
+            {{ unfinished_count }}
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Card -->
+    <div class="bg-white border border-gray-100 rounded-3xl shadow-sm p-6">
+
+      <!-- Tugas Hari Ini -->
+      <h2 class="text-xl font-bold text-gray-900 mb-4">
+        Tugas Hari Ini
+      </h2>
+
+      {% if today_tasks %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {% for booking in today_tasks %}
+          <a href="{% url 'groomer_jobs:job_detail' booking.id %}"
+             class="block rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md transition">
+
+            <!-- Top -->
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-lg font-bold text-gray-900">
+                {{ booking.time_range }}
+              </p>
+
+              <span class="text-xs font-semibold px-3 py-1 rounded-full
+                {% if booking.status == 'scheduled' %}
+                  bg-blue-100 text-blue-700
+                {% elif booking.status == 'service_started' %}
+                  bg-yellow-100 text-yellow-700
+                {% elif booking.status == 'service_completed' %}
+                  bg-green-100 text-green-700
+                {% endif %}
+              ">
+                {{ booking.status_label }}
+              </span>
+            </div>
+
+            <!-- Content -->
+            <p class="text-sm text-gray-800 mb-1">
+              {{ booking.pet_names }}
+            </p>
+
+            <p class="text-sm text-gray-600 mb-1">
+              Owner: {{ booking.owner_name }}
+            </p>
+
+            <p class="text-sm text-gray-500">
+              {{ booking.service_type_label }}
+            </p>
+
+          </a>
+          {% endfor %}
+
+        </div>
+      {% else %}
+        <div class="border border-dashed border-gray-300 rounded-2xl p-6 text-center text-gray-500">
+          Belum ada pekerjaan grooming hari ini
+        </div>
+      {% endif %}
+
+      <!-- Divider -->
+      <div class="border-t border-gray-200 my-8"></div>
+
+      <!-- Riwayat -->
+      <h2 class="text-xl font-bold text-gray-900 mb-4">
+        Riwayat Hari Ini
+      </h2>
+
+      {% if today_history %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {% for booking in today_history %}
+          <a href="{% url 'groomer_jobs:job_detail' booking.id %}"
+             class="block rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-md transition">
+
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-lg font-bold text-gray-900">
+                {{ booking.time_range }}
+              </p>
+
+              <span class="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700">
+                {{ booking.status_label }}
+              </span>
+            </div>
+
+            <p class="text-sm text-gray-800 mb-1">
+              {{ booking.pet_names }}
+            </p>
+
+            <p class="text-sm text-gray-600 mb-1">
+              Owner: {{ booking.owner_name }}
+            </p>
+
+            <p class="text-sm text-gray-500">
+              {{ booking.service_type_label }}
+            </p>
+
+          </a>
+          {% endfor %}
+
+        </div>
+      {% else %}
+        <div class="border border-dashed border-gray-300 rounded-2xl p-6 text-center text-gray-500">
+          Belum ada riwayat pekerjaan grooming hari ini
+        </div>
+      {% endif %}
+
+    </div>
+
+  </div>
+</div>
+{% endblock %}

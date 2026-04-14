@@ -10,6 +10,8 @@ from django.views import View
 import json
 from .forms import LoginForm, RegisterCustomerForm, RegisterStaffManagerForm, ProfileForm
 from .models import User, Groomer
+from django.utils import timezone
+from booking.models import Booking
 
 @login_required
 @user_passes_test(lambda u: u.role == 'superadmin')
@@ -111,13 +113,48 @@ def customer_dashboard(request):
 def staff_dashboard(request):
     if request.user.role != 'staff':
         return redirect('login')
-    return render(request, 'staff_dashboard.html', {'user': request.user})
+
+    scheduled_count = Booking.objects.filter(status='scheduled').count()
+    started_count = Booking.objects.filter(status='service_started').count()
+    completed_count = Booking.objects.filter(status='service_completed').count()
+    cancelled_count = Booking.objects.filter(status='cancelled').count()
+
+    return render(request, 'staff_dashboard.html', {
+        'user': request.user,
+        'scheduled_count': scheduled_count,
+        'started_count': started_count,
+        'completed_count': completed_count,
+        'cancelled_count': cancelled_count,
+    })
 
 @login_required
 def groomer_dashboard(request):
     if request.user.role != 'groomer':
         return redirect('login')
-    return render(request, 'groomer_dashboard.html', {'user': request.user})
+
+    today = timezone.localdate()
+
+    today_bookings = Booking.objects.filter(
+        groomer__user=request.user,
+        tanggal=today
+    ).exclude(status=Booking.Status.CANCELLED)
+
+    today_total_tasks = today_bookings.count()
+    today_completed_tasks = today_bookings.filter(
+        status=Booking.Status.SERVICE_COMPLETED
+    ).count()
+    today_unfinished_tasks = today_bookings.filter(
+        status__in=[Booking.Status.SCHEDULED, Booking.Status.SERVICE_STARTED]
+    ).count()
+
+    context = {
+        'user': request.user,
+        'today_total_tasks': today_total_tasks,
+        'today_completed_tasks': today_completed_tasks,
+        'today_unfinished_tasks': today_unfinished_tasks,
+    }
+
+    return render(request, 'groomer_dashboard.html', context)
 
 @login_required
 def manager_dashboard(request):

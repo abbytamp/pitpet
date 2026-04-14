@@ -1,0 +1,108 @@
+from django.conf import settings
+from django.db import models
+
+from accounts.models import Groomer
+from packages.models import Package
+from pet.models import Pet
+
+
+class Booking(models.Model):
+    class ServiceType(models.TextChoices):
+        CLINIC = "clinic", "Clinic"
+        HOME = "home", "Home"
+
+    class Status(models.TextChoices):
+        SCHEDULED = "scheduled", "Scheduled"
+        # Status hanya SCHEDULED, SERVICE_STARTED, SERVICE_COMPLETED, dan CANCELLED 
+        # ON_THE_WAY = "on_the_way", "On the way"
+        # ARRIVED = "arrived", "Arrived"
+        SERVICE_STARTED = "service_started", "Service started"
+        SERVICE_COMPLETED = "service_completed", "Service completed"
+        CANCELLED = "cancelled", "Cancelled"
+
+    class PaymentStatus(models.TextChoices):
+        UNPAID = "unpaid", "Unpaid"
+        PAID = "paid", "Paid"
+
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="bookings",
+    )
+    service_type = models.CharField(max_length=10, choices=ServiceType.choices)
+    groomer = models.ForeignKey(
+        Groomer,
+        on_delete=models.PROTECT,
+        related_name="bookings",
+    )
+    tanggal = models.DateField()
+    waktu_mulai = models.TimeField()
+    waktu_selesai = models.TimeField()
+    total_durasi = models.PositiveIntegerField(help_text="Total durasi dalam menit")
+    total_harga = models.DecimalField(max_digits=12, decimal_places=2)
+    alamat = models.TextField(null=True, blank=True)
+    catatan = models.TextField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.SCHEDULED,
+    )
+    payment_status = models.CharField(
+        max_length=10,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.UNPAID,
+    )
+    is_rescheduled = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "bookings"
+        ordering = ["-tanggal", "-waktu_mulai", "-id"]
+
+    def __str__(self):
+        return f"Booking #{self.id} - {self.customer.username} ({self.tanggal} {self.waktu_mulai})"
+
+
+class BookingItem(models.Model):
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+    pet = models.ForeignKey(Pet, on_delete=models.PROTECT, related_name="booking_items")
+    package = models.ForeignKey(
+        Package,
+        on_delete=models.PROTECT,
+        related_name="booking_items",
+    )
+    harga_paket = models.DecimalField(max_digits=12, decimal_places=2)
+    durasi_paket = models.PositiveIntegerField(help_text="Durasi paket dalam menit")
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+
+    class Meta:
+        db_table = "booking_items"
+
+    def __str__(self):
+        return f"BookingItem #{self.id} - Booking #{self.booking_id}"
+
+
+class BookingItemAdditional(models.Model):
+    booking_item = models.ForeignKey(
+        BookingItem,
+        on_delete=models.CASCADE,
+        related_name="additionals",
+    )
+    additional = models.ForeignKey(
+        Package,
+        on_delete=models.PROTECT,
+        related_name="booking_item_additionals",
+    )
+    harga = models.DecimalField(max_digits=12, decimal_places=2)
+    durasi = models.PositiveIntegerField(help_text="Durasi additional dalam menit")
+
+    class Meta:
+        db_table = "booking_item_additionals"
+
+    def __str__(self):
+        return f"BookingItemAdditional #{self.id} - BookingItem #{self.booking_item_id}"

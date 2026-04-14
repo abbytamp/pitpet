@@ -28,9 +28,17 @@
             </div>
 
             <div class="p-8">
+
+                <!-- 🔥 ERROR / SUCCESS MESSAGE -->
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="mb-6 p-4 rounded-xl font-bold text-sm bg-blue-50 text-[#34C1D4]">
+                        <div class="mb-6 p-4 rounded-xl font-bold text-sm 
+                            {% if message.tags == 'error' %}
+                                bg-red-50 text-red-500
+                            {% else %}
+                                bg-blue-50 text-[#34C1D4]
+                            {% endif %}
+                        ">
                             {{ message }}
                         </div>
                     {% endfor %}
