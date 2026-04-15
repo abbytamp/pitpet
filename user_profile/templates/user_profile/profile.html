@@ -17,86 +17,86 @@
 
     {% include 'navbar_customer.html' %}
 
-    <main class="max-w-6xl mx-auto px-6 py-12 w-full flex-1">
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full flex-1">
         
-        <section class="bg-white rounded-3xl p-8 card-shadow mb-12 flex flex-col md:flex-row items-center justify-between gap-6 border border-gray-100">
-            <div class="flex items-center gap-6">
-                <div class="w-24 h-24 bg-[#34C1D4] rounded-full flex items-center justify-center text-white text-3xl font-bold">
+        <section class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 card-shadow mb-8 sm:mb-12 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 border border-gray-100">
+            <div class="flex items-center gap-4 sm:gap-6">
+                <div class="w-16 sm:w-20 md:w-24 h-16 sm:h-20 md:h-24 bg-[#34C1D4] rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
                     {{ user.full_name|slice:":1" }}
                 </div>
                 <div>
-                    <h1 class="heading-font text-3xl text-gray-900">{{ user.full_name }}</h1>
-                    <p class="text-gray-500 font-medium">{{ user.username }}</p>
-                    <p class="text-gray-400 text-sm mt-1">📞 {{ user.phone_number }}</p>
+                    <h1 class="heading-font text-xl sm:text-2xl md:text-3xl text-gray-900">{{ user.full_name }}</h1>
+                    <p class="text-gray-500 font-medium text-sm sm:text-base">{{ user.username }}</p>
+                    <p class="text-gray-400 text-xs sm:text-sm mt-1">📞 {{ user.phone_number }}</p>
                 </div>
             </div>
             <a href="{% url 'user_profile:edit_profile' %}" 
-               class="border-2 border-[#34C1D4] text-[#34C1D4] font-bold px-6 py-2 rounded-full hover:bg-[#34C1D4] hover:text-white transition duration-300">
+               class="border-2 border-[#34C1D4] text-[#34C1D4] font-bold px-4 sm:px-6 py-2 rounded-full hover:bg-[#34C1D4] hover:text-white transition duration-300 text-sm sm:text-base whitespace-nowrap">
                 Edit Profil
             </a>
         </section>
 
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="heading-font text-4xl text-gray-900">Hewan Peliharaan</h2>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+            <h2 class="heading-font text-2xl sm:text-3xl md:text-4xl text-gray-900">Hewan Peliharaan</h2>
             <a href="{% url 'user_profile:add_pet' %}" 
-               class="bg-[#F9A828] text-white font-bold px-6 py-3 rounded-xl hover:bg-orange-500 transition shadow-lg shadow-orange-200 flex items-center gap-2">
+               class="bg-[#F9A828] text-white font-bold px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:bg-orange-500 transition shadow-lg shadow-orange-200 flex items-center gap-2 text-sm sm:text-base">
                 <span>+</span> Tambah Hewan
             </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
             {% if pets %}
                 {% for pet in pets %}
-                <div class="bg-white rounded-3xl overflow-hidden card-shadow border border-gray-50 hover:scale-[1.02] transition duration-300">
-                    <div class="p-6">
+                <div class="bg-white rounded-2xl sm:rounded-3xl overflow-hidden card-shadow border border-gray-50 hover:scale-[1.02] transition duration-300">
+                    <div class="p-4 sm:p-6">
                         <div class="flex justify-between items-start mb-4">
-                            <span class="px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider 
+                            <span class="px-3 sm:px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider 
                                 {% if pet.jenis|lower == 'cat' %} bg-blue-100 text-blue-600 {% else %} bg-orange-100 text-orange-600 {% endif %}">
                                 {{ pet.jenis }}
                             </span>
                         </div>
 
-                        <h3 class="heading-font text-2xl text-gray-900 mb-1 capitalize">{{ pet.name }}</h3>
+                        <h3 class="heading-font text-xl sm:text-2xl text-gray-900 mb-1 capitalize">{{ pet.name }}</h3>
                         <p class="text-gray-400 text-sm mb-4 italic">{{ pet.ras }}</p>
 
-                        <div class="grid grid-cols-2 gap-4 bg-gray-50 rounded-2xl p-4">
+                        <div class="grid grid-cols-2 gap-3 sm:gap-4 bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4">
                             <div>
                                 <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Berat</p>
-                                <p class="font-bold text-gray-700">{{ pet.berat }} kg</p>
+                                <p class="font-bold text-gray-700 text-sm sm:text-base">{{ pet.berat }} kg</p>
                             </div>
                             <div>
                                 <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Umur</p>
-                                <p class="font-bold text-gray-700">{{ pet.umur }} bulan</p>
+                                <p class="font-bold text-gray-700 text-sm sm:text-base">{{ pet.umur }} bulan</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="flex border-t border-gray-100">
                         <a href="{% url 'user_profile:edit_pet' pet.id %}" 
-                           class="flex-1 py-4 text-center text-[#34C1D4] font-bold hover:bg-gray-50 transition border-r border-gray-100">
+                           class="flex-1 py-3 sm:py-4 text-center text-[#34C1D4] font-bold hover:bg-gray-50 transition border-r border-gray-100 text-sm sm:text-base">
                             Edit
                         </a>
                         <button onclick="confirmDeletePet('{% url 'user_profile:delete_pet' pet.id %}', '{{ pet.name }}')"
-                           class="flex-1 py-4 text-center text-red-400 font-bold hover:bg-red-50 transition cursor-pointer">
+                           class="flex-1 py-3 sm:py-4 text-center text-red-400 font-bold hover:bg-red-50 transition cursor-pointer text-sm sm:text-base">
                             Hapus
                         </button>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="col-span-full py-20 text-center bg-white rounded-3xl card-shadow border border-dashed border-gray-300">
-                    <p class="text-gray-400 text-lg">Belum ada hewan peliharaan terdaftar.</p>
+                <div class="col-span-full py-12 sm:py-20 text-center bg-white rounded-2xl sm:rounded-3xl card-shadow border border-dashed border-gray-300">
+                    <p class="text-gray-400 text-base sm:text-lg">Belum ada hewan peliharaan terdaftar.</p>
                 </div>
             {% endif %}
         </div>
     </main>
 
-    <footer class="bg-gray-900 text-white mt-12">
-        <div class="max-w-6xl mx-auto px-6 py-10">
-            <div class="flex flex-col md:flex-row justify-between gap-8 items-start">
+    <footer class="bg-gray-900 text-white mt-auto">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+            <div class="flex flex-col md:flex-row justify-between gap-6 sm:gap-8 items-start">
                 <div>
-                    <span class="bg-[#F5A623] text-white px-4 py-1 rounded-md font-semibold text-sm">Contact Us</span>
-                    <div class="mt-6 space-y-2 text-gray-400 text-sm">
+                    <span class="bg-[#F5A623] text-white px-3 sm:px-4 py-1 rounded-md font-semibold text-sm">Contact Us</span>
+                    <div class="mt-4 sm:mt-6 space-y-2 text-gray-400 text-sm">
                         <p>Email: pitpet@gmail.com</p>
                         <p>Phone: 0811 2222 3333</p>
                         <p>Instagram: @pitpet.id</p>
@@ -108,19 +108,19 @@
     </footer>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-xl">
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Konfirmasi Hapus</h3>
-            <p class="text-gray-600 mb-6">Apakah Anda yakin ingin menghapus data hewan <span id="deletePetName" class="font-bold"></span>?</p>
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl">
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">Konfirmasi Hapus</h3>
+            <p class="text-gray-600 mb-4 sm:mb-6">Apakah Anda yakin ingin menghapus data hewan <span id="deletePetName" class="font-bold"></span>?</p>
             <div class="flex gap-3 justify-end">
                 <button onclick="closeDeleteModal()" 
-                    class="px-6 py-2 rounded-full border-2 border-gray-300 text-gray-600 font-bold hover:bg-gray-100 transition">
+                    class="px-4 sm:px-6 py-2 rounded-full border-2 border-gray-300 text-gray-600 font-bold hover:bg-gray-100 transition text-sm">
                     Batal
                 </button>
                 <form id="deleteForm" method="POST">
                     {% csrf_token %}
                     <button type="submit" 
-                        class="px-6 py-2 rounded-full bg-red-500 text-white font-bold hover:bg-red-600 transition">
+                        class="px-4 sm:px-6 py-2 rounded-full bg-red-500 text-white font-bold hover:bg-red-600 transition text-sm">
                         Ya, Hapus
                     </button>
                 </form>

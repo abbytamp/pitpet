@@ -37,19 +37,19 @@
     {% include 'messages.html' %}
 
     <!-- HERO SECTION -->
-    <section class="max-w-7xl mx-auto px-8 py-20 grid md:grid-cols-2 gap-12 items-center flex-1">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-12 sm:py-16 md:py-20 grid md:grid-cols-2 gap-8 md:gap-12 items-center flex-1">
         <!-- LEFT -->
-        <div>
-            <h1 class="heading-font text-6xl font-extrabold text-gray-900 leading-tight">
+        <div class="text-center md:text-left">
+            <h1 class="heading-font text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
                 One Pit Stop, For All<br>
                 Around Animal Care
             </h1>
 
             <!-- WHY PITPET -->
-            <h3 class="font-bold text-xl mt-8 mb-2">
+            <h3 class="font-bold text-lg sm:text-xl mt-6 sm:mt-8 mb-2">
                 Why Pitpet?
             </h3>
-            <p class="text-gray-500 max-w-md leading-relaxed">
+            <p class="text-gray-500 max-w-md leading-relaxed text-sm sm:text-base mx-auto md:mx-0">
                 At PITPET, our skilled and caring groomers provide complete grooming
                 services for your furry bestie. We focus on creating a safe, clean,
                 and comfortable environment, making sure every session is handled
@@ -58,24 +58,24 @@
 
             <!-- BUTTON -->
             <a href="{% url 'booking:create' %}"
-                class="bg-[#2BBDBD] text-white font-bold px-10 py-4 rounded-full inline-block mt-8 hover:bg-teal-600 transition">
+                class="bg-[#2BBDBD] text-white font-bold px-6 sm:px-8 md:px-10 py-3 sm:py-4 rounded-full inline-block mt-6 sm:mt-8 hover:bg-teal-600 transition text-sm sm:text-base">
                 Book Now !
             </a>
         </div>
 
         <!-- RIGHT IMAGE -->
         <div class="flex justify-center">
-            <img src="{% static 'images/foto_hewan.png' %}" class="w-[480px] max-w-full" alt="Animal Care">
+            <img src="{% static 'images/foto_hewan.png' %}" class="w-full max-w-[300px] sm:max-w-[400px] md:max-w-[480px]" alt="Animal Care">
         </div>
     </section>
 
     <!-- CONTACT US / FOOTER -->
     <footer class="bg-gray-100">
-        <div class="max-w-7xl mx-auto px-8 py-12 rounded-lg">
-            <span class="bg-[#F5A623] text-white px-4 py-1 rounded-md font-semibold text-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12 rounded-lg">
+            <span class="bg-[#F5A623] text-white px-3 sm:px-4 py-1 rounded-md font-semibold text-sm">
                 Contact Us
             </span>
-            <div class="mt-6 space-y-2 text-gray-600">
+            <div class="mt-4 sm:mt-6 space-y-2 text-gray-600 text-sm">
                 <p>Email: pitpet@gmail.com</p>
                 <p>Phone: 0811 2222 3333</p>
                 <p>Instagram: @pitpet.id</p>
