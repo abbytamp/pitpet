@@ -1,48 +1,70 @@
 {% load static %}
 
-<nav class="bg-white shadow-sm">
-
-  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center">
+<nav class="bg-white shadow-sm sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center">
 
     <!-- LOGO kiri -->
     <div class="flex items-center">
       <a href="{% url 'customer_dashboard' %}">
-        <img src="{% static 'images/logo_pitpet.png' %}" alt="PITPET Logo" class="h-12 w-auto">
+        <img src="{% static 'images/logo_pitpet.png' %}" alt="PITPET Logo" class="h-10 sm:h-12 w-auto">
       </a>
     </div>
 
-    <!-- MENU kanan -->
-    <div class="ml-auto flex items-center gap-8 font-semibold text-gray-700 text-lg">
+    <!-- MENU kanan - Desktop -->
+    <div class="hidden md:ml-auto md:flex items-center gap-6 lg:gap-8 font-semibold text-gray-700 text-base lg:text-lg">
 
-      <a href="{% url 'customer_dashboard' %}" class="hover:text-[#F5A623]">
+      <a href="{% url 'customer_dashboard' %}" class="hover:text-[#F5A623] whitespace-nowrap">
         Home
       </a>
 
-      <a href="{% url 'package_catalog' %}" class="hover:text-[#F5A623]">
+      <a href="{% url 'package_catalog' %}" class="hover:text-[#F5A623] whitespace-nowrap">
         Katalog
       </a>
 
-      <a href="{% url 'booking:my_bookings' %}" class="hover:text-[#F5A623]">
+      <a href="{% url 'booking:my_bookings' %}" class="hover:text-[#F5A623] whitespace-nowrap">
         My Bookings
       </a>
 
-      <a href="{% url 'booking:history' %}" class="hover:text-[#F5A623]">
+      <a href="{% url 'booking:history' %}" class="hover:text-[#F5A623] whitespace-nowrap">
         Riwayat
       </a>
 
-      <!-- <a href="#" class="hover:text-[#F5A623]">
-        Profile
-      </a> -->
-      <a href="{% url 'user_profile:profile' %}">Profile</a>
+      <a href="{% url 'user_profile:profile' %}" class="hover:text-[#F5A623] whitespace-nowrap">Profile</a>
 
       <!-- LOGOUT BUTTON -->
       <a href="{% url 'logout' %}"
-        class="bg-[#F5A623] text-white px-6 py-2 rounded-full hover:bg-orange-500 transition">
+        class="bg-[#F5A623] text-white px-4 sm:px-6 py-2 rounded-full hover:bg-orange-500 transition text-sm sm:text-base whitespace-nowrap">
         Log Out
       </a>
 
     </div>
 
+    <!-- Mobile Menu Button -->
+    <button id="mobile-menu-btn" class="md:hidden ml-auto p-2 text-gray-700" onclick="toggleMobileMenu()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+
+  </div>
+
+  <!-- Mobile Menu Dropdown -->
+  <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100">
+    <div class="px-4 py-3 space-y-2">
+      <a href="{% url 'customer_dashboard' %}" class="block py-2 text-gray-700 font-semibold hover:text-[#F5A623]">Home</a>
+      <a href="{% url 'package_catalog' %}" class="block py-2 text-gray-700 font-semibold hover:text-[#F5A623]">Katalog</a>
+      <a href="{% url 'booking:my_bookings' %}" class="block py-2 text-gray-700 font-semibold hover:text-[#F5A623]">My Bookings</a>
+      <a href="{% url 'booking:history' %}" class="block py-2 text-gray-700 font-semibold hover:text-[#F5A623]">Riwayat</a>
+      <a href="{% url 'user_profile:profile' %}" class="block py-2 text-gray-700 font-semibold hover:text-[#F5A623]">Profile</a>
+      <a href="{% url 'logout' %}" class="block py-2 text-[#F5A623] font-semibold">Log Out</a>
+    </div>
   </div>
 
 </nav>
+
+<script>
+  function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    menu.classList.toggle('hidden');
+  }
+</script>

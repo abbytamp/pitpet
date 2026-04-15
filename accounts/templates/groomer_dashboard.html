@@ -1,94 +1,90 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-    <div class="mb-10">
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">Groomer Dashboard</h1>
-        <p class="text-gray-600">Halo, {{ user.full_name }}! Siap merawat hewan kesayangan hari ini?</p>
+<div class="max-w-7xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8">
+    <div class="mb-6 sm:mb-10">
+        <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">Groomer Dashboard</h1>
+        <p class="text-gray-600 text-sm sm:text-base">Halo, {{ user.full_name }}! Siap merawat hewan kesayangan hari ini?</p>
     </div>
 
     <!-- Info Card -->
-    <div class="bg-white rounded-2xl shadow p-6 mb-10">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Informasi Saya</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="p-4 bg-blue-50 rounded-xl">
-                <p class="text-sm text-gray-500 mb-1">Nama</p>
-                <p class="font-semibold text-gray-900">{{ user.full_name }}</p>
+    <div class="bg-white rounded-xl sm:rounded-2xl shadow p-4 sm:p-6 mb-6 sm:mb-10">
+        <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Informasi Saya</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div class="p-3 sm:p-4 bg-blue-50 rounded-xl">
+                <p class="text-xs sm:text-sm text-gray-500 mb-1">Nama</p>
+                <p class="font-semibold text-gray-900 text-sm sm:text-base">{{ user.full_name }}</p>
             </div>
-            <div class="p-4 bg-green-50 rounded-xl">
-                <p class="text-sm text-gray-500 mb-1">Jenis Layanan</p>
-                <p class="font-semibold text-gray-900">{{ user.groomer_profile.get_service_type_display }}</p>
+            <div class="p-3 sm:p-4 bg-green-50 rounded-xl">
+                <p class="text-xs sm:text-sm text-gray-500 mb-1">Jenis Layanan</p>
+                <p class="font-semibold text-gray-900 text-sm sm:text-base">{{ user.groomer_profile.get_service_type_display }}</p>
             </div>
-            <div class="p-4 bg-yellow-50 rounded-xl">
-                <p class="text-sm text-gray-500 mb-1">No. HP</p>
-                <p class="font-semibold text-gray-900">{{ user.phone_number }}</p>
+            <div class="p-3 sm:p-4 bg-yellow-50 rounded-xl">
+                <p class="text-xs sm:text-sm text-gray-500 mb-1">No. HP</p>
+                <p class="font-semibold text-gray-900 text-sm sm:text-base">{{ user.phone_number }}</p>
             </div>
         </div>
     </div>
 
     <!-- Pekerjaan Hari Ini -->
-    <div class="bg-white rounded-2xl shadow p-6 mb-8">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div class="bg-white rounded-xl sm:rounded-2xl shadow p-4 sm:p-6 mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-1">Pekerjaan Hari Ini</h2>
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Pekerjaan Hari Ini</h2>
                 <p class="text-sm text-gray-600">Ringkasan tugas grooming kamu untuk hari ini.</p>
             </div>
 
-            {% comment %} <a href="{% url 'groomer_jobs:daily_job_list' %}"
-            class="font-semibold text-[#F5A623] hover:text-orange-600 transition">
-                Lihat Selengkapnya →
-                </a> {% endcomment %}
             <a href="{% url 'groomer_jobs:daily_job_list' %}"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition">
+            class="inline-flex items-center justify-center px-4 py-2 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition text-sm">
                 Lihat Selengkapnya →
             </a>
         </div>
 
         <!-- Summary Mini Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mb-4 sm:mb-6">
             
             <!-- Total -->
-            <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5
+            <div class="rounded-xl sm:rounded-2xl border border-blue-100 bg-blue-50 p-4 sm:p-5
                         hover:shadow-md hover:-translate-y-1 transition duration-200 cursor-pointer">
-                <p class="text-sm font-semibold text-blue-700 mb-2">Total Tugas</p>
-                <p class="text-4xl font-extrabold text-blue-900 leading-tight mb-2">{{ today_total_tasks }}</p>
-                <p class="text-sm text-gray-600">Semua booking grooming hari ini</p>
+                <p class="text-xs sm:text-sm font-semibold text-blue-700 mb-2">Total Tugas</p>
+                <p class="text-3xl sm:text-4xl font-extrabold text-blue-900 leading-tight mb-2">{{ today_total_tasks }}</p>
+                <p class="text-xs sm:text-sm text-gray-600">Semua booking grooming hari ini</p>
             </div>
 
             <!-- Selesai -->
-            <div class="rounded-2xl border border-green-100 bg-green-50 p-5
+            <div class="rounded-xl sm:rounded-2xl border border-green-100 bg-green-50 p-4 sm:p-5
                         hover:shadow-md hover:-translate-y-1 transition duration-200 cursor-pointer">
-                <p class="text-sm font-semibold text-green-700 mb-2">Sudah Selesai</p>
-                <p class="text-4xl font-extrabold text-green-800 leading-tight mb-2">{{ today_completed_tasks }}</p>
-                <p class="text-sm text-gray-600">Booking yang sudah selesai dikerjakan</p>
+                <p class="text-xs sm:text-sm font-semibold text-green-700 mb-2">Sudah Selesai</p>
+                <p class="text-3xl sm:text-4xl font-extrabold text-green-800 leading-tight mb-2">{{ today_completed_tasks }}</p>
+                <p class="text-xs sm:text-sm text-gray-600">Booking yang sudah selesai dikerjakan</p>
             </div>
 
             <!-- Belum -->
-            <div class="rounded-2xl border border-red-100 bg-red-50 p-5
+            <div class="rounded-xl sm:rounded-2xl border border-red-100 bg-red-50 p-4 sm:p-5
                         hover:shadow-md hover:-translate-y-1 transition duration-200 cursor-pointer">
-                <p class="text-sm font-semibold text-red-700 mb-2">Belum Selesai</p>
-                <p class="text-4xl font-extrabold text-red-700 leading-tight mb-2">{{ today_unfinished_tasks }}</p>
-                <p class="text-sm text-gray-600">Booking yang masih perlu dikerjakan</p>
+                <p class="text-xs sm:text-sm font-semibold text-red-700 mb-2">Belum Selesai</p>
+                <p class="text-3xl sm:text-4xl font-extrabold text-red-700 leading-tight mb-2">{{ today_unfinished_tasks }}</p>
+                <p class="text-xs sm:text-sm text-gray-600">Booking yang masih perlu dikerjakan</p>
             </div>
 
         </div>
 
         <!-- Progress -->
-        <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+        <div class="rounded-xl sm:rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2 sm:mb-3">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-1">Progress Hari Ini</h3>
-                    <p class="text-sm text-gray-600">Pantau perkembangan pekerjaan grooming kamu hari ini.</p>
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-1">Progress Hari Ini</h3>
+                    <p class="text-xs sm:text-sm text-gray-600">Pantau perkembangan pekerjaan grooming kamu hari ini.</p>
                 </div>
 
-                <div class="text-sm text-gray-500">
+                <div class="text-xs sm:text-sm text-gray-500">
                     {{ today_completed_tasks }} dari {{ today_total_tasks }} tugas selesai
                 </div>
             </div>
 
-            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+            <div class="w-full bg-gray-200 rounded-full h-2.5 sm:h-3 overflow-hidden">
                 <div
-                    class="bg-green-500 h-3 rounded-full transition-all duration-500"
+                    class="bg-green-500 h-2.5 sm:h-3 rounded-full transition-all duration-500"
                     style="width: {% if today_total_tasks > 0 %}{% widthratio today_completed_tasks today_total_tasks 100 %}%{% else %}0%{% endif %};"
                 ></div>
             </div>
