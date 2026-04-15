@@ -48,6 +48,7 @@ from booking.utils import (
     get_pet_animal_type,
     is_working_day,
     is_slot_available,
+    meets_minimum_lead_time,
 )
 from packages.models import Package
 from pet.models import Pet
@@ -517,7 +518,9 @@ def booking_create(request):
         errors["booking_payload"] = "Total durasi booking tidak valid."
 
     if groomer and tanggal and waktu_mulai and total_durasi > 0:
-        if not is_slot_available(groomer.id, tanggal, total_durasi, service_type, waktu_mulai):
+        if not meets_minimum_lead_time(tanggal, waktu_mulai):
+            errors["waktu_mulai"] = "Booking hanya bisa dibuat minimal H+2 jam dari sekarang."
+        elif not is_slot_available(groomer.id, tanggal, total_durasi, service_type, waktu_mulai):
             errors["waktu_mulai"] = "Slot sudah terisi, silakan pilih slot lain."
 
     if errors:
@@ -540,6 +543,25 @@ def booking_create(request):
     with transaction.atomic():
         # Lock groomer row first so two submissions for same groomer are serialized.
         locked_groomer = Groomer.objects.select_for_update().get(id=groomer.id)
+
+        if not meets_minimum_lead_time(tanggal, waktu_mulai):
+            context.update(
+                {
+                    "errors": {
+                        "waktu_mulai": "Booking hanya bisa dibuat minimal H+2 jam dari sekarang."
+                    },
+                    "old": {
+                        "service_type": service_type,
+                        "groomer_id": groomer_id,
+                        "tanggal": tanggal_raw,
+                        "waktu_mulai": waktu_mulai_raw,
+                        "alamat": alamat,
+                        "catatan": catatan,
+                        "booking_payload": payload_raw,
+                    },
+                }
+            )
+            return render(request, "booking/create.html", context, status=409)
 
         if not is_slot_available(locked_groomer.id, tanggal, total_durasi, service_type, waktu_mulai):
             context.update(
@@ -830,6 +852,10 @@ def reschedule_booking_submit(request, booking_id):
         waktu_mulai = datetime.strptime(waktu_mulai_raw, "%H:%M").time()
     except ValueError as e:
         messages.error(request, f"Format tanggal atau waktu tidak valid: {str(e)}")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    if not meets_minimum_lead_time(tanggal, waktu_mulai):
+        messages.error(request, "Booking/reschedule hanya bisa dipilih minimal H+2 jam dari sekarang.")
         return redirect("booking:reschedule_booking", booking_id=booking_id)
 
     if booking.original_tanggal is None:
