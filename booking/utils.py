@@ -132,6 +132,18 @@ def can_fit_in_working_hours(date_obj, start_time: time, duration_minutes: int, 
     return buffered.start >= visible_start and buffered.end <= visible_end
 
 
+def meets_minimum_lead_time(date_obj, start_time: time, lead_hours: int = 2) -> bool:
+    today = timezone.localdate()
+    if date_obj > today:
+        return True
+    if date_obj < today:
+        return False
+
+    min_dt = round_up_to_next_slot(timezone.localtime() + timedelta(hours=lead_hours))
+    requested_start_dt = _as_datetime(date_obj, start_time)
+    return requested_start_dt >= _as_datetime(date_obj, min_dt.time())
+
+
 def calculate_end_time(start_time: time, duration_minutes: int, date_obj=None) -> time:
     if date_obj is None:
         date_obj = timezone.localdate()
@@ -181,6 +193,9 @@ def is_slot_available(groomer_id: int, date_obj, duration_minutes: int, service_
         return False
 
     if duration_minutes <= 0:
+        return False
+
+    if not meets_minimum_lead_time(date_obj, start_time):
         return False
 
     if not can_fit_in_working_hours(date_obj, start_time, duration_minutes, service_type):
