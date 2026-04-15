@@ -11,13 +11,15 @@ from django.utils import timezone
 from booking.models import Booking
 
 
+WORKING_DAYS = [1, 2, 3, 4, 5, 6]  # Tuesday(1) to Sunday(6)
 WORK_START = time(8, 0)
 WORK_END = time(17, 0)
-OFF_DAY = 0  # Monday
-SLOT_MINUTES = 30
+OFF_DAY = 0  # Monday (kept for backward compatibility)
+SLOT_DURATION = 30
+SLOT_MINUTES = SLOT_DURATION
 HOME_BUFFER_MINUTES = 30
 MAX_BOOKING_DAYS = 7
-CLINIC_ADDRESS = "PitPet Clinic - Jl. PitPet No. 123, Jakarta"
+CLINIC_ADDRESS = "Ruko BIBC, Jl. Karang Tengah Raya No.RT06/06, Lb. Bulus, Kec. Cilandak, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12440"
 TRANSPORT_FEES = [
     {"range": "0-10 km", "fee": 0},
     {"range": "11-20 km", "fee": 25000},
@@ -56,6 +58,33 @@ def round_up_to_next_slot(dt: datetime) -> datetime:
     add_minutes = SLOT_MINUTES - remainder
     rounded = dt + timedelta(minutes=add_minutes)
     return rounded.replace(second=0, microsecond=0)
+
+
+def is_working_day(date_obj) -> bool:
+    return date_obj.weekday() in WORKING_DAYS
+
+
+def get_first_bookable_date():
+    """Return earliest selectable date based on day-off and same-day +2h rule."""
+    today = timezone.localdate()
+    max_date = today + timedelta(days=MAX_BOOKING_DAYS)
+
+    current = today
+    while current <= max_date:
+        if not is_working_day(current):
+            current += timedelta(days=1)
+            continue
+
+        if current == today:
+            min_dt = round_up_to_next_slot(timezone.localtime() + timedelta(hours=2))
+            # If min start already reaches/passes work end, skip today entirely.
+            if min_dt.time() >= WORK_END:
+                current += timedelta(days=1)
+                continue
+
+        return current
+
+    return today
 
 
 def get_package_price_for_pet(package, pet) -> Decimal:
@@ -148,7 +177,7 @@ def _active_booking_qs(groomer_id: int, date_obj) -> QuerySet[Booking]:
 
 
 def is_slot_available(groomer_id: int, date_obj, duration_minutes: int, service_type: str, start_time: time) -> bool:
-    if date_obj.weekday() == OFF_DAY:
+    if not is_working_day(date_obj):
         return False
 
     if duration_minutes <= 0:
@@ -169,7 +198,7 @@ def is_slot_available(groomer_id: int, date_obj, duration_minutes: int, service_
 
 
 def get_available_slots(groomer_id: int, date_obj, duration_minutes: int, service_type: str) -> list[dict[str, str]]:
-    if date_obj.weekday() == OFF_DAY:
+    if not is_working_day(date_obj):
         return []
 
     if duration_minutes <= 0:

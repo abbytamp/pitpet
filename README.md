@@ -1,47 +1,98 @@
-1.⁠ ⁠README utama (root repository)
+# Sistem Manajemen Layanan Grooming PitPet
+Amirah Rizkita Setiadji
+2306275235
 
-Project PitPet - Sistem Manajemen Klinik Hewan
+## Fitur 5: Manajemen Booking Grooming
 
-Proyek ini adalah sistem manajemen appointment dan grooming berbasis web untuk Klinik Hewan PitPet. Backend menggunakan Django, frontend menggunakan t
+### Deskripsi Fitur
+Fitur **Manajemen Booking Grooming** memungkinkan customer untuk melakukan booking layanan grooming bagi hewan peliharaan mereka. Sistem ini mencakup berbagai langkah mulai dari pemilihan hewan, jenis layanan, paket grooming, hingga pemilihan groomer dan slot waktu. Setelah booking berhasil dibuat, sistem akan menampilkan ringkasan booking yang mencakup ID booking, tanggal, waktu, lokasi, dan total harga. Selain itu, customer dapat melakukan **reschedule** dan **cancel** booking sesuai kebutuhan.
 
-# Instalasi
-1.⁠ ⁠Clone repository
-git clone https://gitlab.cs.ui.ac.id/propensi-2025-2026-genap/kelas-c/kotwis-based/kotwis-based-project-pitpet.git
+### Aktor yang Terlibat
+- **Customer**: Dapat melakukan booking, reschedule, dan cancel booking grooming.
+- **Staf Operasional**: Dapat melihat, mengupdate, dan membatalkan booking sesuai kebutuhan operasional.
+- **Manager**: Dapat melihat riwayat dan daftar booking untuk kebutuhan monitoring.
 
-2.⁠ ⁠Buat virtual environment
-python -m venv venv
-source venv/bin/activate  (Linux/Mac)
-venv\Scripts\activate (Windows)
+### Alur Kerja Fitur
+1. **Create Booking** (Role: Customer)
+   - **Login** ke sistem dan memilih **hewan peliharaan** untuk grooming.
+   - Memilih **jenis layanan** (Home atau Clinic).
+   - Memilih **paket grooming** yang diinginkan.
+   - **Memilih slot jadwal** dan **groomer** yang tersedia.
+   - Mengisi **detail tambahan** sesuai jenis layanan (alamat  dan catatan jika home grooming, catatan jika clinic).
+   - **Konfirmasi booking** dan menampilkan **ringkasan booking**.
 
-3.⁠ ⁠Install dependencies
-pip install -r requirements.txt
+2. **Read Booking**
+   - Customer dapat **melihat daftar booking** mereka dan **detail booking**.
+   - Staf operasional dan manager dapat melihat seluruh **daftar booking** untuk kebutuhan monitoring.
 
-4.⁠ ⁠Migrasi database
-python manage.py migrate
+3. **Update Booking (Reschedule)**
+   - Customer dapat **reschedule** booking dengan memilih slot baru yang tersedia.
+   - Sistem memvalidasi slot baru dan memperbarui status booking.
 
-5.⁠ ⁠Jalankan server
-python manage.py runserver
+4. **Delete Booking (Cancel)**
+   - Customer dapat **membatalkan booking** sesuai aturan yang disepakati.
+   - Pembatalan booking mengubah status menjadi **cancelled** dan mengosongkan slot untuk bisa dipilih customer lain.
 
-6.⁠ ⁠Akses aplikasi di browser
-http://127.0.0.1:8000/
+### Aturan Bisnis (Business Rules)
+- Booking hanya dapat dibuat pada slot yang statusnya **tersedia**.
+- Groomer yang dapat dipilih harus sesuai dengan jenis layanan yang dipilih oleh customer.
+- Reschedule hanya bisa dilakukan ke slot yang **tersedia**.
+- Pembatalan akan mengosongkan slot yang sebelumnya terpakai.
+- **Status booking**:
+  - **Scheduled**: Booking dibuat.
+  - **Cancelled**: Booking dibatalkan.
+  - **Completed**: Layanan selesai.
+  - **In Progress**: Saat layanan sedang berlangsung.
+  - **Rescheduled**: Jika jadwal diubah.
 
-# Struktur Direktori
-/backend -> kode Django (apps, models, views, urls)
-/templates -> template HTML untuk frontend
-/static -> CSS, JS, image
-/manage.py -> file utama Django
-/requirements.txt -> dependencies Python
-/README.md -> berisi beberapa panduan
+### Keterkaitan dengan Fitur Lain
+- Menggunakan **slot dari fitur manajemen jadwal kerja dan slot grooming**.
+- Status layanan akan diperbarui melalui **fitur dashboard groomer** dan update status layanan.
+- **Booking yang selesai** akan masuk ke **riwayat layanan per hewan**.
 
-# Branching & Workflow
-•⁠  ⁠main -> branch produksi/stable
-•⁠  ⁠development -> branch untuk integrasi fitur
-•⁠  ⁠staging → branch testing sebelum merge ke main
-•⁠  ⁠Branch individu -> untuk mengerjakan backlog/fitur masing-masing
+---
 
-# Kontributor
-•⁠  ⁠Branch “feature-devina” 
-•⁠  ⁠Branch “feature-abby”
-•⁠  ⁠Branch “feature-amirah”
-•⁠  ⁠Branch “feature-salsabila”
-•⁠  ⁠Branch “feature-aliyah”
+## Fitur 7: Riwayat Layanan per Hewan
+
+### Deskripsi Fitur
+Fitur **Riwayat Layanan per Hewan** memungkinkan customer dan staf operasional untuk melihat riwayat layanan grooming yang telah dilakukan pada hewan peliharaan. Riwayat ini bersifat **read-only** dan hanya menampilkan data historis dari layanan grooming yang sudah selesai. Fitur ini membantu customer untuk melihat **rekam jejak perawatan** hewan mereka, serta membantu staf operasional dalam menelusuri riwayat layanan jika terjadi keluhan atau untuk analisis lebih lanjut.
+
+### Aktor yang Terlibat
+- **Customer**: Dapat melihat riwayat layanan grooming untuk hewan peliharaannya.
+- **Staf Operasional**: Dapat melihat riwayat layanan untuk seluruh hewan dalam sistem untuk keperluan monitoring.
+- **Groomer**: Mencatat hasil layanan grooming, yang kemudian akan disimpan dalam riwayat layanan.
+
+### Alur Kerja Fitur
+1. **Tampilan Daftar Riwayat per Hewan**
+   - Customer dapat memilih salah satu hewan miliknya.
+   - Sistem menampilkan daftar **riwayat layanan grooming** yang telah selesai, mencakup:
+     - Tanggal grooming
+     - Jenis layanan (Home / Clinic)
+     - Nama groomer
+     - Paket grooming
+     - Status (Completed)
+
+2. **Detail Riwayat Layanan**
+   - Jika customer memilih salah satu histori, sistem akan menampilkan **detail layanan**, termasuk:
+     - Tanggal dan jam layanan
+     - Jenis layanan (Home / Clinic)
+     - Paket grooming
+     - Nama groomer
+     - Catatan hasil grooming dari groomer, seperti:
+       - Kondisi bulu
+       - Kondisi kulit
+       - Kebersihan telinga
+       - Kondisi kuku
+       - Perilaku hewan
+       - Catatan tambahan
+
+### Aturan Bisnis (Business Rules)
+- **Riwayat hanya menampilkan layanan grooming dengan status "Completed"**.
+- Customer hanya dapat melihat riwayat untuk **hewan miliknya sendiri**.
+- Staf operasional dapat melihat riwayat layanan dari **seluruh hewan** untuk keperluan monitoring.
+- Data riwayat tidak dapat diubah oleh **customer**.
+
+### Keterkaitan dengan Fitur Lain
+- Data riwayat layanan bersumber dari **fitur eksekusi dan dokumentasi layanan grooming**.
+- Riwayat layanan hanya muncul setelah **layanan selesai** dan **catatan grooming tersimpan**.
+- Data riwayat digunakan sebagai dasar untuk **laporan operasional dan statistik**.

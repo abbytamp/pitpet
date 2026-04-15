@@ -42,9 +42,11 @@ from booking.utils import (
     MAX_BOOKING_DAYS,
     TRANSPORT_FEES,
     calculate_end_time,
+    get_first_bookable_date,
     get_available_slots,
     get_package_price_for_pet,
     get_pet_animal_type,
+    is_working_day,
     is_slot_available,
 )
 from packages.models import Package
@@ -68,6 +70,21 @@ def staff_booking_schedule(request):
     else:
         tanggal = timezone.localdate()
 
+    is_off_day = tanggal.weekday() == 0
+
+    if is_off_day:
+        return render(
+            request,
+            'booking/staff_booking_schedule_list.html',
+            {
+                'groomers': [],
+                'groomer_schedules': {},
+                'service_type': service_type,
+                'tanggal': tanggal.strftime('%Y-%m-%d'),
+                'is_off_day': True,
+            },
+        )
+
     # Ambil semua groomer aktif untuk tipe layanan
     groomers = Groomer.objects.select_related('user').filter(service_type=service_type, is_deleted=False)
 
@@ -81,64 +98,92 @@ def staff_booking_schedule(request):
         current += timedelta(minutes=SLOT_MINUTES)
 
     # Ambil semua booking pada tanggal & tipe layanan
-    bookings = (Booking.objects.filter(
-        tanggal=tanggal,
-        service_type=service_type,
-        groomer__in=groomers
-    ).select_related('customer', 'groomer', 'groomer__user')
-    .prefetch_related('items__pet', 'items__package')
+    bookings = (
+        Booking.objects.filter(
+            tanggal=tanggal,
+            service_type=service_type,
+            groomer__in=groomers,
+        )
+        .select_related('customer', 'groomer', 'groomer__user')
+        .prefetch_related('items__pet', 'items__package')
     )
 
-    # --- Untuk tampilan list: satu kotak per booking, slot kosong tetap muncul ---
-    from collections import defaultdict
+    def _slot_in_working_hours(slot_str):
+        return slot_str in slot_times
+
     groomer_schedules = {}
     for groomer in groomers:
-        # Ambil semua booking untuk groomer ini, urutkan mulai
-        groomer_bookings = [b for b in bookings if b.groomer_id == groomer.id and b.status == Booking.Status.SCHEDULED]
-        groomer_bookings.sort(key=lambda b: b.waktu_mulai)
+        groomer_bookings = [
+            booking
+            for booking in bookings
+            if booking.groomer_id == groomer.id and booking.status != Booking.Status.CANCELLED
+        ]
+        groomer_bookings.sort(key=lambda booking: booking.waktu_mulai)
+
+        booking_start_map = {}
+        buffer_map = {}
+        hidden_slots = set()
+
+        for booking in groomer_bookings:
+            start_str = booking.waktu_mulai.strftime('%H:%M')
+            end_str = booking.waktu_selesai.strftime('%H:%M')
+            booking_start_map[start_str] = booking
+
+            current_time = datetime.combine(tanggal, booking.waktu_mulai) + timedelta(minutes=SLOT_MINUTES)
+            booking_end = datetime.combine(tanggal, booking.waktu_selesai)
+            while current_time < booking_end:
+                hidden_slots.add(current_time.strftime('%H:%M'))
+                current_time += timedelta(minutes=SLOT_MINUTES)
+
+            if booking.service_type == Booking.ServiceType.HOME:
+                before_slot = (datetime.combine(tanggal, booking.waktu_mulai) - timedelta(minutes=SLOT_MINUTES)).strftime('%H:%M')
+                after_slot = end_str
+
+                if _slot_in_working_hours(before_slot):
+                    buffer_map.setdefault(before_slot, set()).add(booking.booking_code)
+                if _slot_in_working_hours(after_slot):
+                    buffer_map.setdefault(after_slot, set()).add(booking.booking_code)
+
         schedule = []
-        slot_idx = 0
-        while slot_idx < len(slot_times):
-            slot_time = slot_times[slot_idx]
-            # Cek apakah ada booking yang mulai di slot ini
-            found = False
-            for booking in groomer_bookings:
-                start = booking.waktu_mulai.strftime('%H:%M')
-                end = booking.waktu_selesai.strftime('%H:%M')
-                if slot_time == start:
-                    # Hitung durasi dalam slot
-                    start_idx = slot_idx
-                    try:
-                        end_idx = slot_times.index(end)
-                    except ValueError:
-                        end_idx = len(slot_times)
-                    duration = end_idx - start_idx
-                    # Ambil info booking
-                    if booking.items.exists():
-                        pet_names = [item.pet.name for item in booking.items.all()]
-                        pet_name_display = ' + '.join(pet_names)
-                    else:
-                        pet_name_display = "-"
-                    schedule.append({
-                        'type': 'booking',
-                        'start': start,
-                        'end': end,
-                        'customer': booking.customer,
-                        'pet_name': pet_name_display,
-                        'status_display': booking.get_status_display(),
-                        'payment_status_display': booking.get_payment_status_display(),
-                        'booking_id': booking.id,
-                    })
-                    slot_idx += duration
-                    found = True
-                    break
-            if not found:
-                # Slot kosong
+        for slot_time in slot_times:
+            if slot_time in hidden_slots:
+                continue
+
+            booking = booking_start_map.get(slot_time)
+            if booking:
+                if booking.items.exists():
+                    pet_names = [item.pet.name for item in booking.items.all()]
+                    pet_name_display = ' + '.join(pet_names)
+                else:
+                    pet_name_display = '-'
+
                 schedule.append({
-                    'type': 'available',
-                    'start': slot_time,
+                    'type': 'booking',
+                    'start': booking.waktu_mulai.strftime('%H:%M'),
+                    'end': booking.waktu_selesai.strftime('%H:%M'),
+                    'customer': booking.customer,
+                    'pet_name': pet_name_display,
+                    'status_display': booking.get_status_display(),
+                    'payment_status_display': booking.get_payment_status_display(),
+                    'booking_id': booking.id,
                 })
-                slot_idx += 1
+                continue
+
+            booking_codes = sorted(buffer_map.get(slot_time, set()))
+            if booking_codes:
+                schedule.append({
+                    'type': 'buffer',
+                    'start': slot_time,
+                    'booking_codes': booking_codes,
+                    'booking_label': booking_codes[0] if len(booking_codes) == 1 else 'Buffer',
+                })
+                continue
+
+            schedule.append({
+                'type': 'available',
+                'start': slot_time,
+            })
+
         groomer_schedules[groomer.id] = schedule
 
     context = {
@@ -146,6 +191,7 @@ def staff_booking_schedule(request):
         'groomer_schedules': groomer_schedules,
         'service_type': service_type,
         'tanggal': tanggal.strftime('%Y-%m-%d'),
+        'is_off_day': False,
     }
     return render(request, 'booking/staff_booking_schedule_list.html', context)
 
@@ -259,18 +305,36 @@ def _to_int(value, default=0):
         return default
 
 
+ACTIVE_BOOKING_STATUSES = [
+    Booking.Status.SCHEDULED,
+    Booking.Status.SERVICE_STARTED,
+]
+
+
 @login_required
 def booking_create(request):
     if not _is_customer(request.user):
         return redirect("login")
 
     pets = Pet.objects.filter(owner=request.user).order_by("name")
+    blocked_pet_ids = set(
+        BookingItem.objects.filter(
+            booking__customer=request.user,
+        )
+        .filter(
+            models.Q(booking__status__in=ACTIVE_BOOKING_STATUSES)
+            | models.Q(booking__status=Booking.Status.SERVICE_COMPLETED, booking__payment_status=Booking.PaymentStatus.UNPAID)
+        )
+        .values_list("pet_id", flat=True)
+        .distinct()
+    )
 
     context = {
         "pets": pets,
+        "blocked_pet_ids": blocked_pet_ids,
         "clinic_address": CLINIC_ADDRESS,
         "transport_fees": TRANSPORT_FEES,
-        "min_date": timezone.localdate().isoformat(),
+        "min_date": get_first_bookable_date().isoformat(),
         "max_date": (timezone.localdate() + timedelta(days=MAX_BOOKING_DAYS)).isoformat(),
         "errors": {},
     }
@@ -319,6 +383,9 @@ def booking_create(request):
     if selected_pet_ids and len(customer_pets) != len(set(selected_pet_ids)):
         errors["booking_payload"] = "Anda hanya dapat mem-booking hewan milik Anda sendiri."
 
+    if selected_pet_ids and blocked_pet_ids.intersection(selected_pet_ids):
+        errors["booking_payload"] = "Salah satu hewan yang dipilih sedang memiliki booking aktif."
+
     groomer = None
     if groomer_id:
         groomer = (
@@ -341,6 +408,8 @@ def booking_create(request):
             max_date = today + timedelta(days=MAX_BOOKING_DAYS)
             if tanggal < today or tanggal > max_date:
                 errors["tanggal"] = "Tanggal booking harus antara hari ini hingga 7 hari ke depan."
+            elif not is_working_day(tanggal):
+                errors["tanggal"] = "Hari Senin libur. Silakan pilih tanggal lain."
         except ValueError:
             errors["tanggal"] = "Format tanggal tidak valid."
 
@@ -557,6 +626,54 @@ def booking_success(request, booking_id: int):
     )
 
 
+@login_required
+def booking_detail(request, booking_id: int):
+    if not _is_customer(request.user):
+        return redirect("login")
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("customer", "groomer", "groomer__user")
+        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
+        id=booking_id,
+    )
+
+    if booking.customer_id != request.user.id:
+        return HttpResponseForbidden("403 Forbidden: booking ini bukan milik Anda.")
+
+    return render(
+        request,
+        "booking/detail.html",
+        {
+            "booking": booking,
+            "clinic_address": CLINIC_ADDRESS,
+        },
+    )
+
+
+@login_required
+def cancel_booking(request, booking_id):
+    if not _is_customer(request.user):
+        return redirect("login")
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("groomer", "groomer__user"),
+        id=booking_id,
+        customer=request.user,
+    )
+
+    if booking.status != Booking.Status.SCHEDULED:
+        messages.error(request, "Booking tidak dapat dibatalkan.")
+        return redirect("booking:detail", booking_id=booking.id)
+
+    if request.method == "POST":
+        booking.status = Booking.Status.CANCELLED
+        booking.save(update_fields=["status", "updated_at"])
+        messages.success(request, "Booking berhasil dibatalkan.")
+        return redirect("booking:my_bookings")
+
+    return render(request, "booking/cancel_confirm.html", {"booking": booking})
+
+
 
 # Halaman booking aktif (tidak cancelled)
 @login_required
@@ -643,6 +760,14 @@ def api_reschedule_slots(request, booking_id):
     if date_obj < today or date_obj > today + timedelta(days=MAX_BOOKING_DAYS):
         return JsonResponse({"error": "Tanggal di luar range booking."}, status=400)
 
+    if not is_working_day(date_obj):
+        return JsonResponse(
+            {
+                "slots": [],
+                "message": "Hari Senin libur. Silakan pilih tanggal lain.",
+            }
+        )
+
     groomer = booking.groomer
     duration = booking.total_durasi
     service_type = booking.service_type
@@ -706,6 +831,11 @@ def reschedule_booking_submit(request, booking_id):
     except ValueError as e:
         messages.error(request, f"Format tanggal atau waktu tidak valid: {str(e)}")
         return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    if booking.original_tanggal is None:
+        booking.original_tanggal = booking.tanggal
+        booking.original_waktu_mulai = booking.waktu_mulai
+        booking.original_waktu_selesai = booking.waktu_selesai
 
     if not is_slot_available(booking.groomer.id, tanggal, booking.total_durasi, booking.service_type, waktu_mulai):
         messages.error(request, "Slot yang dipilih sudah terisi. Silakan pilih waktu lain.")
@@ -1032,6 +1162,14 @@ def api_slots(request):
     if date_obj < today or date_obj > today + timedelta(days=MAX_BOOKING_DAYS):
         return JsonResponse({"error": "Tanggal di luar range booking."}, status=400)
 
+    if not is_working_day(date_obj):
+        return JsonResponse(
+            {
+                "slots": [],
+                "message": "Hari Senin libur. Silakan pilih tanggal lain.",
+            }
+        )
+
     groomer = (
         Groomer.objects.select_related("user")
         .filter(id=groomer_id, service_type=service_type, user__is_active=True)
@@ -1044,7 +1182,7 @@ def api_slots(request):
     return JsonResponse(
         {
             "slots": slots,
-            "message": ""
+            "message": None
             if slots
             else "Tidak ada slot tersedia untuk groomer ini pada tanggal tersebut, silakan pilih tanggal atau groomer lain.",
         }
