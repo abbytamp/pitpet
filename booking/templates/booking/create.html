@@ -3,10 +3,18 @@
 {% block title %}Booking Grooming{% endblock title %}
 
 {% block content %}
-<section class="max-w-6xl mx-auto px-4 py-8">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Buat Booking Grooming</h1>
-        <p class="text-gray-600 mt-1">Pilih layanan, hewan, paket, groomer, dan slot waktu.</p>
+<section class="max-w-3xl mx-auto px-4 py-8">
+    <div class="mb-6 flex items-start justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Booking Grooming</h1>
+            <p class="text-gray-600 mt-1">Book a grooming session for your pets</p>
+        </div>
+        <div class="h-10 w-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 bg-white" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21a8 8 0 0 0-16 0"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
     </div>
 
     <form method="post" id="bookingForm" class="space-y-6">
@@ -16,55 +24,71 @@
         <input type="hidden" id="waktuMulaiInput" name="waktu_mulai" value="{{ old.waktu_mulai|default:'' }}">
 
         <div class="bg-white border rounded-xl p-5">
-            <h2 class="font-semibold text-lg">1. Jenis Layanan</h2>
-            <div class="mt-3 flex flex-wrap gap-3">
-                <label class="inline-flex items-center gap-2">
-                    <input type="radio" name="service_type" value="clinic" class="service-type" {% if old.service_type == 'clinic' %}checked{% endif %}>
-                    <span>Clinic</span>
-                </label>
-                <label class="inline-flex items-center gap-2">
-                    <input type="radio" name="service_type" value="home" class="service-type" {% if old.service_type == 'home' %}checked{% endif %}>
-                    <span>Home</span>
-                </label>
+            <label class="block text-sm font-medium text-gray-700">Jenis Layanan</label>
+            <select id="serviceTypeSelect" class="mt-1 w-full border rounded-xl px-3 py-2">
+                <option value="">Select</option>
+                <option value="clinic" {% if old.service_type == 'clinic' %}selected{% endif %}>Clinic Service</option>
+                <option value="home" {% if old.service_type == 'home' %}selected{% endif %}>Home Service</option>
+            </select>
+            <div class="hidden">
+                <input type="radio" name="service_type" value="clinic" class="service-type" {% if old.service_type == 'clinic' %}checked{% endif %}>
+                <input type="radio" name="service_type" value="home" class="service-type" {% if old.service_type == 'home' %}checked{% endif %}>
             </div>
             {% if errors.service_type %}
             <p class="text-sm text-red-600 mt-2">{{ errors.service_type }}</p>
             {% endif %}
 
-            <div id="clinicInfo" class="mt-4 p-3 rounded-lg bg-blue-50 text-sm hidden">
+            <div id="clinicInfo" class="mt-4 p-3 rounded-lg border bg-blue-50 text-sm hidden">
                 <p class="font-medium text-blue-900">Alamat Klinik PitPet</p>
                 <p class="text-blue-800">{{ clinic_address }}</p>
             </div>
 
-            <div id="homeInfo" class="mt-4 p-3 rounded-lg bg-amber-50 text-sm hidden space-y-3">
-                <div>
-                    <p class="font-medium text-amber-900">Tabel Ongkir Home Service</p>
-                    <ul class="mt-2 space-y-1 text-amber-800">
-                        {% for fee in transport_fees %}
-                        <li>{{ fee.range }}: Rp {{ fee.fee|floatformat:0 }}</li>
-                        {% endfor %}
-                    </ul>
-                    <p class="text-xs text-amber-700 mt-2">Ongkir tidak dihitung di total harga booking.</p>
+            <div id="homeFeeInfo" class="mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50 text-sm hidden">
+                <div class="flex items-start gap-2">
+                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-200 text-amber-900 text-xs font-bold">!</span>
+                    <div>
+                        <p class="font-semibold text-amber-900">Transport Fee</p>
+                        <p class="text-amber-800 mt-1">Jarak dari PitPet Clinic via Google Maps</p>
+                    </div>
                 </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Alamat Home Service</label>
-                    <textarea name="alamat" id="alamatInput" rows="3" class="mt-1 w-full border rounded-lg px-3 py-2">{{ old.alamat|default:'' }}</textarea>
-                    {% if errors.alamat %}
-                    <p class="text-sm text-red-600 mt-1">{{ errors.alamat }}</p>
-                    {% endif %}
+                <div class="mt-3 border border-amber-200 rounded-lg overflow-hidden">
+                    <table class="w-full text-left text-amber-900">
+                        <tbody>
+                            {% for fee in transport_fees %}
+                            <tr class="border-b border-amber-200 last:border-b-0">
+                                <td class="px-3 py-2">{{ fee.range }}</td>
+                                <td class="px-3 py-2 font-medium">
+                                    {% if fee.fee == 0 %}
+                                    Gratis
+                                    {% else %}
+                                    Rp {{ fee.fee|floatformat:0 }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
         <div class="bg-white border rounded-xl p-5">
-            <h2 class="font-semibold text-lg">2. Pilih Hewan</h2>
-            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <label class="block text-sm font-medium text-gray-700">Hewan</label>
+            <button type="button" id="petSelectButton" class="mt-1 w-full border rounded-xl px-3 py-2 text-left text-sm text-gray-700 flex justify-between items-center">
+                <span id="petSelectLabel">Select</span>
+                <span class="text-gray-400">&#9662;</span>
+            </button>
+            <div id="petDropdownPanel" class="mt-2 border rounded-xl p-3 space-y-2 hidden max-h-56 overflow-y-auto">
                 {% for pet in pets %}
-                <label class="border rounded-lg p-3 flex items-start gap-2">
-                    <input type="checkbox" class="pet-checkbox mt-1" value="{{ pet.id }}" data-pet-name="{{ pet.name }}" data-pet-jenis="{{ pet.jenis|lower }}" data-pet-berat="{{ pet.berat }}">
+                <label class="border rounded-lg p-3 flex items-start gap-2 {% if pet.id in blocked_pet_ids %}bg-gray-100 text-gray-500 cursor-not-allowed{% else %}cursor-pointer{% endif %}">
+                    <input type="checkbox" class="pet-checkbox mt-1" value="{{ pet.id }}" data-pet-name="{{ pet.name }}" data-pet-jenis="{{ pet.jenis|lower }}" data-pet-berat="{{ pet.berat }}" {% if pet.id in blocked_pet_ids %}disabled{% endif %}>
                     <span class="text-sm">
-                        <span class="font-medium block">{{ pet.name }}</span>
+                        <span class="font-medium block">
+                            {{ pet.name }}
+                            {% if pet.id in blocked_pet_ids %}
+                            <span class="ml-1 text-xs font-normal text-amber-700">(ada booking aktif)</span>
+                            {% endif %}
+                        </span>
                         <span class="text-gray-600">{{ pet.jenis }} | {{ pet.berat }} kg</span>
                     </span>
                 </label>
@@ -80,12 +104,10 @@
         <div id="perPetContainer" class="space-y-4"></div>
 
         <div class="bg-white border rounded-xl p-5 space-y-4">
-            <h2 class="font-semibold text-lg">4. Groomer & Jadwal</h2>
-
             <div>
                 <label class="block text-sm font-medium text-gray-700">Groomer</label>
-                <select name="groomer_id" id="groomerSelect" class="mt-1 w-full border rounded-lg px-3 py-2">
-                    <option value="">Pilih groomer</option>
+                <select name="groomer_id" id="groomerSelect" class="mt-1 w-full border rounded-xl px-3 py-2">
+                    <option value="">Select</option>
                 </select>
                 {% if errors.groomer_id %}
                 <p class="text-sm text-red-600 mt-1">{{ errors.groomer_id }}</p>
@@ -94,14 +116,14 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700">Tanggal</label>
-                <input type="date" name="tanggal" id="tanggalInput" class="mt-1 w-full border rounded-lg px-3 py-2" min="{{ min_date }}" max="{{ max_date }}" value="{{ old.tanggal|default:'' }}">
+                <input type="date" name="tanggal" id="tanggalInput" class="mt-1 w-full border rounded-xl px-3 py-2" min="{{ min_date }}" max="{{ max_date }}" value="{{ old.tanggal|default:'' }}">
                 {% if errors.tanggal %}
                 <p class="text-sm text-red-600 mt-1">{{ errors.tanggal }}</p>
                 {% endif %}
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Slot Tersedia</label>
+            <div id="slotSection" class="hidden">
+                <label class="block text-sm font-medium text-gray-700">Pilih Slot</label>
                 <div id="slotContainer" class="mt-2 flex flex-wrap gap-2"></div>
                 <p id="slotMessage" class="text-sm text-gray-600 mt-2">Pilih layanan, hewan, groomer, dan tanggal untuk melihat slot.</p>
                 {% if errors.waktu_mulai %}
@@ -109,18 +131,30 @@
                 {% endif %}
             </div>
 
+            <div id="alamatSection" class="hidden">
+                <label class="block text-sm font-medium text-gray-700">Alamat</label>
+                <textarea name="alamat" id="alamatInput" rows="3" class="mt-1 w-full border rounded-xl px-3 py-2" placeholder="Masukkan alamat lengkap home service">{{ old.alamat|default:'' }}</textarea>
+                {% if errors.alamat %}
+                <p class="text-sm text-red-600 mt-1">{{ errors.alamat }}</p>
+                {% endif %}
+            </div>
+
             <div>
-                <label class="block text-sm font-medium text-gray-700">Catatan (opsional)</label>
-                <textarea name="catatan" id="catatanInput" rows="3" class="mt-1 w-full border rounded-lg px-3 py-2">{{ old.catatan|default:'' }}</textarea>
+                <label class="block text-sm font-medium text-gray-700">Catatan *opsional</label>
+                <textarea name="catatan" id="catatanInput" rows="3" class="mt-1 w-full border rounded-xl px-3 py-2" placeholder="Tambahkan catatan jika diperlukan">{{ old.catatan|default:'' }}</textarea>
             </div>
         </div>
 
-        <div class="bg-white border rounded-xl p-5">
-            <h2 class="font-semibold text-lg">9. Ringkasan</h2>
+        <div class="bg-white border rounded-xl p-5" id="summarySection">
+            <h2 class="font-semibold text-lg">Ringkasan</h2>
+            <div id="summaryAddressRow" class="mt-2 text-sm text-gray-700 hidden">
+                <span class="font-medium">Alamat:</span>
+                <span id="summaryAddressText" class="ml-1">-</span>
+            </div>
             <div id="summaryContainer" class="mt-3 space-y-3 text-sm text-gray-700"></div>
-            <p id="homePriceNote" class="mt-2 text-xs text-amber-700 hidden">*Harga belum termasuk ongkir</p>
+            <p id="homePriceNote" class="mt-2 text-xs italic text-amber-700 hidden">*harga belum termasuk ongkir</p>
             <div class="mt-3 border-t pt-3 flex justify-between font-semibold">
-                <span>Total Harga</span>
+                <span>Total</span>
                 <span id="summaryTotalPrice">Rp 0</span>
             </div>
             <div class="mt-1 flex justify-between text-sm text-gray-600">
@@ -129,42 +163,121 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-3">
-            <button type="submit" id="submitBtn" class="px-5 py-2 rounded-lg bg-indigo-600 text-white disabled:bg-gray-400" disabled>
-                Konfirmasi Booking
+        <div id="requiredHintBox" class="hidden w-full border border-red-200 bg-red-50 rounded-xl p-3 text-sm text-red-800">
+            <p class="font-medium">Field wajib belum lengkap:</p>
+            <ul id="requiredHintList" class="list-disc pl-5 mt-1 space-y-1"></ul>
+        </div>
+
+        <div class="flex items-center justify-center gap-3">
+            <button type="submit" id="submitBtn" class="px-6 py-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                Buat Booking
             </button>
             <a href="{% url 'customer_dashboard' %}" class="px-5 py-2 rounded-lg border">Kembali</a>
         </div>
     </form>
 </section>
 
+<div id="confirmModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 px-4">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-gray-100">
+        <div class="px-6 py-5 border-b">
+            <h3 class="text-xl font-semibold text-gray-900">Confirm your booking</h3>
+            <p class="text-sm text-gray-600 mt-1">Apakah Anda yakin dengan pesanan anda?</p>
+        </div>
+
+        <div class="px-6 py-5 max-h-[70vh] overflow-y-auto space-y-5">
+            <div class="border rounded-xl p-4 text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6">
+                    <p><span class="text-gray-500">Jenis Layanan:</span> <span id="modalServiceType" class="font-medium"></span></p>
+                    <p><span class="text-gray-500">Groomer:</span> <span id="modalGroomer" class="font-medium"></span></p>
+                    <p><span class="text-gray-500">Tanggal:</span> <span id="modalDate" class="font-medium"></span></p>
+                    <p><span class="text-gray-500">Jam:</span> <span id="modalTime" class="font-medium"></span></p>
+                    <p id="modalAlamatRow" class="sm:col-span-2 hidden"><span class="text-gray-500">Alamat:</span> <span id="modalAlamat" class="font-medium"></span></p>
+                    <p id="modalJadwalRow" class="sm:col-span-2 hidden"><span class="text-gray-500">Jadwal:</span> <span id="modalJadwal" class="font-medium">-</span></p>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="font-semibold text-gray-900">Rincian per Hewan</h4>
+                <div id="modalItems" class="mt-3 space-y-3"></div>
+            </div>
+
+            <div class="border-t pt-4">
+                <div class="flex justify-between font-semibold text-gray-900">
+                    <span>Total</span>
+                    <span id="modalTotal">Rp 0</span>
+                </div>
+                <p id="modalOngkirNote" class="mt-1 text-xs italic text-amber-700 hidden">*harga belum termasuk ongkir</p>
+            </div>
+
+            <div>
+                <p class="text-sm font-medium text-gray-700 mb-1">Catatan</p>
+                <div id="modalCatatan" class="border rounded-xl p-3 text-sm text-gray-700 bg-gray-50">-</div>
+            </div>
+        </div>
+
+        <div class="px-6 py-4 border-t flex justify-end gap-3">
+            <button type="button" id="modalCancelBtn" class="px-4 py-2 rounded-xl border border-gray-300 text-gray-700">Batal</button>
+            <button type="button" id="modalConfirmBtn" class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Konfirmasi</button>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
     const perPetContainer = document.getElementById('perPetContainer');
     const summaryContainer = document.getElementById('summaryContainer');
+    const summaryAddressRow = document.getElementById('summaryAddressRow');
+    const summaryAddressText = document.getElementById('summaryAddressText');
     const summaryTotalPrice = document.getElementById('summaryTotalPrice');
     const summaryTotalDuration = document.getElementById('summaryTotalDuration');
     const homePriceNote = document.getElementById('homePriceNote');
     const slotContainer = document.getElementById('slotContainer');
     const slotMessage = document.getElementById('slotMessage');
+    const slotSection = document.getElementById('slotSection');
+    const alamatSection = document.getElementById('alamatSection');
+    const homeFeeInfo = document.getElementById('homeFeeInfo');
     const groomerSelect = document.getElementById('groomerSelect');
     const tanggalInput = document.getElementById('tanggalInput');
+    const serviceTypeSelect = document.getElementById('serviceTypeSelect');
     const serviceTypeInputs = Array.from(document.querySelectorAll('.service-type'));
+    const petSelectButton = document.getElementById('petSelectButton');
+    const petSelectLabel = document.getElementById('petSelectLabel');
+    const petDropdownPanel = document.getElementById('petDropdownPanel');
     const petCheckboxes = Array.from(document.querySelectorAll('.pet-checkbox'));
     const submitBtn = document.getElementById('submitBtn');
+    const requiredHintBox = document.getElementById('requiredHintBox');
+    const requiredHintList = document.getElementById('requiredHintList');
     const bookingPayloadInput = document.getElementById('bookingPayload');
     const waktuMulaiInput = document.getElementById('waktuMulaiInput');
     const alamatInput = document.getElementById('alamatInput');
     const catatanInput = document.getElementById('catatanInput');
     const bookingForm = document.getElementById('bookingForm');
+    const confirmModal = document.getElementById('confirmModal');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+
+    const modalServiceType = document.getElementById('modalServiceType');
+    const modalGroomer = document.getElementById('modalGroomer');
+    const modalDate = document.getElementById('modalDate');
+    const modalTime = document.getElementById('modalTime');
+    const modalAlamat = document.getElementById('modalAlamat');
+    const modalAlamatRow = document.getElementById('modalAlamatRow');
+    const modalItems = document.getElementById('modalItems');
+    const modalTotal = document.getElementById('modalTotal');
+    const modalOngkirNote = document.getElementById('modalOngkirNote');
+    const modalCatatan = document.getElementById('modalCatatan');
 
     const state = {
         selectedServiceType: getSelectedServiceType(),
         selectedPetIds: new Set(),
         petConfigs: {},
+        petOptionsCache: {},
         selectedSlot: null,
         totalDuration: 0,
-        totalPrice: 0
+        totalPrice: 0,
+        summaryItems: [],
+        showRequiredHints: false,
+        slotRequestSeq: 0
     };
 
     const oldPayload = bookingPayloadInput.value;
@@ -173,7 +286,7 @@
             const parsed = JSON.parse(oldPayload);
             (parsed.items || []).forEach((item) => {
                 const checkbox = petCheckboxes.find((c) => Number(c.value) === Number(item.pet_id));
-                if (checkbox) {
+                if (checkbox && !checkbox.disabled) {
                     checkbox.checked = true;
                     state.selectedPetIds.add(Number(item.pet_id));
                     state.petConfigs[item.pet_id] = {
@@ -189,20 +302,50 @@
 
     initializePanels();
     onServiceTypeChange();
-    rebuildPetSections().then(() => {
-        recalculateSummary();
-        maybeLoadSlots();
+    updateSummaryMeta();
+    updatePetSelectLabel();
+    rebuildPetSections().then(async () => {
+        await recalculateSummary();
+        await maybeLoadSlots();
+    });
+
+    petSelectButton.addEventListener('click', () => {
+        petDropdownPanel.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!petDropdownPanel.contains(event.target) && !petSelectButton.contains(event.target)) {
+            petDropdownPanel.classList.add('hidden');
+        }
+    });
+
+    serviceTypeSelect.addEventListener('change', async () => {
+        const value = serviceTypeSelect.value;
+        serviceTypeInputs.forEach((input) => {
+            input.checked = input.value === value;
+        });
+        state.selectedServiceType = value;
+        state.selectedSlot = null;
+        waktuMulaiInput.value = '';
+        onServiceTypeChange();
+        updateSummaryMeta();
+        loadGroomers();
+        await recalculateSummary();
+        await maybeLoadSlots();
+        validateSubmit();
     });
 
     serviceTypeInputs.forEach((input) => {
-        input.addEventListener('change', () => {
+        input.addEventListener('change', async () => {
+            serviceTypeSelect.value = getSelectedServiceType();
             state.selectedServiceType = getSelectedServiceType();
             state.selectedSlot = null;
             waktuMulaiInput.value = '';
             onServiceTypeChange();
+            updateSummaryMeta();
             loadGroomers();
-            recalculateSummary();
-            maybeLoadSlots();
+            await recalculateSummary();
+            await maybeLoadSlots();
             validateSubmit();
         });
     });
@@ -222,56 +365,66 @@
 
             state.selectedSlot = null;
             waktuMulaiInput.value = '';
+            updatePetSelectLabel();
 
             await rebuildPetSections();
-            recalculateSummary();
-            maybeLoadSlots();
+            await recalculateSummary();
+            await maybeLoadSlots();
             validateSubmit();
         });
     });
 
-    groomerSelect.addEventListener('change', () => {
+    groomerSelect.addEventListener('change', async () => {
         state.selectedSlot = null;
         waktuMulaiInput.value = '';
-        maybeLoadSlots();
+        await maybeLoadSlots();
         validateSubmit();
     });
 
-    tanggalInput.addEventListener('change', () => {
+    tanggalInput.addEventListener('change', async () => {
+        enforceWorkingDate();
         state.selectedSlot = null;
         waktuMulaiInput.value = '';
-        maybeLoadSlots();
+        await maybeLoadSlots();
         validateSubmit();
     });
 
-    bookingForm.addEventListener('submit', (event) => {
-        recalculateSummary();
+    alamatInput.addEventListener('input', () => {
+        updateSummaryMeta();
+        validateSubmit();
+    });
+
+    alamatInput.addEventListener('change', () => {
+        updateSummaryMeta();
+        validateSubmit();
+    });
+
+    bookingForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await recalculateSummary();
         if (!isFormValid()) {
-            event.preventDefault();
+            state.showRequiredHints = true;
+            validateSubmit();
             return;
         }
 
         const payload = buildPayload();
         bookingPayloadInput.value = JSON.stringify(payload);
+        renderConfirmationModal();
+        openModal();
+    });
 
-        const lines = [];
-        lines.push('Konfirmasi Booking Grooming');
-        lines.push('--------------------------------');
-        lines.push(`Layanan: ${state.selectedServiceType}`);
-        lines.push(`Groomer ID: ${groomerSelect.value}`);
-        lines.push(`Tanggal: ${tanggalInput.value}`);
-        lines.push(`Jam Mulai: ${state.selectedSlot ? state.selectedSlot.start : ''}`);
-        lines.push(`Total Durasi: ${state.totalDuration} menit`);
-        lines.push(`Total Harga: Rp ${formatRupiah(state.totalPrice)}`);
-        if (state.selectedServiceType === 'home') {
-            lines.push(`Alamat: ${alamatInput.value.trim() || '-'}`);
+    modalCancelBtn.addEventListener('click', closeModal);
+    confirmModal.addEventListener('click', (event) => {
+        if (event.target === confirmModal) {
+            closeModal();
         }
-        lines.push(`Catatan: ${catatanInput.value.trim() || '-'}`);
+    });
 
-        const ok = window.confirm(lines.join('\n'));
-        if (!ok) {
-            event.preventDefault();
-        }
+    modalConfirmBtn.addEventListener('click', () => {
+        const payload = buildPayload();
+        bookingPayloadInput.value = JSON.stringify(payload);
+        bookingForm.submit();
     });
 
     function initializePanels() {
@@ -285,17 +438,58 @@
 
     function onServiceTypeChange() {
         const clinicInfo = document.getElementById('clinicInfo');
-        const homeInfo = document.getElementById('homeInfo');
         const serviceType = getSelectedServiceType();
 
         clinicInfo.classList.toggle('hidden', serviceType !== 'clinic');
-        homeInfo.classList.toggle('hidden', serviceType !== 'home');
+        homeFeeInfo.classList.toggle('hidden', serviceType !== 'home');
+        alamatSection.classList.toggle('hidden', serviceType !== 'home');
         homePriceNote.classList.toggle('hidden', serviceType !== 'home');
+    }
+
+    function updatePetSelectLabel() {
+        const names = petCheckboxes
+            .filter((checkbox) => checkbox.checked)
+            .map((checkbox) => checkbox.dataset.petName);
+        petSelectLabel.textContent = names.length ? names.join(', ') : 'Select';
+    }
+
+    function updateSummaryMeta() {
+        const serviceType = getSelectedServiceType();
+        const isHome = serviceType === 'home';
+        summaryAddressRow.classList.toggle('hidden', !isHome);
+        summaryAddressText.textContent = alamatInput.value.trim() || '-';
+    }
+
+    function isMondayDateValue(rawDate) {
+        if (!rawDate) {
+            return false;
+        }
+        const parts = rawDate.split('-');
+        if (parts.length !== 3) {
+            return false;
+        }
+        const year = Number(parts[0]);
+        const month = Number(parts[1]) - 1;
+        const day = Number(parts[2]);
+        const dateObj = new Date(year, month, day);
+        return dateObj.getDay() === 1;
+    }
+
+    function enforceWorkingDate() {
+        if (!tanggalInput.value) {
+            return;
+        }
+        if (isMondayDateValue(tanggalInput.value)) {
+            slotContainer.innerHTML = '';
+            state.selectedSlot = null;
+            waktuMulaiInput.value = '';
+            slotMessage.textContent = 'Hari Senin libur. Silakan pilih tanggal lain.';
+        }
     }
 
     async function loadGroomers() {
         const serviceType = getSelectedServiceType();
-        groomerSelect.innerHTML = '<option value="">Pilih groomer</option>';
+        groomerSelect.innerHTML = '<option value="">Select</option>';
         if (!serviceType) {
             return;
         }
@@ -309,12 +503,27 @@
         data.groomers.forEach((groomer) => {
             const option = document.createElement('option');
             option.value = groomer.id;
-            option.textContent = `${groomer.name} (${groomer.phone})`;
+            option.textContent = `${groomer.name}`;
             if (String(groomer.id) === '{{ old.groomer_id|default:"" }}') {
                 option.selected = true;
             }
             groomerSelect.appendChild(option);
         });
+    }
+
+    async function getPetOptions(petId) {
+        if (state.petOptionsCache[petId]) {
+            return state.petOptionsCache[petId];
+        }
+
+        const response = await fetch(`/booking/api/options/pet/?pet_id=${petId}`);
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || 'Gagal memuat opsi paket.');
+        }
+
+        state.petOptionsCache[petId] = data;
+        return data;
     }
 
     async function rebuildPetSections() {
@@ -329,17 +538,21 @@
             const section = document.createElement('div');
             section.className = 'bg-white border rounded-xl p-5';
             section.dataset.petId = String(petId);
+            const petSize = getPetSize(checkbox.dataset.petJenis, checkbox.dataset.petBerat);
             section.innerHTML = `
-                <h2 class="font-semibold text-lg">3. Paket untuk ${checkbox.dataset.petName}</h2>
-                <p class="text-sm text-gray-600 mt-1">Jenis hewan: ${checkbox.dataset.petJenis}</p>
+                <h2 class="font-semibold text-base flex items-center gap-2">
+                    <span aria-hidden="true">&#128062;</span>
+                    <span>${checkbox.dataset.petName} &middot; ${capitalize(checkbox.dataset.petJenis)}${petSize ? ', ' + petSize : ''}</span>
+                </h2>
                 <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700">Paket Grooming</label>
-                    <select class="mt-1 w-full border rounded-lg px-3 py-2 pet-package-select">
-                        <option value="">Pilih paket</option>
+                    <label class="block text-sm font-medium text-gray-700">Paket</label>
+                    <select class="mt-1 w-full border rounded-xl px-3 py-2 pet-package-select">
+                        <option value="">Select</option>
                     </select>
                 </div>
                 <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700">Additional Service (opsional)</label>
+                    <label class="block text-sm font-medium text-gray-700">Additional</label>
+                    <p class="text-xs text-gray-500 mt-1 additional-hint">Pilih paket grooming terlebih dahulu untuk membuka additional.</p>
                     <div class="mt-2 space-y-2 additional-list"></div>
                 </div>
             `;
@@ -349,9 +562,10 @@
             const packageSelect = section.querySelector('.pet-package-select');
             const additionalList = section.querySelector('.additional-list');
 
-            const response = await fetch(`/booking/api/options/pet/?pet_id=${petId}`);
-            const data = await response.json();
-            if (!response.ok) {
+            let data;
+            try {
+                data = await getPetOptions(petId);
+            } catch (error) {
                 additionalList.innerHTML = '<p class="text-sm text-red-600">Gagal memuat opsi paket.</p>';
                 continue;
             }
@@ -375,25 +589,42 @@
                     const checked = (state.petConfigs[petId]?.additional_ids || []).map(Number).includes(Number(add.id));
                     wrapper.innerHTML = `
                         <input type="checkbox" class="additional-checkbox mt-1" value="${add.id}" ${checked ? 'checked' : ''}>
-                        <span class="text-sm">${add.label}</span>
+                        <span class="text-sm">${add.name} (${add.duration} min) - Rp ${formatRupiah(add.price)}</span>
                     `;
                     additionalList.appendChild(wrapper);
                 });
             }
 
-            packageSelect.addEventListener('change', () => {
+            toggleAdditionalAvailability(section, petId);
+
+            packageSelect.addEventListener('change', async () => {
                 const config = state.petConfigs[petId] || { package_id: null, additional_ids: [] };
                 config.package_id = packageSelect.value ? Number(packageSelect.value) : null;
+
+                if (!config.package_id) {
+                    config.additional_ids = [];
+                    additionalList.querySelectorAll('.additional-checkbox').forEach((input) => {
+                        input.checked = false;
+                    });
+                }
+
                 state.petConfigs[petId] = config;
+                toggleAdditionalAvailability(section, petId);
                 state.selectedSlot = null;
                 waktuMulaiInput.value = '';
-                recalculateSummary();
-                maybeLoadSlots();
+                await recalculateSummary();
+                await maybeLoadSlots();
                 validateSubmit();
             });
 
-            additionalList.addEventListener('change', (event) => {
+            additionalList.addEventListener('change', async (event) => {
                 if (!event.target.classList.contains('additional-checkbox')) {
+                    return;
+                }
+
+                const selectedPackageId = state.petConfigs[petId]?.package_id;
+                if (!selectedPackageId) {
+                    event.target.checked = false;
                     return;
                 }
 
@@ -405,11 +636,31 @@
                 state.petConfigs[petId] = config;
                 state.selectedSlot = null;
                 waktuMulaiInput.value = '';
-                recalculateSummary();
-                maybeLoadSlots();
+                await recalculateSummary();
+                await maybeLoadSlots();
                 validateSubmit();
             });
         }
+    }
+
+    function toggleAdditionalAvailability(section, petId) {
+        const hasPackage = !!state.petConfigs[petId]?.package_id;
+        const hint = section.querySelector('.additional-hint');
+        const checkboxes = section.querySelectorAll('.additional-checkbox');
+        const wrappers = section.querySelectorAll('.additional-list label');
+
+        if (hint) {
+            hint.classList.toggle('hidden', hasPackage);
+        }
+
+        checkboxes.forEach((input) => {
+            input.disabled = !hasPackage;
+        });
+
+        wrappers.forEach((wrapper) => {
+            wrapper.classList.toggle('opacity-60', !hasPackage);
+            wrapper.classList.toggle('cursor-not-allowed', !hasPackage);
+        });
     }
 
     async function recalculateSummary() {
@@ -418,13 +669,15 @@
 
         let totalDuration = 0;
         let totalPrice = 0;
+        const summaryItems = [];
 
         summaryContainer.innerHTML = '';
 
         for (const item of payload.items) {
-            const response = await fetch(`/booking/api/options/pet/?pet_id=${item.pet_id}`);
-            const data = await response.json();
-            if (!response.ok) {
+            let data;
+            try {
+                data = await getPetOptions(item.pet_id);
+            } catch (error) {
                 continue;
             }
 
@@ -444,29 +697,51 @@
                 }
                 itemDuration += Number(add.duration || 0);
                 itemSubtotal += Number(add.price || 0);
-                additionalLines.push(`<li class="text-gray-600">+ ${add.name} (${add.duration} menit) - Rp ${formatRupiah(add.price)}</li>`);
+                additionalLines.push(`<li class="text-gray-600">+ ${add.name} (${add.duration} min) - Rp ${formatRupiah(add.price)}</li>`);
             });
 
             totalDuration += itemDuration;
             totalPrice += itemSubtotal;
 
-            const petName = petCheckboxes.find((p) => Number(p.value) === Number(item.pet_id))?.dataset.petName || 'Pet';
+            const petData = petCheckboxes.find((p) => Number(p.value) === Number(item.pet_id));
+            const petName = petData?.dataset.petName || 'Pet';
+            const petJenis = capitalize(petData?.dataset.petJenis || '');
+            const petSize = getPetSize(petData?.dataset.petJenis || '', petData?.dataset.petBerat || 0);
 
             const block = document.createElement('div');
             block.className = 'border rounded-lg p-3';
             block.innerHTML = `
-                <p class="font-medium">${petName}</p>
+                <p class="font-medium">${petName} - ${petJenis}${petSize ? ', ' + petSize : ''}</p>
                 <ul class="mt-1 space-y-1">
-                    <li>${pkg.name} (${pkg.duration} menit) - Rp ${formatRupiah(pkg.price)}</li>
+                    <li>${pkg.name} (${pkg.duration} min) - Rp ${formatRupiah(pkg.price)}</li>
                     ${additionalLines.join('')}
                 </ul>
                 <p class="mt-2 font-medium">Subtotal: Rp ${formatRupiah(itemSubtotal)}</p>
             `;
             summaryContainer.appendChild(block);
+
+            summaryItems.push({
+                petName,
+                petJenis,
+                petSize,
+                packageName: pkg.name,
+                packageDuration: pkg.duration,
+                packagePrice: Number(pkg.price || 0),
+                additionals: item.additional_ids
+                    .map((id) => data.additionals.find((a) => Number(a.id) === Number(id)))
+                    .filter(Boolean)
+                    .map((add) => ({
+                        name: add.name,
+                        duration: add.duration,
+                        price: Number(add.price || 0),
+                    })),
+                subtotal: itemSubtotal,
+            });
         }
 
         state.totalDuration = totalDuration;
         state.totalPrice = totalPrice;
+        state.summaryItems = summaryItems;
 
         summaryTotalDuration.textContent = `${totalDuration} menit`;
         summaryTotalPrice.textContent = `Rp ${formatRupiah(totalPrice)}`;
@@ -495,6 +770,10 @@
         const serviceType = getSelectedServiceType();
         const groomerId = groomerSelect.value;
         const tanggal = tanggalInput.value;
+        const hasPetSelection = buildPayload().items.length > 0;
+        const requestSeq = ++state.slotRequestSeq;
+
+        slotSection.classList.toggle('hidden', !(serviceType && hasPetSelection));
 
         if (!serviceType || !groomerId || !tanggal || state.totalDuration <= 0) {
             slotContainer.innerHTML = '';
@@ -502,9 +781,36 @@
             return;
         }
 
-        const url = `/api/slots/?groomer_id=${encodeURIComponent(groomerId)}&date=${encodeURIComponent(tanggal)}&duration=${encodeURIComponent(state.totalDuration)}&service_type=${encodeURIComponent(serviceType)}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        if (isMondayDateValue(tanggal)) {
+            slotContainer.innerHTML = '';
+            state.selectedSlot = null;
+            waktuMulaiInput.value = '';
+            slotMessage.textContent = 'Hari Senin libur. Silakan pilih tanggal lain.';
+            validateSubmit();
+            return;
+        }
+
+        slotMessage.textContent = 'Memuat slot...';
+        const url = `/booking/api/slots/?groomer_id=${encodeURIComponent(groomerId)}&date=${encodeURIComponent(tanggal)}&duration=${encodeURIComponent(state.totalDuration)}&service_type=${encodeURIComponent(serviceType)}`;
+
+        let response;
+        let data;
+        try {
+            response = await fetch(url, { cache: 'no-store' });
+            data = await response.json();
+        } catch (error) {
+            if (requestSeq !== state.slotRequestSeq) {
+                return;
+            }
+            slotContainer.innerHTML = '';
+            slotMessage.textContent = 'Gagal memuat slot. Coba lagi.';
+            validateSubmit();
+            return;
+        }
+
+        if (requestSeq !== state.slotRequestSeq) {
+            return;
+        }
 
         slotContainer.innerHTML = '';
         state.selectedSlot = null;
@@ -527,8 +833,8 @@
         data.slots.forEach((slot) => {
             const button = document.createElement('button');
             button.type = 'button';
-            button.className = 'px-3 py-2 border rounded-lg text-sm hover:bg-indigo-50';
-            button.textContent = slot.label;
+            button.className = 'px-4 py-2 border rounded-full text-sm hover:bg-indigo-50';
+            button.textContent = slot.label.replace(' - ', '-');
             button.addEventListener('click', () => {
                 Array.from(slotContainer.querySelectorAll('button')).forEach((b) => {
                     b.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
@@ -552,32 +858,174 @@
         validateSubmit();
     }
 
-    function isFormValid() {
+    function openModal() {
+        confirmModal.classList.remove('hidden');
+        confirmModal.classList.add('flex');
+    }
+
+    function closeModal() {
+        confirmModal.classList.add('hidden');
+        confirmModal.classList.remove('flex');
+    }
+
+    function renderConfirmationModal() {
+        const serviceType = getSelectedServiceType() === 'home' ? 'Home Service' : 'Clinic Service';
+        const groomerLabel = groomerSelect.options[groomerSelect.selectedIndex]?.text || '-';
+        const dateText = formatDateDisplay(tanggalInput.value);
+        const timeText = state.selectedSlot ? state.selectedSlot.label.replace('-', ' - ') : '-';
+
+        modalServiceType.textContent = serviceType;
+        modalGroomer.textContent = groomerLabel;
+        modalDate.textContent = dateText;
+        modalTime.textContent = timeText;
+
+        if (getSelectedServiceType() === 'home') {
+            modalAlamatRow.classList.remove('hidden');
+            modalAlamat.textContent = alamatInput.value.trim() || '-';
+            modalOngkirNote.classList.remove('hidden');
+        } else {
+            modalAlamatRow.classList.add('hidden');
+            modalOngkirNote.classList.add('hidden');
+        }
+
+        modalItems.innerHTML = '';
+        state.summaryItems.forEach((item) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'border rounded-xl p-3 text-sm';
+            const additionalLines = item.additionals
+                .map((add) => `<li class="flex justify-between gap-3"><span>${add.name} (${add.duration} min)</span><span>Rp ${formatRupiah(add.price)}</span></li>`)
+                .join('');
+            wrap.innerHTML = `
+                <div class="flex items-center justify-between gap-3 font-medium">
+                    <span>&#128062; ${item.petName} - ${item.petJenis}${item.petSize ? ', ' + item.petSize : ''}</span>
+                    <span>Rp ${formatRupiah(item.subtotal)}</span>
+                </div>
+                <ul class="mt-2 space-y-1 text-gray-700">
+                    <li class="flex justify-between gap-3"><span>${item.packageName} (${item.packageDuration} min)</span><span>Rp ${formatRupiah(item.packagePrice)}</span></li>
+                    ${additionalLines}
+                </ul>
+            `;
+            modalItems.appendChild(wrap);
+        });
+
+        modalTotal.textContent = `Rp ${formatRupiah(state.totalPrice)}`;
+        modalCatatan.textContent = catatanInput.value.trim() || '-';
+    }
+
+    function formatDateDisplay(rawDate) {
+        if (!rawDate) {
+            return '-';
+        }
+        const parts = rawDate.split('-');
+        if (parts.length !== 3) {
+            return rawDate;
+        }
+        const dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        return new Intl.DateTimeFormat('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        }).format(dateObj);
+    }
+
+    function getPetSize(petJenisRaw, weightRaw) {
+        if (!isDogType(petJenisRaw)) {
+            return '';
+        }
+
+        const weight = Number(weightRaw || 0);
+        if (!weight || Number.isNaN(weight)) {
+            return '';
+        }
+
+        if (weight >= 2 && weight <= 10) {
+            return 'S';
+        }
+        if (weight >= 11 && weight <= 25) {
+            return 'M';
+        }
+        if (weight >= 26 && weight <= 45) {
+            return 'L';
+        }
+
+        return 'XL';
+    }
+
+    function isDogType(jenisRaw) {
+        const jenis = String(jenisRaw || '').trim().toLowerCase();
+        return jenis === 'anjing' || jenis === 'dog';
+    }
+
+    function capitalize(value) {
+        if (!value) {
+            return '';
+        }
+        return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function getMissingRequiredFields() {
+        const missing = [];
         const serviceType = getSelectedServiceType();
+        const selectedPetCount = state.selectedPetIds.size;
         const payload = buildPayload();
+
         if (!serviceType) {
-            return false;
+            missing.push('Jenis layanan belum dipilih.');
         }
-        if (!payload.items.length) {
-            return false;
+
+        if (!selectedPetCount) {
+            missing.push('Hewan belum dipilih.');
+        } else if (payload.items.length < selectedPetCount) {
+            missing.push('Paket grooming untuk setiap hewan terpilih wajib diisi.');
         }
+
         if (!groomerSelect.value) {
-            return false;
+            missing.push('Groomer belum dipilih.');
         }
+
         if (!tanggalInput.value) {
-            return false;
+            missing.push('Tanggal booking belum dipilih.');
         }
+
         if (!state.selectedSlot || !waktuMulaiInput.value) {
-            return false;
+            missing.push('Slot waktu belum dipilih.');
         }
+
         if (serviceType === 'home' && !alamatInput.value.trim()) {
-            return false;
+            missing.push('Alamat home service wajib diisi.');
         }
-        return true;
+
+        return missing;
+    }
+
+    function isFormValid() {
+        return getMissingRequiredFields().length === 0;
     }
 
     function validateSubmit() {
-        submitBtn.disabled = !isFormValid();
+        const missing = getMissingRequiredFields();
+        const valid = missing.length === 0;
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+        if (valid) {
+            state.showRequiredHints = false;
+            requiredHintBox.classList.add('hidden');
+            requiredHintList.innerHTML = '';
+            return;
+        }
+
+        if (!state.showRequiredHints) {
+            requiredHintBox.classList.add('hidden');
+            requiredHintList.innerHTML = '';
+            return;
+        }
+
+        requiredHintList.innerHTML = missing
+            .map((item) => `<li>${item}</li>`)
+            .join('');
+        requiredHintBox.classList.remove('hidden');
     }
 
     function formatRupiah(num) {

@@ -140,10 +140,11 @@
                         <h3 class="text-gray-900 font-bold">Aksi</h3>
                     </div>
 
-                    <div class="p-6 space-y-3">
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         
                         <!-- Edit Profile Button -->
-                        <a href="{% url 'edit_profile' %}" class="w-full block text-center px-6 py-3 bg-[#F5A623] hover:bg-orange-500 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+                        <a href="{% url 'edit_profile' %}" class="w-full text-center px-6 py-3 bg-[#F5A623] hover:bg-orange-500 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
@@ -151,12 +152,13 @@
                         </a>
 
                         <!-- Change Password Button -->
-                        <a href="{% url 'change_password' %}" class="w-full block text-center px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+                        <a href="{% url 'change_password' %}" class="w-full text-center px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                             </svg>
                             Ubah Password
                         </a>
+                        </div>
 
                     </div>
                 </div>
