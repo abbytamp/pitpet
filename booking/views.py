@@ -29,7 +29,7 @@ from django.contrib import messages
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-from django.db import transaction
+from django.db import models, transaction
 from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -183,6 +183,8 @@ def staff_booking_detail(request, booking_id):
             "total_pet_duration": total_pet_duration,
         })
 
+    grooming_notes = booking.grooming_notes if booking.grooming_notes else "belum tersedia"
+
     context = {
         "booking": booking,
         "owner_name": booking.customer.full_name,
@@ -202,6 +204,7 @@ def staff_booking_detail(request, booking_id):
             booking.payment_status == Booking.PaymentStatus.UNPAID
             and booking.status == Booking.Status.SERVICE_COMPLETED
         ),
+        "grooming_notes": grooming_notes,
     }
 
     return render(request, "booking/staff_booking_detail.html", context)
@@ -591,6 +594,177 @@ def booking_history(request):
         bookings = bookings.filter(status=Booking.Status.CANCELLED)
 
     return render(request, "booking/history.html", {"bookings": bookings, "status_filter": status_filter})
+
+
+@login_required
+def booking_history_detail(request, booking_id):
+    if not _is_customer(request.user):
+        return redirect("login")
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("customer", "groomer", "groomer__user")
+        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
+        id=booking_id,
+        customer=request.user,
+    )
+
+    pet_items = []
+    for item in booking.items.all():
+        additionals = []
+        for additional in item.additionals.all():
+            additionals.append({
+                "name": additional.additional.name,
+                "harga": additional.harga,
+            })
+
+        pet_items.append({
+            "pet_name": item.pet.name,
+            "pet_type": item.pet.jenis,
+            "package_name": item.package.name if item.package else "-",
+            "package_price": item.harga_paket,
+            "durasi_paket": item.durasi_paket,
+            "additionals": additionals,
+            "subtotal": item.subtotal,
+        })
+
+    grooming_notes = booking.grooming_notes if booking.grooming_notes else "belum tersedia"
+
+    context = {
+        "booking": booking,
+        "customer_name": booking.customer.full_name,
+        "booking_date": booking.tanggal,
+        "booking_time": f"{booking.waktu_mulai.strftime('%H:%M')} - {booking.waktu_selesai.strftime('%H:%M')}",
+        "service_type": booking.get_service_type_display(),
+        "groomer_name": booking.groomer.user.full_name,
+        "total_durasi": booking.total_durasi,
+        "total_harga": booking.total_harga,
+        "status": booking.get_status_display(),
+        "payment_status": booking.get_payment_status_display(),
+        "pet_items": pet_items,
+        "grooming_notes": grooming_notes,
+    }
+
+    return render(request, "booking/history_detail.html", context)
+
+
+@login_required
+def staff_booking_history_all(request):
+    if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
+        return HttpResponseForbidden("403 Forbidden: hanya staff operasional yang dapat mengakses halaman ini.")
+
+    search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', 'all')
+    page = _to_int(request.GET.get('page'), 1)
+    per_page = 10
+
+    bookings = (
+        Booking.objects.select_related("customer", "groomer", "groomer__user")
+        .prefetch_related("items__pet", "items__package")
+        .filter(status__in=[Booking.Status.CANCELLED, Booking.Status.SERVICE_COMPLETED])
+        .order_by("-tanggal", "-waktu_mulai")
+    )
+
+    if search_query:
+        bookings = bookings.filter(
+            models.Q(customer__full_name__icontains=search_query) |
+            models.Q(items__pet__name__icontains=search_query)
+        ).distinct()
+
+    if status_filter == 'paid':
+        bookings = bookings.filter(payment_status=Booking.PaymentStatus.PAID, status=Booking.Status.SERVICE_COMPLETED)
+    elif status_filter == 'cancelled':
+        bookings = bookings.filter(status=Booking.Status.CANCELLED)
+
+    total_count = bookings.count()
+    total_pages = (total_count + per_page - 1) // per_page
+    offset = (page - 1) * per_page
+    bookings = bookings[offset:offset + per_page]
+
+    booking_list = []
+    for booking in bookings:
+        pet_names = [item.pet.name for item in booking.items.all()]
+        booking_list.append({
+            'id': booking.id,
+            'tanggal': booking.tanggal,
+            'waktu_mulai': booking.waktu_mulai.strftime('%H:%M'),
+            'waktu_selesai': booking.waktu_selesai.strftime('%H:%M'),
+            'customer_name': booking.customer.full_name,
+            'pet_names': pet_names,
+            'groomer_name': booking.groomer.user.full_name,
+            'service_type': booking.get_service_type_display(),
+            'status': booking.status,
+            'status_label': booking.get_status_display(),
+            'payment_status': booking.payment_status,
+            'payment_status_label': booking.get_payment_status_display(),
+        })
+
+    context = {
+        'bookings': booking_list,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'page': page,
+        'total_pages': total_pages,
+        'total_count': total_count,
+        'prev_page': page - 1,
+        'next_page': page + 1,
+    }
+
+    return render(request, "booking/staff_history_all.html", context)
+
+
+@login_required
+def staff_booking_history_detail(request, booking_id):
+    if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
+        return HttpResponseForbidden("403 Forbidden: hanya staff operasional yang dapat mengakses halaman ini.")
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("customer", "groomer", "groomer__user")
+        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
+        id=booking_id,
+    )
+
+    pet_items = []
+    for item in booking.items.all():
+        additionals = []
+        for additional in item.additionals.all():
+            additionals.append({
+                "name": additional.additional.name,
+                "harga": additional.harga,
+            })
+
+        pet_items.append({
+            "pet_name": item.pet.name,
+            "pet_type": item.pet.jenis,
+            "package_name": item.package.name if item.package else "-",
+            "package_price": item.harga_paket,
+            "durasi_paket": item.durasi_paket,
+            "additionals": additionals,
+            "subtotal": item.subtotal,
+        })
+
+    grooming_notes = booking.grooming_notes if booking.grooming_notes else "belum tersedia"
+
+    context = {
+        "booking": booking,
+        "customer_name": booking.customer.full_name,
+        "customer_phone": booking.customer.phone_number,
+        "booking_date": booking.tanggal,
+        "booking_time": f"{booking.waktu_mulai.strftime('%H:%M')} - {booking.waktu_selesai.strftime('%H:%M')}",
+        "service_type": booking.get_service_type_display(),
+        "groomer_name": booking.groomer.user.full_name,
+        "address": booking.alamat,
+        "total_durasi": booking.total_durasi,
+        "total_harga": booking.total_harga,
+        "status": booking.status,
+        "status_label": booking.get_status_display(),
+        "payment_status": booking.payment_status,
+        "payment_status_label": booking.get_payment_status_display(),
+        "catatan": booking.catatan,
+        "pet_items": pet_items,
+        "grooming_notes": grooming_notes,
+    }
+
+    return render(request, "booking/staff_booking_history_detail.html", context)
 
 
 @login_required

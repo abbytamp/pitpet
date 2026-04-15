@@ -53,6 +53,7 @@ class Booking(models.Model):
         default=PaymentStatus.UNPAID,
     )
     is_rescheduled = models.BooleanField(default=False)
+    grooming_notes = models.TextField(null=True, blank=True, help_text="Catatan hasil grooming yang diisi oleh groomer setelah layanan selesai")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
