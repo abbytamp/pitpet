@@ -1,8 +1,20 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block title %}My Booking{% endblock title %}
 
 {% block content %}
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+function canReschedule(booking) {
+    return booking.status === 'scheduled' && !booking.is_rescheduled && booking.time_diff_hours >= 2;
+}
+
+function showRescheduleMessage() {
+    alert('Perubahan jadwal kurang dari 2 jam. Silakan hubungi staff untuk perubahan jadwal.');
+}
+</script>
 <section class="max-w-5xl mx-auto px-4 py-8">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-900">My Booking</h1>
@@ -11,6 +23,7 @@
 
     <div class="space-y-3">
         {% for booking in bookings %}
+        {% with can_reschedule=booking.can_reschedule time_diff_hours=booking.time_diff_hours %}
         <div class="bg-white border rounded-xl p-4">
             <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <p class="font-medium">#{{ booking.id }} | {{ booking.tanggal }} | {{ booking.waktu_mulai }} - {{ booking.waktu_selesai }}</p>
@@ -24,7 +37,24 @@
                 <li>{{ item.pet.name }} - {{ item.package.name }} ({{ item.durasi_paket }} menit)</li>
                 {% endfor %}
             </ul>
+            
+            <div class="mt-3 flex gap-2">
+                {% if booking.status == 'scheduled' and not booking.is_rescheduled %}
+                    {% if booking.time_diff_hours >= 2 %}
+                    <a href="{% url 'booking:reschedule_booking' booking.id %}" 
+                       class="px-3 py-1 rounded-lg bg-[#F9A828] text-white text-sm font-semibold hover:bg-orange-500">
+                        Reschedule
+                    </a>
+                    {% else %}
+                    <button onclick="alert('Perubahan jadwal kurang dari 2 jam. Silakan hubungi staff untuk perubahan jadwal.')" 
+                            class="px-3 py-1 rounded-lg bg-gray-300 text-gray-600 text-sm font-semibold cursor-not-allowed">
+                        Reschedule
+                    </button>
+                    {% endif %}
+                {% endif %}
+            </div>
         </div>
+        {% endwith %}
         {% empty %}
         <p class="text-gray-600">Belum ada booking.</p>
         {% endfor %}

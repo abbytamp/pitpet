@@ -64,6 +64,27 @@ class Booking(models.Model):
     def __str__(self):
         return f"Booking #{self.id} - {self.customer.username} ({self.tanggal} {self.waktu_mulai})"
 
+    @property
+    def can_reschedule(self):
+        if self.status != Booking.Status.SCHEDULED:
+            return False
+        if self.is_rescheduled:
+            return False
+        from django.utils import timezone
+        from datetime import datetime, timedelta
+        now = timezone.localtime()
+        booking_datetime = timezone.make_aware(datetime.combine(self.tanggal, self.waktu_mulai))
+        return (booking_datetime - now) >= timedelta(hours=2)
+
+    @property
+    def time_diff_hours(self):
+        from django.utils import timezone
+        from datetime import datetime, timedelta
+        now = timezone.localtime()
+        booking_datetime = timezone.make_aware(datetime.combine(self.tanggal, self.waktu_mulai))
+        diff = booking_datetime - now
+        return diff.total_seconds() / 3600 if diff.total_seconds() > 0 else 0
+
 
 class BookingItem(models.Model):
     booking = models.ForeignKey(

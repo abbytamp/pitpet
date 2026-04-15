@@ -103,8 +103,10 @@ def can_fit_in_working_hours(date_obj, start_time: time, duration_minutes: int, 
     return buffered.start >= visible_start and buffered.end <= visible_end
 
 
-def calculate_end_time(start_time: time, duration_minutes: int) -> time:
-    end_dt = _as_datetime(timezone.localdate(), start_time) + timedelta(minutes=duration_minutes)
+def calculate_end_time(start_time: time, duration_minutes: int, date_obj=None) -> time:
+    if date_obj is None:
+        date_obj = timezone.localdate()
+    end_dt = _as_datetime(date_obj, start_time) + timedelta(minutes=duration_minutes)
     return end_dt.time()
 
 
