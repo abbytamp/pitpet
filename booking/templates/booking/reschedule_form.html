@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Reschedule Booking - PITPET{% endblock title %}
+
+{% block content %}
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    .slot-btn.selected {
+        background-color: #34C1D4;
+        color: white;
+        border-color: #34C1D4;
+    }
+</style>
+<section class="max-w-2xl mx-auto px-4 py-8">
+    <div class="mb-6">
+        <a href="{% url 'booking:my_bookings' %}" class="inline-flex items-center text-[#34C1D4] hover:text-[#2daab8] font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Kembali
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="bg-[#F9A828] px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Reschedule Booking</h1>
+            <p class="text-white/80 text-sm">Booking #{{ booking.id }}</p>
+        </div>
+
+        <div class="p-6">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="mb-4 p-4 rounded-xl text-sm font-bold 
+                    {% if message.tags == 'error' %}bg-red-50 text-red-500{% else %}bg-green-50 text-green-600{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="bg-gray-50 rounded-xl p-4 mb-6">
+                <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Detail Booking</h3>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <p class="text-gray-400">Groomer</p>
+                        <p class="font-semibold text-gray-800">{{ groomer_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Jenis Layanan</p>
+                        <p class="font-semibold text-gray-800">{{ service_type }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Durasi</p>
+                        <p class="font-semibold text-gray-800">{{ total_durasi }} menit</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Jadwal Lama</p>
+                        <p class="font-semibold text-gray-800">{{ booking.tanggal }} {{ booking.waktu_mulai }} - {{ booking.waktu_selesai }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <form id="rescheduleForm" action="{% url 'booking:reschedule_booking_submit' booking.id %}" method="POST" class="space-y-6">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Tanggal</label>
+                    <input type="date" id="tanggal" name="tanggal" 
+                           min="{{ min_date }}" max="{{ max_date }}"
+                           required
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#F9A828] focus:ring-2 focus:ring-[#F9A828]/20 outline-none transition duration-200 bg-gray-50"
+                           onchange="loadSlots()">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Jam</label>
+                    <div id="slotsContainer" class="grid grid-cols-3 gap-3">
+                        <p class="col-span-3 text-gray-400 text-sm text-center py-4">Pilih tanggal terlebih dahulu</p>
+                    </div>
+                    <input type="hidden" id="waktu_mulai" name="waktu_mulai" required>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <a href="{% url 'booking:my_bookings' %}" 
+                       class="flex-1 text-center py-4 bg-gray-100 text-gray-500 font-bold rounded-2xl hover:bg-gray-200 transition">
+                        Batal
+                    </a>
+                    
+                    <button type="submit" id="submitBtn" disabled
+                            class="flex-1 bg-[#34C1D4] text-white font-extrabold py-4 rounded-2xl hover:bg-[#2daab8] transition disabled:bg-gray-300 disabled:cursor-not-allowed">
+                        Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const bookingId = {{ booking.id }};
+
+        function loadSlots() {
+            const tanggal = document.getElementById('tanggal').value;
+            const slotsContainer = document.getElementById('slotsContainer');
+            
+            console.log('Loading slots for date:', tanggal);
+            
+            if (!tanggal) {
+                slotsContainer.innerHTML = '<p class="col-span-3 text-gray-400 text-sm text-center py-4">Pilih tanggal terlebih dahulu</p>';
+                return;
+            }
+
+            slotsContainer.innerHTML = '<p class="col-span-3 text-gray-400 text-sm text-center py-4">Memuat slot...</p>';
+
+            const url = "/booking/my/" + bookingId + "/reschedule/api/slots/?date=" + tanggal;
+            console.log('Fetching URL:', url);
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('API Response:', data);
+                    if (data.slots && data.slots.length > 0) {
+                        let html = '';
+                        data.slots.forEach(slot => {
+                            html += `<button type="button" class="slot-btn px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:border-[#34C1D4] transition"
+                                    onclick="selectSlot('${slot.start}', '${slot.end}', this)">
+                                ${slot.label}
+                            </button>`;
+                        });
+                        slotsContainer.innerHTML = html;
+                    } else {
+                        slotsContainer.innerHTML = '<p class="col-span-3 text-red-500 text-sm text-center py-4">' + (data.message || 'Tidak ada slot tersedia untuk tanggal tersebut. Silakan pilih tanggal lain.') + '</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading slots:', error);
+                    slotsContainer.innerHTML = '<p class="col-span-3 text-red-500 text-sm text-center py-4">Terjadi kesalahan. Silakan coba lagi.</p>';
+                });
+        }
+
+        function selectSlot(start, end, btn) {
+            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('waktu_mulai').value = start;
+            document.getElementById('submitBtn').disabled = false;
+            console.log('Selected slot:', start);
+        }
+
+        document.getElementById('rescheduleForm').addEventListener('submit', function(e) {
+            const tanggal = document.getElementById('tanggal').value;
+            const waktu = document.getElementById('waktu_mulai').value;
+            console.log('Submitting - Tanggal:', tanggal, 'Waktu:', waktu);
+        });
+    </script>
+</section>
+{% endblock content %}

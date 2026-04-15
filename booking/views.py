@@ -497,7 +497,7 @@ def booking_create(request):
             groomer=locked_groomer,
             tanggal=tanggal,
             waktu_mulai=waktu_mulai,
-            waktu_selesai=calculate_end_time(waktu_mulai, total_durasi),
+            waktu_selesai=calculate_end_time(waktu_mulai, total_durasi, tanggal),
             total_durasi=total_durasi,
             total_harga=total_harga,
             alamat=alamat if service_type == Booking.ServiceType.HOME else None,
@@ -573,6 +573,154 @@ def my_bookings(request):
     )
 
     return render(request, "booking/my_bookings.html", {"bookings": bookings})
+
+
+@login_required
+def reschedule_booking(request, booking_id):
+    if not _is_customer(request.user):
+        return redirect("login")
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("groomer", "groomer__user")
+        .prefetch_related("items__pet", "items__package"),
+        id=booking_id,
+        customer=request.user,
+    )
+
+    now = timezone.localtime()
+    booking_datetime = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
+    time_diff = booking_datetime - now
+
+    if booking.status != Booking.Status.SCHEDULED:
+        messages.error(request, "Booking tidak dapat di-reschedule.")
+        return redirect("booking:my_bookings")
+
+    if booking.is_rescheduled:
+        messages.error(request, "Booking sudah pernah di-reschedule sebelumnya.")
+        return redirect("booking:my_bookings")
+
+    if time_diff < timedelta(hours=2):
+        messages.error(request, "Perubahan jadwal kurang dari 2 jam. Silakan hubungi staff untuk perubahan jadwal.")
+        return redirect("booking:my_bookings")
+
+    min_date = (timezone.localdate() + timedelta(days=1)).isoformat()
+    max_date = (timezone.localdate() + timedelta(days=MAX_BOOKING_DAYS)).isoformat()
+
+    context = {
+        "booking": booking,
+        "groomer": booking.groomer,
+        "groomer_name": booking.groomer.user.full_name,
+        "service_type": booking.get_service_type_display(),
+        "total_durasi": booking.total_durasi,
+        "min_date": min_date,
+        "max_date": max_date,
+    }
+
+    return render(request, "booking/reschedule_form.html", context)
+
+
+@login_required
+def api_reschedule_slots(request, booking_id):
+    if not _is_customer(request.user):
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("groomer"),
+        id=booking_id,
+        customer=request.user,
+    )
+
+    date_raw = request.GET.get("date", "").strip()
+    if not date_raw:
+        return JsonResponse({"error": "date wajib diisi."}, status=400)
+
+    try:
+        date_obj = datetime.strptime(date_raw, "%Y-%m-%d").date()
+    except ValueError:
+        return JsonResponse({"error": "Format date tidak valid."}, status=400)
+
+    today = timezone.localdate()
+    if date_obj < today or date_obj > today + timedelta(days=MAX_BOOKING_DAYS):
+        return JsonResponse({"error": "Tanggal di luar range booking."}, status=400)
+
+    groomer = booking.groomer
+    duration = booking.total_durasi
+    service_type = booking.service_type
+
+    slots = get_available_slots(groomer.id, date_obj, duration, service_type)
+
+    return JsonResponse({
+        "booking_id": booking_id,
+        "groomer_id": groomer.id,
+        "duration": duration,
+        "service_type": service_type,
+        "date": str(date_obj),
+        "slots": slots,
+        "message": "" if slots else "Tidak ada slot tersedia untuk tanggal tersebut."
+    })
+
+
+@login_required
+def reschedule_booking_submit(request, booking_id):
+    if not _is_customer(request.user):
+        return redirect("login")
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Method not allowed")
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("groomer"),
+        id=booking_id,
+        customer=request.user,
+    )
+
+    now = timezone.localtime()
+    booking_datetime = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
+
+    if booking.status != Booking.Status.SCHEDULED:
+        messages.error(request, "Booking tidak dapat di-reschedule.")
+        return redirect("booking:my_bookings")
+
+    if booking.is_rescheduled:
+        messages.error(request, "Booking sudah pernah di-reschedule sebelumnya.")
+        return redirect("booking:my_bookings")
+
+    if booking_datetime - now < timedelta(hours=2):
+        messages.error(request, "Perubahan jadwal kurang dari 2 jam.")
+        return redirect("booking:my_bookings")
+
+    tanggal_raw = request.POST.get("tanggal", "").strip()
+    waktu_mulai_raw = request.POST.get("waktu_mulai", "").strip()
+
+    if not tanggal_raw:
+        messages.error(request, "Tanggal wajib diisi.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    if not waktu_mulai_raw:
+        messages.error(request, "Waktu mulai wajib dipilih.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    try:
+        tanggal = datetime.strptime(tanggal_raw, "%Y-%m-%d").date()
+        waktu_mulai = datetime.strptime(waktu_mulai_raw, "%H:%M").time()
+    except ValueError as e:
+        messages.error(request, f"Format tanggal atau waktu tidak valid: {str(e)}")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    if not is_slot_available(booking.groomer.id, tanggal, booking.total_durasi, booking.service_type, waktu_mulai):
+        messages.error(request, "Slot yang dipilih sudah terisi. Silakan pilih waktu lain.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    end_time = calculate_end_time(waktu_mulai, booking.total_durasi, tanggal)
+
+    booking.tanggal = tanggal
+    booking.waktu_mulai = waktu_mulai
+    booking.waktu_selesai = end_time
+    booking.is_rescheduled = True
+    booking.save()
+
+    messages.success(request, f"Jadwal booking berhasil diubah ke {tanggal} {waktu_mulai} - {end_time}.")
+    return redirect("booking:my_bookings")
 
 
 # Halaman riwayat booking (hanya milik sendiri, status Paid & Cancelled, filter status)
