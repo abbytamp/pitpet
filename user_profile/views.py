@@ -6,7 +6,7 @@ from pet.models import Pet
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
-from django.db import IntegrityError  # 🔥 TAMBAHAN
+from django.db import IntegrityError  
 
 
 @login_required
@@ -54,7 +54,6 @@ def update_profile_api(request):
         }
     }, status=200)
 
-
 @login_required
 def edit_profile_view(request):
     user = request.user
@@ -85,7 +84,6 @@ def edit_profile_view(request):
     return render(request, "user_profile/edit_profile.html")
 
 
-# 🔥 FIX UTAMA DI SINI
 @login_required
 def add_pet(request):
     if request.method == 'POST':

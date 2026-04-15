@@ -19,7 +19,7 @@
 
     <div class="space-y-3">
         {% for booking in bookings %}
-        <div class="bg-[#FFF8ED] border border-[#F5A623] rounded-xl p-4">
+        <a href="{% url 'booking:history_detail' booking.id %}" class="block bg-[#FFF8ED] border border-[#F5A623] rounded-xl p-4 hover:opacity-80 transition">
             <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <p class="font-medium text-black">#{{ booking.id }} | {{ booking.tanggal }} | {{ booking.waktu_mulai|time:'H:i' }} - {{ booking.waktu_selesai|time:'H:i' }}</p>
                                 {% if booking.status == 'service_completed' and booking.payment_status == 'paid' %}
@@ -41,7 +41,7 @@
                 </li>
                 {% endfor %}
             </ul>
-        </div>
+        </a>
         {% empty %}
         <p class="text-gray-400">Belum ada riwayat booking.</p>
         {% endfor %}
