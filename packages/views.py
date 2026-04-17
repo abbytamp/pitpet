@@ -2,14 +2,22 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .decorators import staff_required
 from .models import Package, PackagePrice
 from django.contrib import messages
-from django.db import transaction 
+from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponseBadRequest
 from .forms import PackageForm
 
 # Ketentuan edit paket
-def _has_scheduled_booking(package: Package) -> bool:
-    # return package.bookings.filter(status="scheduled").exists()
-    return False
+def _has_active_booking(package: Package) -> bool:
+    return (
+        package.booking_items.filter(
+            booking__status__in=["scheduled", "service_started"]
+        ).exists()
+        or
+        package.booking_item_additionals.filter(
+            booking_item__booking__status__in=["scheduled", "service_started"]
+        ).exists()
+    )
 
 @staff_required
 def package_list(request):
@@ -118,10 +126,29 @@ def package_update(request, package_id: int):
 
     pkg = get_object_or_404(Package.objects.prefetch_related("prices"), id=package_id, is_deleted=False)
 
-    if _has_scheduled_booking(pkg):
+    if _has_active_booking(pkg):
         # 409 Conflict
+        initial = {
+            "name": pkg.name,
+            "animal_type": pkg.animal_type,
+            "package_type": pkg.package_type,
+            "description": pkg.description,
+            "duration_min": str(pkg.duration_min),
+            "price_cat": pkg.cat_price if pkg.animal_type == "cat" else None,
+            "price_all_size": pkg.price_s if pkg.is_all_size else None,
+            "price_s": pkg.price_s if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+            "price_m": pkg.price_m if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+            "price_l": pkg.price_l if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+            "price_xl": pkg.price_xl if pkg.animal_type == "dog" and not pkg.is_all_size else None,
+        }
+
         return render(request, "packages/package_form.html", {
-            "form": PackageForm(initial={}, locked_animal_type=pkg.animal_type, locked_package_type=pkg.package_type, package_instance=pkg),
+            "form": PackageForm(
+                initial=initial,
+                locked_animal_type=pkg.animal_type,
+                locked_package_type=pkg.package_type,
+                package_instance=pkg,
+            ),
             "mode": "edit",
             "pkg": pkg,
             "conflict": True,
@@ -193,8 +220,8 @@ def package_delete(request, package_id: int):
 
     pkg = get_object_or_404(Package, id=package_id, is_deleted=False)
 
-    if _has_scheduled_booking(pkg):
-        messages.error(request, "Paket tidak bisa dihapus karena masih ada booking yang terjadwal.")
+    if _has_active_booking(pkg):
+        messages.error(request, "Paket tidak bisa dihapus karena masih ada booking yang sedang berlangsung.")
         return redirect("package_list")
 
     pkg.soft_delete()

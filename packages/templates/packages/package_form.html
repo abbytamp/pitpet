@@ -4,12 +4,29 @@
 {% block content %}
 <div class="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
 
-  <div class="mb-8">
-    <h1 class="text-4xl font-bold text-gray-900 mb-2">
-      {% if mode == "edit" %}Edit Paket{% else %}Tambah Paket{% endif %}</h1>
-    <p class="text-gray-600">{% if mode == "edit" %}Perbarui informasi paket grooming.{% else %}Tambahkan paket grooming baru ke katalog PitPet.{% endif %}
-    </p>
-  </div>
+  {% if conflict %}
+    <div id="conflictModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Paket Tidak Dapat Diubah</h3>
+        <p class="text-gray-600 mb-6">
+          Paket ini sedang digunakan oleh booking dengan status <strong>scheduled/service started</strong>, sehingga tidak dapat diubah saat ini.
+        </p>
+
+        <div class="flex justify-end">
+          <a href="{% url 'package_list' %}"
+            class="px-6 py-3 rounded-xl font-semibold bg-[#F5A623] hover:bg-orange-500 text-white transition">
+            OK
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  {% if conflict %}
+    <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      Paket tidak dapat diubah karena sedang digunakan oleh booking dengan status scheduled.
+    </div>
+  {% endif %}
 
   <div class="glass p-8 rounded-3xl shadow-sm border border-gray-100">
     <form method="POST"
