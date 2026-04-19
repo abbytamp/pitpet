@@ -777,7 +777,11 @@ def cancel_booking(request, booking_id):
     )
 
     if booking.status != Booking.Status.SCHEDULED:
-        messages.error(request, "Booking tidak dapat dibatalkan.")
+        messages.error(request, booking.cancel_block_message)
+        return redirect("booking:detail", booking_id=booking.id)
+
+    if not booking.can_cancel:
+        messages.error(request, booking.cancel_block_message)
         return redirect("booking:detail", booking_id=booking.id)
 
     if request.method == "POST":
