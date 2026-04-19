@@ -7,12 +7,10 @@ from django.contrib.auth.decorators import login_required
 def staff_cancel_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     now = timezone.localtime()
-    # Hanya staff, status scheduled, dan waktu sekarang < waktu mulai
-    booking_start = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
+    # Hanya staff dan status scheduled, tanpa cek waktu mulai
     if (
         request.user.role == User.Role.STAFF and
-        booking.status == Booking.Status.SCHEDULED and
-        now < booking_start
+        booking.status == Booking.Status.SCHEDULED
     ):
         if request.method == "POST":
             booking.status = Booking.Status.CANCELLED
