@@ -1,13 +1,10 @@
 from datetime import date, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
-
-from booking.models import Booking
-from django.db import transaction
 from django.urls import reverse
-
 from booking.models import Booking, BookingItem
 from .models import GroomingServiceForm
 
@@ -22,7 +19,7 @@ def daily_job_list(request):
     offset_days = int(request.GET.get("days", 0))
     today = date.today() + timedelta(days=offset_days)
     
-    task_statuses = ["scheduled", "service_started"]
+    task_statuses = [booking.Status.SCHEDULED, Booking.Status.SERVICE_STARTED]
 
     bookings = (
         Booking.objects.filter(
@@ -56,7 +53,7 @@ def daily_job_list(request):
             "status_label": booking.get_status_display(),
         }
 
-        if booking.status == "service_completed":
+        if booking.status == Booking.Status.SERVICE_COMPLETED:
             today_history.append(data)
         elif booking.status in task_statuses:
             today_tasks.append(data)
@@ -112,11 +109,11 @@ def booking_belongs_to_groomer(booking, user):
 
 
 def can_start_booking(booking):
-    return booking.status == "scheduled"
+    return booking.status == Booking.Status.SCHEDULED
 
 
 def can_complete_booking(booking):
-    return booking.status == "service_started"
+    return booking.status == Booking.Status.SERVICE_STARTED
 
 @login_required
 def job_detail(request, booking_id):
@@ -180,8 +177,7 @@ def job_detail(request, booking_id):
         "pet_items": pet_items,
         "can_start_service": can_start_booking(booking),
         "can_complete_service": can_complete_booking(booking),
-        # Tombol isi form layanan per hewan, skrg hanya based on status booking dulu
-        "can_show_pet_note_button": booking.status == "service_started",
+        "can_show_pet_note_button": booking.status == Booking.Status.SERVICE_STARTED,
         "all_forms_completed": all_grooming_forms_completed(booking),
     }
 
@@ -206,11 +202,11 @@ def update_booking_status(request, booking_id):
     if not booking_belongs_to_groomer(booking, user):
         return HttpResponseForbidden("Anda tidak dapat mengubah booking milik groomer lain.")
 
-    if booking.status == "cancelled":
+    if booking.status == Booking.Status.CANCELLED:
         messages.error(request, "Booking yang dibatalkan tidak dapat diubah statusnya.")
         return redirect("groomer_jobs:job_detail", booking_id=booking.id)
 
-    if booking.status == "service_completed":
+    if booking.status == Booking.Status.SERVICE_COMPLETED:
         messages.error(request, "Booking yang sudah selesai tidak dapat diubah lagi.")
         return redirect("groomer_jobs:job_detail", booking_id=booking.id)
 
@@ -221,7 +217,7 @@ def update_booking_status(request, booking_id):
             messages.error(request, "Status booking ini tidak dapat diubah ke service started.")
             return redirect("groomer_jobs:job_detail", booking_id=booking.id)
 
-        booking.status = "service_started"
+        booking.status = Booking.Status.SERVICE_STARTED
         booking.save(update_fields=["status", "updated_at"])
         messages.success(request, "Status layanan berhasil diperbarui menjadi Service started.")
         return redirect("groomer_jobs:job_detail", booking_id=booking.id)
@@ -232,9 +228,10 @@ def update_booking_status(request, booking_id):
             return redirect("groomer_jobs:job_detail", booking_id=booking.id)
 
         if not all_grooming_forms_completed(booking):
-            return redirect(f"/groomer-jobs/bookings/{booking.id}/?error=incomplete_form")
+            detail_url = reverse("groomer_jobs:job_detail", kwargs={"booking_id": booking.id})
+            return redirect(f"{detail_url}?error=incomplete_form")
 
-        booking.status = "service_completed"
+        booking.status = Booking.Status.SERVICE_COMPLETED
         booking.save(update_fields=["status", "updated_at"])
         messages.success(request, "Status layanan berhasil diperbarui menjadi Service completed.")
         return redirect("groomer_jobs:job_detail", booking_id=booking.id)
@@ -247,7 +244,7 @@ def is_groomer(user):
 
 
 def can_access_service_form(booking, user):
-    return booking.groomer.user == user and booking.status == "service_started"
+    return booking.groomer.user == user and booking.status == Booking.Status.SERVICE_STARTED
 
 
 def booking_item_belongs_to_booking(booking_item, booking):
@@ -285,7 +282,7 @@ def grooming_service_form(request, booking_id, booking_item_id):
     if booking.groomer.user != user:
         return HttpResponseForbidden("Anda tidak dapat mengakses booking milik groomer lain.")
 
-    if booking.status != "service_started":
+    if booking.status != Booking.Status.SERVICE_STARTED :
         messages.error(request, "Form layanan hanya dapat diakses saat status booking service started.")
         return redirect("groomer_jobs:job_detail", booking_id=booking.id)
 
@@ -331,7 +328,7 @@ def submit_grooming_service_form(request, booking_id, booking_item_id):
     if booking.groomer.user != user:
         return HttpResponseForbidden("Anda tidak dapat mengisi form booking milik groomer lain.")
 
-    if booking.status != "service_started":
+    if booking.status != Booking.Status.SERVICE_STARTED:
         messages.error(request, "Form layanan hanya dapat disimpan saat status booking service started.")
         return redirect("groomer_jobs:job_detail", booking_id=booking.id)
 
