@@ -152,7 +152,7 @@
     <!-- Action Section -->
     <div class="bg-white border border-gray-100 rounded-xl shadow-sm p-6 mt-6">
 
-      {% if can_start_service %}
+      {% if show_start_service %}
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
 
         <div>
@@ -165,7 +165,7 @@
         </div>
 
         <button type="button"
-                onclick="openStatusModal('start_service')"
+                onclick="handleStatusAction('start_service', {{ can_start_service|yesno:'true,false' }}, true)"
                 class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#34C1D4] text-white font-semibold hover:bg-[#2daab8] transition">
           Start Service
         </button>
@@ -173,7 +173,7 @@
       </div>
       {% endif %}
 
-      {% if can_complete_service %}
+      {% if show_complete_service %}
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
 
         <div>
@@ -186,7 +186,7 @@
         </div>
 
         <button type="button"
-                onclick="openStatusModal('complete_service')"
+                onclick="handleStatusAction('complete_service', {{ can_complete_service|yesno:'true,false' }}, {{ all_forms_completed|yesno:'true,false' }})"
                 class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#34C1D4] text-white font-semibold hover:bg-[#2daab8] transition">
           Complete Service
         </button>
@@ -207,8 +207,7 @@
   </div>
 </div>
 
-{% if request.GET.error == "incomplete_form" %}
-<div id="errorModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+<div id="errorModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4">
   <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
 
     <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">
@@ -216,7 +215,7 @@
     </h3>
 
     <p class="text-gray-600 mb-4 sm:mb-6 text-sm">
-      Masih terdapat hewan yang belum memiliki catatan grooming.
+      Masih terdapat hewan yang belum memiliki <strong>catatan grooming</strong>.
     </p>
 
     <button onclick="closeErrorModal()"
@@ -232,7 +231,6 @@ function closeErrorModal() {
   document.getElementById('errorModal').style.display = 'none';
 }
 </script>
-{% endif %}
 
 {% if request.GET.all_forms_completed == "1" %}
 <div id="allFormsCompletedModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
@@ -260,6 +258,24 @@ function closeAllFormsCompletedModal() {
 }
 </script>
 {% endif %}
+
+<!-- Time Restriction Modal -->
+<div id="timeRestrictionModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4">
+  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+    <h3 id="timeRestrictionTitle" class="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+      Status belum dapat diubah
+    </h3>
+
+    <p id="timeRestrictionMessage" class="text-gray-600 mb-4 sm:mb-6 text-sm">
+      Status layanan belum dapat diubah.
+    </p>
+
+    <button onclick="closeTimeRestrictionModal()"
+            class="w-full py-3 px-4 rounded-xl font-semibold bg-red-500 hover:bg-red-600 text-white">
+      OK
+    </button>
+  </div>
+</div>
 
 <!-- Status Confirmation Modal -->
 <div id="statusModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4">
@@ -290,6 +306,68 @@ function closeAllFormsCompletedModal() {
 </div>
 
 <script>
+  function handleStatusAction(action, isTimeAllowed, areFormsCompleted) {
+    if (action === 'start_service') {
+      if (!isTimeAllowed) {
+        openTimeRestrictionModal(
+          'Tidak dapat memulai layanan',
+          'Layanan hanya dapat dimulai <span class="font-semibold text-orange-600">sesuai waktu pada jadwal</span>.'
+        );
+        return;
+      }
+
+      openStatusModal('start_service');
+      return;
+    }
+
+    if (action === 'complete_service') {
+      if (!isTimeAllowed) {
+        openTimeRestrictionModal(
+          'Tidak dapat menyelesaikan layanan',
+          'Layanan baru dapat diselesaikan <span class="font-semibold text-orange-600">minimal 15 menit sebelum waktu selesai pada jadwal</span>.'
+        );
+        return;
+      }
+
+      if (!areFormsCompleted) {
+        openIncompleteFormModal();
+        return;
+      }
+
+      openStatusModal('complete_service');
+      return;
+    }
+  }
+
+  function openTimeRestrictionModal(titleText, messageHtml) {
+    const modal = document.getElementById('timeRestrictionModal');
+    const title = document.getElementById('timeRestrictionTitle');
+    const message = document.getElementById('timeRestrictionMessage');
+
+    title.textContent =  titleText;
+    message.innerHTML = messageHtml;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeTimeRestrictionModal() {
+    const modal = document.getElementById('timeRestrictionModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  function openIncompleteFormModal() {
+    const modal = document.getElementById('errorModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeErrorModal() {
+    const modal = document.getElementById('errorModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
   function openStatusModal(action) {
     const modal = document.getElementById('statusModal');
     const actionInput = document.getElementById('statusActionInput');
