@@ -23,4 +23,5 @@ urlpatterns = [
     path("api/options/pet/", views.api_pet_options, name="api_pet_options"),
     path("api/groomers/", views.api_groomers, name="api_groomers"),
     path("api/slots/", views.api_slots, name="api_slots"),
+    path("api/bookings/<int:booking_id>/payment-status/", views.api_update_payment_status, name="api_update_payment_status"),
 ]
