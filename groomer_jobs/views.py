@@ -7,6 +7,7 @@ from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from booking.models import Booking, BookingItem
+from booking.utils import get_dog_size
 from .models import GroomingServiceForm
 
 @login_required
@@ -76,32 +77,17 @@ def daily_job_list(request):
     return render(request, "groomer_jobs/daily_job_list.html", context)
 
 def get_pet_size_label(pet):
-    """
-    Menghitung size hewan berdasarkan aturan, nanati ganti pakai field size dari model Pet
-    - Cat: tidak tampilkan size
-    - Dog:
-        S  = 2-10 kg
-        M  = 11-25 kg
-        L  = 26-45 kg
-        XL = >45 kg
-    """
     pet_type = (pet.jenis or "").lower()
-    weight = pet.berat
 
     if pet_type == "cat":
         return ""
 
     if pet_type == "dog":
-        if weight is None:
+        if pet.berat is None:
             return "-"
-        if 2 <= weight <= 10:
-            return "S"
-        if 11 <= weight <= 25:
-            return "M"
-        if 26 <= weight <= 45:
-            return "L"
-        if weight > 45:
-            return "XL"
+        return get_dog_size(float(pet.berat))
+
+    return "-"
 
     return "-"
 
@@ -166,7 +152,7 @@ def job_detail(request, booking_id):
 
         for additional in item.additionals.all():
             additionals.append({
-                "name": additional.additional.name,
+                "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
                 "duration": additional.durasi,
             })
             total_pet_duration += additional.durasi
@@ -176,7 +162,7 @@ def job_detail(request, booking_id):
             "pet_name": item.pet.name,
             "pet_type": item.pet.jenis,
             "pet_size": get_pet_size_label(item.pet),
-            "package_name": item.package.name,
+            "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
             "package_duration": item.durasi_paket,
             "additionals": additionals,
             "total_pet_duration": total_pet_duration,

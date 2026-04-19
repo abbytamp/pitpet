@@ -60,7 +60,7 @@
                             <p class="text-gray-600">
                                 {% for item in booking.items.all %}
                                     {% if not forloop.first %}<span class="mx-1">•</span>{% endif %}
-                                    {{ item.pet.name }} - {{ item.package.name }}
+                                    {{ item.pet.name }} - {{ item.package_name|default:item.package.name|default:"-" }}
                                 {% endfor %}
                             </p>
                         </div>
