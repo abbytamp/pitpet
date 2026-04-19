@@ -8,12 +8,10 @@ from django.views.decorators.http import require_http_methods
 def staff_cancel_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     now = timezone.localtime()
-    # Hanya staff, status scheduled, dan waktu sekarang < waktu mulai
-    booking_start = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
+    # Hanya staff dan status scheduled, tanpa cek waktu mulai
     if (
         request.user.role == User.Role.STAFF and
-        booking.status == Booking.Status.SCHEDULED and
-        now < booking_start
+        booking.status == Booking.Status.SCHEDULED
     ):
         if request.method == "POST":
             booking.status = Booking.Status.CANCELLED
@@ -89,7 +87,13 @@ def staff_booking_schedule(request):
         )
 
     # Ambil semua groomer aktif untuk tipe layanan
-    groomers = Groomer.objects.select_related('user').filter(service_type=service_type, is_deleted=False)
+    # Jika ingin menampilkan groomer yang sudah dihapus untuk tanggal sebelum/sama dengan deleted_at,
+    # gunakan all_objects dan filter manual
+    from django.db.models import Q
+    groomers = Groomer.all_objects.select_related('user').filter(
+        Q(is_deleted=False, service_type=service_type) |
+        Q(is_deleted=True, service_type=service_type, deleted_at__gte=datetime.combine(tanggal, datetime.min.time()))
+    )
 
     # Tentukan slot waktu per 30 menit (mengikuti aturan booking)
     from booking.utils import WORK_START, WORK_END, SLOT_MINUTES
@@ -986,10 +990,14 @@ def booking_history(request):
         return redirect("login")
 
     status_filter = request.GET.get('status', 'all')
+
     bookings = Booking.objects.select_related("groomer", "groomer__user") \
         .prefetch_related("items__pet", "items__package") \
         .filter(customer=request.user) \
-        .filter(status__in=[Booking.Status.CANCELLED, Booking.Status.SERVICE_COMPLETED], payment_status__in=[Booking.PaymentStatus.PAID, Booking.PaymentStatus.UNPAID]) \
+        .filter(
+            models.Q(status=Booking.Status.CANCELLED) |
+            (models.Q(status=Booking.Status.SERVICE_COMPLETED) & models.Q(payment_status=Booking.PaymentStatus.PAID))
+        ) \
         .order_by("-tanggal", "-waktu_mulai")
 
     if status_filter == 'paid':
