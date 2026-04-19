@@ -114,7 +114,22 @@
     {% if booking.status == 'scheduled' %}
     <div class="mt-6">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
-            <a href="{% url 'booking:cancel_booking' booking.id %}" class="h-12 w-full px-4 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors flex items-center justify-center">Cancel</a>
+            <div>
+                <button
+                    type="button"
+                    id="openCancelModalBtn"
+                    class="h-12 w-full px-4 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors flex items-center justify-center"
+                >
+                    Cancel Booking
+                </button>
+
+                {% if not booking.can_cancel %}
+                <p class="mt-1 text-xs text-red-600 text-center sm:text-left">
+                    Sisa waktu kurang dari 2 jam, harap lapor via Whatsapp ke staff untuk melakukan pembatalan.
+                </p>
+                {% endif %}
+            </div>
+
             {% if not booking.is_rescheduled %}
             <div>
                 <a href="{% url 'booking:reschedule_booking' booking.id %}" class="h-12 w-full px-4 rounded-lg bg-[#34C1D4] text-white font-semibold hover:bg-[#2baab9] transition-colors flex items-center justify-center">Reschedule</a>
@@ -124,5 +139,108 @@
         </div>
     </div>
     {% endif %}
+
+    {% if booking.status == 'scheduled' %}
+    <div
+        id="cancelBookingModal"
+        class="fixed inset-0 z-50 hidden"
+        aria-hidden="true"
+    >
+        <div id="cancelBookingBackdrop" class="absolute inset-0 bg-black/40"></div>
+
+        <div class="relative min-h-screen flex items-center justify-center px-4 py-6">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+                <div class="flex items-start gap-3">
+                    <div class="w-11 h-11 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0">
+                        !
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-lg font-bold text-gray-900">Cancel Booking</h2>
+
+                        {% if booking.can_cancel %}
+                        <p class="mt-2 text-sm text-gray-600 leading-relaxed">
+                            Apakah Anda yakin ingin melakukan pembatalan?
+                        </p>
+
+                        <form method="post" action="{% url 'booking:cancel_booking' booking.id %}" class="mt-5 flex flex-col-reverse sm:flex-row gap-3">
+                            {% csrf_token %}
+                            <button
+                                type="button"
+                                id="closeCancelModalBtn"
+                                class="h-11 w-full rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                            >
+                                Tidak
+                            </button>
+                            <button
+                                type="submit"
+                                class="h-11 w-full rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
+                            >
+                                Ya, Batalkan
+                            </button>
+                        </form>
+                        {% else %}
+                        <p class="mt-2 text-sm text-gray-600 leading-relaxed">
+                            Sisa waktu kurang dari 2 jam, harap lapor via Whatsapp ke staff untuk melakukan pembatalan.
+                        </p>
+
+                        <div class="mt-5">
+                            <button
+                                type="button"
+                                id="closeCancelModalSingleBtn"
+                                class="h-11 w-full rounded-lg bg-gray-900 text-white font-semibold hover:bg-black transition-colors"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </section>
+{% if booking.status == 'scheduled' %}
+<script>
+    (function () {
+        const modal = document.getElementById('cancelBookingModal');
+        const openBtn = document.getElementById('openCancelModalBtn');
+        const closeBtn = document.getElementById('closeCancelModalBtn');
+        const closeSingleBtn = document.getElementById('closeCancelModalSingleBtn');
+        const backdrop = document.getElementById('cancelBookingBackdrop');
+
+        if (!modal || !openBtn) return;
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        openBtn.addEventListener('click', openModal);
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
+        }
+
+        if (closeSingleBtn) {
+            closeSingleBtn.addEventListener('click', closeModal);
+        }
+
+        if (backdrop) {
+            backdrop.addEventListener('click', closeModal);
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+    })();
+</script>
+{% endif %}
 {% endblock content %}
