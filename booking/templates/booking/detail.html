@@ -114,22 +114,13 @@
     {% if booking.status == 'scheduled' %}
     <div class="mt-6">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
-            <div>
-                <button
-                    type="button"
-                    id="openCancelModalBtn"
-                    class="h-12 w-full px-4 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors flex items-center justify-center"
-                >
-                    Cancel Booking
-                </button>
-
-                {% if not booking.can_cancel %}
-                <p class="mt-1 text-xs text-red-600 text-center sm:text-left">
-                    Sisa waktu kurang dari 2 jam, harap lapor via Whatsapp ke staff untuk melakukan pembatalan.
-                </p>
-                {% endif %}
-            </div>
-
+            <button
+                type="button"
+                id="openCancelModalBtn"
+                class="h-12 w-full px-4 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors flex items-center justify-center"
+            >
+                Cancel
+            </button>
             {% if not booking.is_rescheduled %}
             <div>
                 <a href="{% url 'booking:reschedule_booking' booking.id %}" class="h-12 w-full px-4 rounded-lg bg-[#34C1D4] text-white font-semibold hover:bg-[#2baab9] transition-colors flex items-center justify-center">Reschedule</a>
@@ -138,14 +129,8 @@
             {% endif %}
         </div>
     </div>
-    {% endif %}
 
-    {% if booking.status == 'scheduled' %}
-    <div
-        id="cancelBookingModal"
-        class="fixed inset-0 z-50 hidden"
-        aria-hidden="true"
-    >
+    <div id="cancelBookingModal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
         <div id="cancelBookingBackdrop" class="absolute inset-0 bg-black/40"></div>
 
         <div class="relative min-h-screen flex items-center justify-center px-4 py-6">
@@ -180,7 +165,7 @@
                         </form>
                         {% else %}
                         <p class="mt-2 text-sm text-gray-600 leading-relaxed">
-                            Sisa waktu kurang dari 2 jam, harap lapor via Whatsapp ke staff untuk melakukan pembatalan.
+                            {{ booking.cancel_block_message }}
                         </p>
 
                         <div class="mt-5">
@@ -200,6 +185,7 @@
     </div>
     {% endif %}
 </section>
+
 {% if booking.status == 'scheduled' %}
 <script>
     (function () {

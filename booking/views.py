@@ -2,17 +2,17 @@
 # Cancel booking oleh staff (pastikan ada di bawah dan tidak error import)
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.urls import reverse
-from django.views.decorators.http import require_http_methods
 
 @login_required
 def staff_cancel_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     now = timezone.localtime()
-    # Hanya staff dan status scheduled, tanpa cek waktu mulai
+    # Hanya staff, status scheduled, dan waktu sekarang < waktu mulai
+    booking_start = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
     if (
         request.user.role == User.Role.STAFF and
-        booking.status == Booking.Status.SCHEDULED
+        booking.status == Booking.Status.SCHEDULED and
+        now < booking_start
     ):
         if request.method == "POST":
             booking.status = Booking.Status.CANCELLED
@@ -391,20 +391,6 @@ def _get_pet_size_label(pet):
 def _is_customer(user) -> bool:
     return user.is_authenticated and user.role == User.Role.CUSTOMER
 
-def _get_booking_datetime(booking):
-    return timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
-
-def _validate_customer_cancel_booking(booking):
-    if booking.status != Booking.Status.SCHEDULED:
-        return False, "Booking tidak dapat dibatalkan."
-
-    if not booking.can_cancel:
-        return (
-            False,
-            "Sisa waktu kurang dari 2 jam, harap lapor via Whatsapp ke staff untuk melakukan pembatalan."
-        )
-
-    return True, ""
 
 def _to_int(value, default=0):
     try:
@@ -790,52 +776,23 @@ def cancel_booking(request, booking_id):
         customer=request.user,
     )
 
-    is_allowed, error_message = _validate_customer_cancel_booking(booking)
-    if not is_allowed:
-        messages.error(request, error_message)
-        return redirect("booking:my_bookings")
+    if booking.status != Booking.Status.SCHEDULED:
+        messages.error(request, booking.cancel_block_message)
+        return redirect("booking:detail", booking_id=booking.id)
+
+    if not booking.can_cancel:
+        messages.error(request, booking.cancel_block_message)
+        return redirect("booking:detail", booking_id=booking.id)
 
     if request.method == "POST":
         booking.status = Booking.Status.CANCELLED
         booking.save(update_fields=["status", "updated_at"])
         messages.success(request, "Booking berhasil dibatalkan.")
-        return redirect("booking:history")
+        return redirect("booking:my_bookings")
 
     return render(request, "booking/cancel_confirm.html", {"booking": booking})
 
-@login_required
-@require_http_methods(["PUT"])
-def api_cancel_booking(request, booking_id):
-    if not _is_customer(request.user):
-        return JsonResponse(
-            {"message": "Unauthorized. Hanya customer yang dapat mengakses endpoint ini."},
-            status=403,
-        )
 
-    booking = get_object_or_404(
-        Booking.objects.select_related("groomer", "groomer__user"),
-        id=booking_id,
-        customer=request.user,
-    )
-
-    is_allowed, error_message = _validate_customer_cancel_booking(booking)
-    if not is_allowed:
-        return JsonResponse({"message": error_message}, status=400)
-
-    booking.status = Booking.Status.CANCELLED
-    booking.save(update_fields=["status", "updated_at"])
-
-    return JsonResponse(
-        {
-            "message": "Booking berhasil dibatalkan.",
-            "booking_id": booking.id,
-            "booking_code": booking.booking_code,
-            "status": booking.status,
-            "status_display": booking.get_status_display(),
-            "redirect_url": reverse("booking:history"),
-        },
-        status=200,
-    )
 
 # Halaman booking aktif (tidak cancelled)
 @login_required
