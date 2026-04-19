@@ -248,33 +248,15 @@ def staff_booking_detail(request, booking_id):
         "payment_status_label": booking.get_payment_status_display(),
         "time_range": f"{booking.waktu_mulai.strftime('%H:%M')} - {booking.waktu_selesai.strftime('%H:%M')}",
         "total_duration": booking.total_durasi,
+        "total_harga": f"{booking.total_harga:,.0f}".replace(",", "."),
         "pet_items": pet_items,
         "can_cancel": booking.status == Booking.Status.SCHEDULED,
-        "can_mark_paid": (
-            booking.payment_status == Booking.PaymentStatus.UNPAID
-            and booking.status == Booking.Status.SERVICE_COMPLETED
-        ),
         "grooming_notes": grooming_notes,
     }
 
     return render(request, "booking/staff_booking_detail.html", context)
 
 
-def _iter_booking_slots(booking, slot_minutes=30):
-    """
-    Menghasilkan semua slot waktu yang dipakai booking:
-    contoh 08:00-09:30 -> 08:00, 08:30, 09:00
-    """
-    current = datetime.combine(booking.tanggal, booking.waktu_mulai)
-    end = datetime.combine(booking.tanggal, booking.waktu_selesai)
-    step = timedelta(minutes=slot_minutes)
-
-    slots = []
-    while current < end:
-        slots.append(current.strftime("%H:%M"))
-        current += step
-    return slots
-
 # Calculate size label (nanti ganti dengan defined method di model pet)
 def _get_pet_size_label(pet):
     pet_type = (pet.jenis or "").lower()
@@ -296,102 +278,6 @@ def _get_pet_size_label(pet):
             return "XL"
 
     return "-"
-
-
-@login_required
-def staff_booking_detail(request, booking_id):
-    if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
-        return HttpResponseForbidden("403 Forbidden: hanya staff operasional yang dapat mengakses halaman ini.")
-
-    booking = get_object_or_404(
-        Booking.objects.select_related("customer", "groomer", "groomer__user")
-        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
-        id=booking_id,
-    )
-
-    pet_items = []
-    for item in booking.items.all():
-        additionals = []
-        total_pet_duration = item.durasi_paket
-
-        for additional in item.additionals.all():
-            additionals.append({
-                "name": additional.additional.name,
-                "duration": additional.durasi,
-            })
-            total_pet_duration += additional.durasi
-
-        pet_items.append({
-            "pet_name": item.pet.name,
-            "pet_type": item.pet.jenis,
-            "pet_size": _get_pet_size_label(item.pet),
-            "package_name": item.package.name if item.package else "-",
-            "package_duration": item.durasi_paket,
-            "additionals": additionals,
-            "total_pet_duration": total_pet_duration,
-        })
-
-    context = {
-        "booking": booking,
-        "owner_name": booking.customer.full_name,
-        "owner_phone": booking.customer.phone_number,
-        "service_type_label": booking.get_service_type_display(),
-        "groomer_name": booking.groomer.user.full_name,
-        "address": booking.alamat,
-        "status": booking.status,
-        "status_label": booking.get_status_display(),
-        "payment_status": booking.payment_status,
-        "payment_status_label": booking.get_payment_status_display(),
-        "time_range": f"{booking.waktu_mulai.strftime('%H:%M')} - {booking.waktu_selesai.strftime('%H:%M')}",
-        "total_duration": booking.total_durasi,
-        "pet_items": pet_items,
-        "can_cancel": booking.status == Booking.Status.SCHEDULED,
-        "can_mark_paid": (
-            booking.payment_status == Booking.PaymentStatus.UNPAID
-            and booking.status == Booking.Status.SERVICE_COMPLETED
-        ),
-    }
-
-    return render(request, "booking/staff_booking_detail.html", context)
-
-
-def _iter_booking_slots(booking, slot_minutes=30):
-    """
-    Menghasilkan semua slot waktu yang dipakai booking:
-    contoh 08:00-09:30 -> 08:00, 08:30, 09:00
-    """
-    current = datetime.combine(booking.tanggal, booking.waktu_mulai)
-    end = datetime.combine(booking.tanggal, booking.waktu_selesai)
-    step = timedelta(minutes=slot_minutes)
-
-    slots = []
-    while current < end:
-        slots.append(current.strftime("%H:%M"))
-        current += step
-    return slots
-
-# Calculate size label (nanti ganti dengan defined method di model pet)
-def _get_pet_size_label(pet):
-    pet_type = (pet.jenis or "").lower()
-    weight = pet.berat
-
-    if pet_type == "cat":
-        return ""
-
-    if pet_type == "dog":
-        if weight is None:
-            return "-"
-        if 2 <= weight <= 10:
-            return "S"
-        if 11 <= weight <= 25:
-            return "M"
-        if 26 <= weight <= 45:
-            return "L"
-        if weight > 45:
-            return "XL"
-
-    return "-"
-
 
 def _is_customer(user) -> bool:
     return user.is_authenticated and user.role == User.Role.CUSTOMER
