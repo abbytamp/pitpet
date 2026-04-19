@@ -69,6 +69,23 @@
       </div>
     </div>
 
+    {% if messages %}
+    <div class="space-y-3 mb-4 sm:mb-6">
+      {% for message in messages %}
+        <div class="rounded-xl border px-4 py-3 text-sm
+          {% if message.tags == 'success' %}
+            border-green-200 bg-green-50 text-green-700
+          {% elif message.tags == 'error' %}
+            border-red-200 bg-red-50 text-red-700
+          {% else %}
+            border-gray-200 bg-gray-50 text-gray-700
+          {% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
     <!-- Daftar Hewan -->
     <div class="bg-white border border-gray-100 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
 
@@ -104,14 +121,24 @@
           </div>
 
           <!-- Right -->
-          {% if can_show_pet_note_button %}
           <div class="flex items-start sm:items-center">
-            <a href="#"
-               class="px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition">
-              Isi Form
-            </a>
+            {% if can_show_pet_note_button %}
+                {% if item.already_has_note %}
+                    <span class="px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold bg-green-50 text-green-700 border border-green-200">
+                      Sudah Diisi
+                    </span>
+                {% else %}
+                    <a href="{% url 'groomer_jobs:grooming_service_form' booking.id item.booking_item_id %}"
+                      class="px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition">
+                      Isi Form Layanan
+                    </a>
+                {% endif %}
+            {% elif item.already_has_note %}
+                <span class="px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold bg-green-50 text-green-700 border border-green-200">
+                  Sudah Diisi
+                </span>
+            {% endif %}
           </div>
-          {% endif %}
 
         </div>
         {% empty %}
@@ -172,6 +199,33 @@
 <script>
 function closeErrorModal() {
   document.getElementById('errorModal').style.display = 'none';
+}
+</script>
+{% endif %}
+
+{% if request.GET.all_forms_completed == "1" %}
+<div id="allFormsCompletedModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+
+    <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+      Semua form sudah terisi
+    </h3>
+
+    <p class="text-gray-600 mb-4 sm:mb-6 text-sm">
+      Seluruh form sudah terisi, silakan klik service complete untuk menyelesaikan layanan.
+    </p>
+
+    <button onclick="closeAllFormsCompletedModal()"
+            class="w-full py-3 px-4 rounded-xl font-semibold bg-blue-500 hover:bg-blue-600 text-white transition">
+      OK
+    </button>
+
+  </div>
+</div>
+
+<script>
+function closeAllFormsCompletedModal() {
+  document.getElementById('allFormsCompletedModal').style.display = 'none';
 }
 </script>
 {% endif %}

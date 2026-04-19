@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+  <div class="max-w-4xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8">
+
+    <div class="mb-4">
+      <a href="{% url 'groomer_jobs:job_detail' booking.id %}"
+         class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 transition">
+        &lt; Kembali ke Detail Pekerjaan
+      </a>
+    </div>
+
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
+      Form Layanan Grooming
+    </h1>
+
+    {% if messages %}
+      <div class="space-y-3 mb-4 sm:mb-6">
+        {% for message in messages %}
+          <div class="rounded-xl border px-4 py-3 text-sm
+            {% if message.tags == 'success' %}
+              border-green-200 bg-green-50 text-green-700
+            {% elif message.tags == 'error' %}
+              border-red-200 bg-red-50 text-red-700
+            {% else %}
+              border-gray-200 bg-gray-50 text-gray-700
+            {% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Informasi Ringkas -->
+    <div class="bg-white border border-gray-100 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+      <h2 class="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
+        Informasi Booking dan Hewan
+      </h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="bg-gray-50 border border-gray-100 rounded-lg sm:rounded-xl p-3">
+          <p class="text-xs text-gray-500">Booking ID</p>
+          <p class="text-sm font-semibold text-gray-900">{{ booking.booking_code }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-lg sm:rounded-xl p-3">
+          <p class="text-xs text-gray-500">Nama Pemilik</p>
+          <p class="text-sm font-semibold text-gray-900">{{ owner_name }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-lg sm:rounded-xl p-3">
+          <p class="text-xs text-gray-500">Nama Groomer</p>
+          <p class="text-sm font-semibold text-gray-900">{{ groomer_name }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-lg sm:rounded-xl p-3">
+          <p class="text-xs text-gray-500">Jenis Layanan</p>
+          <p class="text-sm font-semibold text-gray-900">{{ service_type_label }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-lg sm:rounded-xl p-3">
+          <p class="text-xs text-gray-500">Jam Layanan</p>
+          <p class="text-sm font-semibold text-gray-900">{{ time_range }}</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-lg sm:rounded-xl p-3">
+          <p class="text-xs text-gray-500">Hewan</p>
+          <p class="text-sm font-semibold text-gray-900">
+            {{ pet.name }} ({{ pet.jenis }})
+          </p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-lg sm:rounded-xl p-3 sm:col-span-2">
+          <p class="text-xs text-gray-500">Paket</p>
+          <p class="text-sm font-semibold text-gray-900">
+            {{ booking_item.package.name }} ({{ booking_item.durasi_paket }} menit)
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white border border-gray-100 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
+      <form id="groomingServiceForm"
+            method="post"
+            action="{% url 'groomer_jobs:submit_grooming_service_form' booking.id booking_item.id %}"
+            enctype="multipart/form-data"
+            class="space-y-5">
+        {% csrf_token %}
+
+        <div>
+          <label for="kondisi_bulu" class="block text-sm font-semibold text-gray-900 mb-2">
+            Kondisi Bulu <span class="text-red-500">*</span>
+          </label>
+          <textarea id="kondisi_bulu" name="kondisi_bulu" rows="3"
+                    class="w-full rounded-xl border {% if errors.kondisi_bulu %}border-red-300{% else %}border-gray-200{% endif %} px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    placeholder="Masukkan kondisi bulu hewan">{{ old.kondisi_bulu|default:'' }}</textarea>
+          {% if errors.kondisi_bulu %}
+            <p class="mt-1 text-sm text-red-600">{{ errors.kondisi_bulu }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="kondisi_kulit" class="block text-sm font-semibold text-gray-900 mb-2">
+            Kondisi Kulit <span class="text-red-500">*</span>
+          </label>
+          <textarea id="kondisi_kulit" name="kondisi_kulit" rows="3"
+                    class="w-full rounded-xl border {% if errors.kondisi_kulit %}border-red-300{% else %}border-gray-200{% endif %} px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    placeholder="Masukkan kondisi kulit hewan">{{ old.kondisi_kulit|default:'' }}</textarea>
+          {% if errors.kondisi_kulit %}
+            <p class="mt-1 text-sm text-red-600">{{ errors.kondisi_kulit }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="kondisi_telinga" class="block text-sm font-semibold text-gray-900 mb-2">
+            Kondisi Telinga <span class="text-red-500">*</span>
+          </label>
+          <textarea id="kondisi_telinga" name="kondisi_telinga" rows="3"
+                    class="w-full rounded-xl border {% if errors.kondisi_telinga %}border-red-300{% else %}border-gray-200{% endif %} px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    placeholder="Masukkan kondisi telinga hewan">{{ old.kondisi_telinga|default:'' }}</textarea>
+          {% if errors.kondisi_telinga %}
+            <p class="mt-1 text-sm text-red-600">{{ errors.kondisi_telinga }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="kondisi_kuku" class="block text-sm font-semibold text-gray-900 mb-2">
+            Kondisi Kuku <span class="text-red-500">*</span>
+          </label>
+          <textarea id="kondisi_kuku" name="kondisi_kuku" rows="3"
+                    class="w-full rounded-xl border {% if errors.kondisi_kuku %}border-red-300{% else %}border-gray-200{% endif %} px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    placeholder="Masukkan kondisi kuku hewan">{{ old.kondisi_kuku|default:'' }}</textarea>
+          {% if errors.kondisi_kuku %}
+            <p class="mt-1 text-sm text-red-600">{{ errors.kondisi_kuku }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="perilaku_hewan" class="block text-sm font-semibold text-gray-900 mb-2">
+            Perilaku Hewan <span class="text-red-500">*</span>
+          </label>
+          <textarea id="perilaku_hewan" name="perilaku_hewan" rows="3"
+                    class="w-full rounded-xl border {% if errors.perilaku_hewan %}border-red-300{% else %}border-gray-200{% endif %} px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    placeholder="Masukkan perilaku hewan selama grooming">{{ old.perilaku_hewan|default:'' }}</textarea>
+          {% if errors.perilaku_hewan %}
+            <p class="mt-1 text-sm text-red-600">{{ errors.perilaku_hewan }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="catatan_tambahan" class="block text-sm font-semibold text-gray-900 mb-2">
+            Catatan Tambahan
+          </label>
+          <textarea id="catatan_tambahan" name="catatan_tambahan" rows="3"
+                    class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    placeholder="Masukkan catatan tambahan jika ada">{{ old.catatan_tambahan|default:'' }}</textarea>
+        </div>
+
+        <div>
+          <label for="foto_bukti_layanan" class="block text-sm font-semibold text-gray-900 mb-2">
+            Foto Bukti Layanan <span class="text-red-500">*</span>
+          </label>
+          <input id="foto_bukti_layanan"
+                 name="foto_bukti_layanan"
+                 type="file"
+                 accept="image/*"
+                 class="block w-full rounded-xl border {% if errors.foto_bukti_layanan %}border-red-300{% else %}border-gray-200{% endif %} bg-white px-4 py-3 text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100">
+          <p class="mt-1 text-xs text-gray-500">File harus berupa gambar (jpg, jpeg, png, atau webp).</p>
+          {% if errors.foto_bukti_layanan %}
+            <p class="mt-1 text-sm text-red-600">{{ errors.foto_bukti_layanan }}</p>
+          {% endif %}
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2">
+          <a href="{% url 'groomer_jobs:job_detail' booking.id %}"
+             class="w-full sm:w-auto px-4 sm:px-6 py-3 rounded-xl bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200 transition text-sm text-center">
+            Batal
+          </a>
+
+          <button type="button"
+                  id="openSubmitModalBtn"
+                  disabled
+                  class="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition text-sm disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300">
+            Submit
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<!-- Submit Confirmation Modal -->
+<div id="submitConfirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4">
+  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+    <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+      Konfirmasi Simpan Catatan
+    </h3>
+
+    <p class="text-gray-600 mb-4 sm:mb-6 text-sm">
+      Apakah Anda yakin ingin menyimpan catatan grooming ini?
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center gap-3">
+      <button type="button"
+              onclick="closeSubmitModal()"
+              class="w-full py-3 px-4 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-black transition text-sm">
+        Batal
+      </button>
+
+      <button type="button"
+              id="confirmSubmitBtn"
+              class="w-full py-3 px-4 rounded-xl font-semibold bg-green-500 hover:bg-green-600 text-white transition text-sm">
+        Konfirmasi
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById('groomingServiceForm');
+  const openSubmitModalBtn = document.getElementById('openSubmitModalBtn');
+  const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+  const modal = document.getElementById('submitConfirmModal');
+
+  const requiredFields = [
+    document.getElementById('kondisi_bulu'),
+    document.getElementById('kondisi_kulit'),
+    document.getElementById('kondisi_telinga'),
+    document.getElementById('kondisi_kuku'),
+    document.getElementById('perilaku_hewan'),
+    document.getElementById('foto_bukti_layanan'),
+  ];
+
+  function isFilled(field) {
+    if (!field) return false;
+    if (field.type === 'file') {
+      return field.files && field.files.length > 0;
+    }
+    return field.value.trim() !== '';
+  }
+
+  function validateFormState() {
+    const allFilled = requiredFields.every(isFilled);
+    openSubmitModalBtn.disabled = !allFilled;
+  }
+
+  requiredFields.forEach((field) => {
+    field.addEventListener('input', validateFormState);
+    field.addEventListener('change', validateFormState);
+  });
+
+  openSubmitModalBtn.addEventListener('click', function () {
+    if (openSubmitModalBtn.disabled) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  });
+
+  confirmSubmitBtn.addEventListener('click', function () {
+    form.submit();
+  });
+
+  validateFormState();
+})();
+
+function closeSubmitModal() {
+  const modal = document.getElementById('submitConfirmModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+</script>
+{% endblock %}
