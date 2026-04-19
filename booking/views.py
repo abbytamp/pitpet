@@ -830,10 +830,6 @@ def reschedule_booking(request, booking_id):
         customer=request.user,
     )
 
-    now = timezone.localtime()
-    booking_datetime = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
-    time_diff = booking_datetime - now
-
     if booking.status != Booking.Status.SCHEDULED:
         messages.error(request, "Booking tidak dapat di-reschedule.")
         return redirect("booking:my_bookings")
@@ -842,18 +838,22 @@ def reschedule_booking(request, booking_id):
         messages.error(request, "Booking sudah pernah di-reschedule sebelumnya.")
         return redirect("booking:my_bookings")
 
-    if time_diff < timedelta(hours=2):
-        messages.error(request, "Perubahan jadwal kurang dari 2 jam. Silakan hubungi staff untuk perubahan jadwal.")
+    now = timezone.localtime()
+    booking_datetime = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
+    if (booking_datetime - now).total_seconds() < 0:
+        messages.error(request, "Booking sudah lewat. Tidak dapat di-reschedule.")
         return redirect("booking:my_bookings")
 
-    min_date = (timezone.localdate() + timedelta(days=1)).isoformat()
-    max_date = (timezone.localdate() + timedelta(days=MAX_BOOKING_DAYS)).isoformat()
+    today = timezone.localdate()
+    min_date = today.isoformat()
+    max_date = (today + timedelta(days=MAX_BOOKING_DAYS)).isoformat()
 
     context = {
         "booking": booking,
         "groomer": booking.groomer,
         "groomer_name": booking.groomer.user.full_name,
-        "service_type": booking.get_service_type_display(),
+        "service_type": booking.service_type,
+        "service_type_display": booking.get_service_type_display(),
         "total_durasi": booking.total_durasi,
         "min_date": min_date,
         "max_date": max_date,
@@ -882,17 +882,7 @@ def api_reschedule_slots(request, booking_id):
     except ValueError:
         return JsonResponse({"error": "Format date tidak valid."}, status=400)
 
-    today = timezone.localdate()
-    if date_obj < today or date_obj > today + timedelta(days=MAX_BOOKING_DAYS):
-        return JsonResponse({"error": "Tanggal di luar range booking."}, status=400)
-
-    if not is_working_day(date_obj):
-        return JsonResponse(
-            {
-                "slots": [],
-                "message": "Hari Senin libur. Silakan pilih tanggal lain.",
-            }
-        )
+    from .utils import get_available_slots
 
     groomer = booking.groomer
     duration = booking.total_durasi
@@ -936,12 +926,17 @@ def reschedule_booking_submit(request, booking_id):
         messages.error(request, "Booking sudah pernah di-reschedule sebelumnya.")
         return redirect("booking:my_bookings")
 
-    if booking_datetime - now < timedelta(hours=2):
-        messages.error(request, "Perubahan jadwal kurang dari 2 jam.")
+    if (booking_datetime - now).total_seconds() < 0:
+        messages.error(request, "Booking sudah lewat. Tidak dapat di-reschedule.")
         return redirect("booking:my_bookings")
 
+    groomer_id_raw = request.POST.get("groomer_id", "").strip()
     tanggal_raw = request.POST.get("tanggal", "").strip()
     waktu_mulai_raw = request.POST.get("waktu_mulai", "").strip()
+
+    if not groomer_id_raw:
+        messages.error(request, "Groomer wajib dipilih.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
 
     if not tanggal_raw:
         messages.error(request, "Tanggal wajib diisi.")
@@ -952,34 +947,44 @@ def reschedule_booking_submit(request, booking_id):
         return redirect("booking:reschedule_booking", booking_id=booking_id)
 
     try:
+        groomer_id = int(groomer_id_raw)
         tanggal = datetime.strptime(tanggal_raw, "%Y-%m-%d").date()
         waktu_mulai = datetime.strptime(waktu_mulai_raw, "%H:%M").time()
     except ValueError as e:
-        messages.error(request, f"Format tanggal atau waktu tidak valid: {str(e)}")
+        messages.error(request, "Format groomer, tanggal, atau waktu tidak valid.")
         return redirect("booking:reschedule_booking", booking_id=booking_id)
 
-    if not meets_minimum_lead_time(tanggal, waktu_mulai):
-        messages.error(request, "Booking/reschedule hanya bisa dipilih minimal H+2 jam dari sekarang.")
+    try:
+        new_groomer = Groomer.objects.get(id=groomer_id, user__is_active=True)
+    except Groomer.DoesNotExist:
+        messages.error(request, "Groomer tidak valid atau tidak aktif.")
         return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    new_booking_datetime = timezone.make_aware(datetime.combine(tanggal, waktu_mulai))
+    now = timezone.localtime()
+    if (new_booking_datetime - now).total_seconds() < 0:
+        messages.error(request, "Waktu booking baru sudah lewat. Silakan pilih waktu lain.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    if not is_slot_available(new_groomer.id, tanggal, booking.total_durasi, booking.service_type, waktu_mulai):
+        messages.error(request, "Slot yang dipilih sudah terisi. Silakan pilih waktu lain.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    end_time = calculate_end_time(waktu_mulai, booking.total_durasi, tanggal)
 
     if booking.original_tanggal is None:
         booking.original_tanggal = booking.tanggal
         booking.original_waktu_mulai = booking.waktu_mulai
         booking.original_waktu_selesai = booking.waktu_selesai
 
-    if not is_slot_available(booking.groomer.id, tanggal, booking.total_durasi, booking.service_type, waktu_mulai):
-        messages.error(request, "Slot yang dipilih sudah terisi. Silakan pilih waktu lain.")
-        return redirect("booking:reschedule_booking", booking_id=booking_id)
-
-    end_time = calculate_end_time(waktu_mulai, booking.total_durasi, tanggal)
-
+    booking.groomer = new_groomer
     booking.tanggal = tanggal
     booking.waktu_mulai = waktu_mulai
     booking.waktu_selesai = end_time
     booking.is_rescheduled = True
     booking.save()
 
-    messages.success(request, f"Jadwal booking berhasil diubah ke {tanggal} {waktu_mulai} - {end_time}.")
+    messages.success(request, f"Booking berhasil di-reschedule ke {new_groomer.user.full_name} pada {tanggal} {waktu_mulai} - {end_time}.")
     return redirect("booking:my_bookings")
 
 

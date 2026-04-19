@@ -43,18 +43,14 @@
                 <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Detail Booking</h3>
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                        <p class="text-gray-400">Groomer</p>
-                        <p class="font-semibold text-gray-800">{{ groomer_name }}</p>
-                    </div>
-                    <div>
                         <p class="text-gray-400">Jenis Layanan</p>
-                        <p class="font-semibold text-gray-800">{{ service_type }}</p>
+                        <p class="font-semibold text-gray-800">{{ service_type_display }}</p>
                     </div>
                     <div>
                         <p class="text-gray-400">Durasi</p>
                         <p class="font-semibold text-gray-800">{{ total_durasi }} menit</p>
                     </div>
-                    <div>
+                    <div class="col-span-2">
                         <p class="text-gray-400">Jadwal Lama</p>
                         <p class="font-semibold text-gray-800">{{ booking.tanggal }} {{ booking.waktu_mulai }} - {{ booking.waktu_selesai }}</p>
                     </div>
@@ -64,6 +60,16 @@
             <form id="rescheduleForm" action="{% url 'booking:reschedule_booking_submit' booking.id %}" method="POST" class="space-y-6">
                 {% csrf_token %}
                 
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Groomer</label>
+                    <select id="groomerSelect" name="groomer_id" required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#F9A828] focus:ring-2 focus:ring-[#F9A828]/20 outline-none transition duration-200 bg-gray-50"
+                            onchange="loadSlots()">
+                        <option value="">Pilih Groomer</option>
+                    </select>
+                    <input type="hidden" id="originalGroomerId" value="{{ groomer.id }}">
+                </div>
+
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Tanggal</label>
                     <input type="date" id="tanggal" name="tanggal" 
@@ -76,7 +82,7 @@
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Jam</label>
                     <div id="slotsContainer" class="grid grid-cols-3 gap-3">
-                        <p class="col-span-3 text-gray-400 text-sm text-center py-4">Pilih tanggal terlebih dahulu</p>
+                        <p class="col-span-3 text-gray-400 text-sm text-center py-4">Pilih groomer dan tanggal terlebih dahulu</p>
                     </div>
                     <input type="hidden" id="waktu_mulai" name="waktu_mulai" required>
                 </div>
@@ -98,12 +104,45 @@
 
     <script>
         const bookingId = {{ booking.id }};
+        const serviceType = "{{ service_type }}";
+        const originalGroomerId = document.getElementById('originalGroomerId').value;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGroomers();
+        });
+
+        async function loadGroomers() {
+            const groomerSelect = document.getElementById('groomerSelect');
+            
+            try {
+                const response = await fetch(`/booking/api/groomers/?service_type=${encodeURIComponent(serviceType)}`);
+                const data = await response.json();
+                
+                if (data.groomers && data.groomers.length > 0) {
+                    let html = '<option value="">Pilih Groomer</option>';
+                    data.groomers.forEach(groomer => {
+                        const selected = groomer.id == originalGroomerId ? 'selected' : '';
+                        html += `<option value="${groomer.id}" ${selected}>${groomer.name}</option>`;
+                    });
+                    groomerSelect.innerHTML = html;
+                } else {
+                    groomerSelect.innerHTML = '<option value="">Tidak ada groomer tersedia</option>';
+                }
+            } catch (error) {
+                console.error('Error loading groomers:', error);
+                groomerSelect.innerHTML = '<option value="">Error memuat groomer</option>';
+            }
+        }
 
         function loadSlots() {
+            const groomerId = document.getElementById('groomerSelect').value;
             const tanggal = document.getElementById('tanggal').value;
             const slotsContainer = document.getElementById('slotsContainer');
             
-            console.log('Loading slots for date:', tanggal);
+            if (!groomerId) {
+                slotsContainer.innerHTML = '<p class="col-span-3 text-gray-400 text-sm text-center py-4">Pilih groomer terlebih dahulu</p>';
+                return;
+            }
             
             if (!tanggal) {
                 slotsContainer.innerHTML = '<p class="col-span-3 text-gray-400 text-sm text-center py-4">Pilih tanggal terlebih dahulu</p>';
@@ -112,13 +151,11 @@
 
             slotsContainer.innerHTML = '<p class="col-span-3 text-gray-400 text-sm text-center py-4">Memuat slot...</p>';
 
-            const url = "/booking/my/" + bookingId + "/reschedule/api/slots/?date=" + tanggal;
-            console.log('Fetching URL:', url);
+            const url = `/booking/api/slots/?groomer_id=${encodeURIComponent(groomerId)}&date=${encodeURIComponent(tanggal)}&duration={{ total_durasi }}&service_type=${encodeURIComponent(serviceType)}`;
 
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('API Response:', data);
                     if (data.slots && data.slots.length > 0) {
                         let html = '';
                         data.slots.forEach(slot => {
@@ -147,9 +184,10 @@
         }
 
         document.getElementById('rescheduleForm').addEventListener('submit', function(e) {
+            const groomerId = document.getElementById('groomerSelect').value;
             const tanggal = document.getElementById('tanggal').value;
             const waktu = document.getElementById('waktu_mulai').value;
-            console.log('Submitting - Tanggal:', tanggal, 'Waktu:', waktu);
+            console.log('Submitting - Groomer:', groomerId, 'Tanggal:', tanggal, 'Waktu:', waktu);
         });
     </script>
 </section>
