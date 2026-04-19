@@ -47,11 +47,11 @@
                 {% for item in booking.items.all %}
                 <div class="border rounded-lg p-3 text-sm">
                     <p class="font-medium">{{ item.pet.name }}</p>
-                    <p>{{ item.package.name }} - {{ item.durasi_paket }} menit - Rp {{ item.harga_paket|rupiah }}</p>
+                    <p>{{ item.package_name|default:item.package.name|default:"-" }} - {{ item.durasi_paket }} menit - Rp {{ item.harga_paket|rupiah }}</p>
                     {% if item.additionals.all %}
                     <ul class="mt-1 text-gray-600 list-disc list-inside">
                         {% for add in item.additionals.all %}
-                        <li>{{ add.additional.name }} (+{{ add.durasi }} menit) - Rp {{ add.harga|rupiah }}</li>
+                        <li>{{ add.additional_name|default:add.additional.name|default:"-" }} (+{{ add.durasi }} menit) - Rp {{ add.harga|rupiah }}</li>
                         {% endfor %}
                     </ul>
                     {% endif %}

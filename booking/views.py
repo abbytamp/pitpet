@@ -46,6 +46,7 @@ from booking.utils import (
     get_available_slots,
     get_package_price_for_pet,
     get_pet_animal_type,
+    get_dog_size,
     is_working_day,
     is_slot_available,
     meets_minimum_lead_time,
@@ -218,7 +219,7 @@ def staff_booking_detail(request, booking_id):
 
         for additional in item.additionals.all():
             additionals.append({
-                "name": additional.additional.name,
+                "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
                 "duration": additional.durasi,
             })
             total_pet_duration += additional.durasi
@@ -227,7 +228,7 @@ def staff_booking_detail(request, booking_id):
             "pet_name": item.pet.name,
             "pet_type": item.pet.jenis,
             "pet_size": _get_pet_size_label(item.pet),
-            "package_name": item.package.name if item.package else "-",
+            "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
             "package_duration": item.durasi_paket,
             "additionals": additionals,
             "total_pet_duration": total_pet_duration,
@@ -263,22 +264,14 @@ def staff_booking_detail(request, booking_id):
 # Calculate size label (nanti ganti dengan defined method di model pet)
 def _get_pet_size_label(pet):
     pet_type = (pet.jenis or "").lower()
-    weight = pet.berat
 
     if pet_type == "cat":
         return ""
 
     if pet_type == "dog":
-        if weight is None:
+        if pet.berat is None:
             return "-"
-        if 2 <= weight <= 10:
-            return "S"
-        if 11 <= weight <= 25:
-            return "M"
-        if 26 <= weight <= 45:
-            return "L"
-        if weight > 45:
-            return "XL"
+        return get_dog_size(float(pet.berat))
 
     return "-"
 
@@ -593,6 +586,7 @@ def booking_create(request):
                 booking=booking,
                 pet=item["pet"],
                 package=item["package"],
+                package_name=item["package"].name,
                 harga_paket=item["harga_paket"],
                 durasi_paket=item["durasi_paket"],
                 subtotal=item["subtotal"],
@@ -607,6 +601,7 @@ def booking_create(request):
                     BookingItemAdditional(
                         booking_item=created_item,
                         additional=add["additional"],
+                        additional_name=add["additional"].name,
                         harga=add["harga"],
                         durasi=add["durasi"],
                     )
@@ -932,7 +927,7 @@ def booking_history_detail(request, booking_id):
         additionals = []
         for additional in item.additionals.all():
             additionals.append({
-                "name": additional.additional.name,
+                "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
                 "harga": additional.harga,
             })
 
@@ -941,7 +936,7 @@ def booking_history_detail(request, booking_id):
         pet_items.append({
             "pet_name": item.pet.name,
             "pet_type": item.pet.jenis,
-            "package_name": item.package.name if item.package else "-",
+            "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
             "package_price": item.harga_paket,
             "durasi_paket": item.durasi_paket,
             "additionals": additionals,
@@ -1079,7 +1074,7 @@ def staff_booking_history_detail(request, booking_id):
         additionals = []
         for additional in item.additionals.all():
             additionals.append({
-                "name": additional.additional.name,
+                "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
                 "harga": additional.harga,
             })
 
@@ -1088,7 +1083,7 @@ def staff_booking_history_detail(request, booking_id):
         pet_items.append({
             "pet_name": item.pet.name,
             "pet_type": item.pet.jenis,
-            "package_name": item.package.name if item.package else "-",
+            "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
             "package_price": item.harga_paket,
             "durasi_paket": item.durasi_paket,
             "additionals": additionals,
