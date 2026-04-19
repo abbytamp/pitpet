@@ -104,7 +104,7 @@ def _as_datetime(date_obj, time_obj) -> datetime:
 def _with_buffer(start_dt: datetime, end_dt: datetime, service_type: str) -> BookingWindow:
     if service_type == Booking.ServiceType.HOME:
         gap = timedelta(minutes=HOME_BUFFER_MINUTES)
-        return BookingWindow(start=start_dt - gap, end=end_dt + gap)
+        return BookingWindow(start=start_dt - gap, end=end_dt)
     return BookingWindow(start=start_dt, end=end_dt)
 
 
@@ -127,7 +127,7 @@ def can_fit_in_working_hours(date_obj, start_time: time, duration_minutes: int, 
     if start_dt < visible_start or end_dt > visible_end:
         return False
 
-    # For home service, keep the hidden travel buffer inside working hours too.
+    # For home service, keep the hidden travel buffer before the booking inside working hours too.
     buffered = _with_buffer(start_dt, end_dt, service_type)
     return buffered.start >= visible_start and buffered.end <= visible_end
 

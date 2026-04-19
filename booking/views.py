@@ -24,6 +24,7 @@ def staff_cancel_booking(request, booking_id):
     else:
         messages.error(request, "Booking tidak dapat dibatalkan.")
         return redirect('booking:staff_booking_detail', booking_id=booking_id)
+        
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 import json
@@ -138,12 +139,9 @@ def staff_booking_schedule(request):
 
             if booking.service_type == Booking.ServiceType.HOME:
                 before_slot = (datetime.combine(tanggal, booking.waktu_mulai) - timedelta(minutes=SLOT_MINUTES)).strftime('%H:%M')
-                after_slot = end_str
 
                 if _slot_in_working_hours(before_slot):
                     buffer_map.setdefault(before_slot, set()).add(booking.booking_code)
-                if _slot_in_working_hours(after_slot):
-                    buffer_map.setdefault(after_slot, set()).add(booking.booking_code)
 
         schedule = []
         for slot_time in slot_times:
