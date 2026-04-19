@@ -19,6 +19,9 @@
       Detail Riwayat Booking
     </h1>
 
+    <!-- Notifikasi -->
+    <div id="paymentStatusAlert" class="hidden mb-6 rounded-xl border px-4 py-3 text-sm font-medium"></div>
+
     <!-- Informasi Booking -->
     <div class="relative bg-white border border-gray-100 rounded-2xl shadow-sm p-6 mb-6">
 
@@ -31,9 +34,12 @@
             {{ status_label }}
         </span>
 
-        <span class="text-xs font-semibold px-3 py-1 rounded-full
-            {% if payment_status == 'paid' %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-700 border border-red-200{% endif %}">
-            {{ payment_status_label }}
+        <span
+          id="paymentStatusBadge"
+          class="text-xs font-semibold px-3 py-1 rounded-full {% if payment_status == 'paid' %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-700 border border-red-200{% endif %}"
+          data-payment-status="{{ payment_status }}"
+        >
+            <span id="paymentStatusLabel">{{ payment_status_label }}</span>
         </span>
       </div>
 
@@ -109,6 +115,25 @@
         </div>
 
       </div>
+
+      {% if payment_status == 'unpaid' and status == 'service_completed' %}
+      <div class="mt-6 pt-5 border-t border-gray-100">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p class="text-sm font-semibold text-gray-900">Status Pembayaran</p>
+            <p class="text-sm text-gray-500">Konfirmasi pembayaran booking ini jika pembayaran sudah diterima.</p>
+          </div>
+
+          <button
+            type="button"
+            id="openPaymentModalBtn"
+            class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#34C1D4] text-white font-semibold hover:bg-[#2daab8] transition"
+          >
+            Konfirmasi Pembayaran
+          </button>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <!-- Daftar Hewan -->
@@ -148,4 +173,148 @@
 
   </div>
 </div>
+
+<!-- Payment Confirmation Modal -->
+<div id="paymentConfirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4">
+  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+    <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+      Konfirmasi Pembayaran
+    </h3>
+
+    <p class="text-gray-600 mb-4 sm:mb-6 text-sm">
+      Apakah Anda yakin ingin mengubah status pembayaran booking ini menjadi
+      <span class="font-semibold text-green-600">Paid</span>?
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center gap-3">
+      <button
+        type="button"
+        id="closePaymentModalBtn"
+        class="w-full py-3 px-4 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-black transition text-sm"
+      >
+        Batal
+      </button>
+
+      <button
+        type="button"
+        id="confirmPaymentBtn"
+        class="w-full py-3 px-4 rounded-xl font-semibold bg-green-500 hover:bg-green-600 text-white transition text-sm"
+      >
+        Konfirmasi
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const openPaymentModalBtn = document.getElementById('openPaymentModalBtn');
+    const closePaymentModalBtn = document.getElementById('closePaymentModalBtn');
+    const confirmPaymentBtn = document.getElementById('confirmPaymentBtn');
+    const paymentConfirmModal = document.getElementById('paymentConfirmModal');
+    const paymentStatusBadge = document.getElementById('paymentStatusBadge');
+    const paymentStatusLabel = document.getElementById('paymentStatusLabel');
+    const paymentStatusAlert = document.getElementById('paymentStatusAlert');
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) {
+        return parts.pop().split(';').shift();
+      }
+      return '';
+    }
+
+    function showAlert(message, type) {
+      paymentStatusAlert.classList.remove('hidden', 'border-green-200', 'bg-green-50', 'text-green-700', 'border-red-200', 'bg-red-50', 'text-red-700');
+
+      if (type === 'success') {
+        paymentStatusAlert.classList.add('border-green-200', 'bg-green-50', 'text-green-700');
+      } else {
+        paymentStatusAlert.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
+      }
+
+      paymentStatusAlert.textContent = message;
+
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    function openPaymentModal() {
+      if (!paymentConfirmModal) return;
+      paymentConfirmModal.classList.remove('hidden');
+      paymentConfirmModal.classList.add('flex');
+    }
+
+    function closePaymentModal() {
+      if (!paymentConfirmModal) return;
+      paymentConfirmModal.classList.add('hidden');
+      paymentConfirmModal.classList.remove('flex');
+    }
+
+    async function updatePaymentStatus() {
+      try {
+        const response = await fetch("{% url 'booking:api_update_payment_status' booking.id %}", {
+          method: "PUT",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/json"
+          }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showAlert(data.message || "Gagal memperbarui status pembayaran.", "error");
+          closePaymentModal();
+          return;
+        }
+
+        paymentStatusBadge.classList.remove('bg-red-100', 'text-red-700', 'border-red-200');
+        paymentStatusBadge.classList.add('bg-green-100', 'text-green-800', 'border', 'border-green-200');
+        paymentStatusBadge.setAttribute('data-payment-status', 'paid');
+        paymentStatusLabel.textContent = data.payment_status_label || 'Paid';
+
+        if (openPaymentModalBtn) {
+          openPaymentModalBtn.remove();
+        }
+
+        showAlert(data.message || "Status pembayaran berhasil diperbarui.", "success");
+        closePaymentModal();
+      } catch (error) {
+        showAlert("Terjadi kesalahan saat memperbarui status pembayaran.", "error");
+        closePaymentModal();
+      }
+    }
+
+    if (openPaymentModalBtn) {
+      openPaymentModalBtn.addEventListener('click', openPaymentModal);
+    }
+
+    if (closePaymentModalBtn) {
+      closePaymentModalBtn.addEventListener('click', closePaymentModal);
+    }
+
+    if (confirmPaymentBtn) {
+      confirmPaymentBtn.addEventListener('click', updatePaymentStatus);
+    }
+
+    if (paymentConfirmModal) {
+      paymentConfirmModal.addEventListener('click', function (event) {
+        if (event.target === paymentConfirmModal) {
+          closePaymentModal();
+        }
+      });
+    }
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closePaymentModal();
+      }
+    });
+  })();
+</script>
 {% endblock %}

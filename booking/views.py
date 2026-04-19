@@ -2,6 +2,7 @@
 # Cancel booking oleh staff (pastikan ada di bawah dan tidak error import)
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 
 @login_required
 def staff_cancel_booking(request, booking_id):
@@ -391,6 +392,8 @@ def _get_pet_size_label(pet):
 def _is_customer(user) -> bool:
     return user.is_authenticated and user.role == User.Role.CUSTOMER
 
+def _is_staff_operational(user) -> bool:
+    return user.is_authenticated and user.role == User.Role.STAFF
 
 def _to_int(value, default=0):
     try:
@@ -1309,4 +1312,44 @@ def api_slots(request):
             if slots
             else "Tidak ada slot tersedia untuk groomer ini pada tanggal tersebut, silakan pilih tanggal atau groomer lain.",
         }
+    )
+
+@login_required
+@require_http_methods(["PUT"])
+def api_update_payment_status(request, booking_id):
+    if not _is_staff_operational(request.user):
+        return JsonResponse(
+            {"message": "403 Forbidden: hanya staff operasional yang dapat mengubah status pembayaran."},
+            status=403,
+        )
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("customer", "groomer", "groomer__user"),
+        id=booking_id,
+    )
+
+    if booking.payment_status == Booking.PaymentStatus.PAID:
+        return JsonResponse(
+            {
+                "message": "Status pembayaran booking sudah paid.",
+                "booking_id": booking.id,
+                "payment_status": booking.payment_status,
+                "payment_status_label": booking.get_payment_status_display(),
+            },
+            status=400,
+        )
+
+    booking.payment_status = Booking.PaymentStatus.PAID
+    booking.save(update_fields=["payment_status", "updated_at"])
+
+    return JsonResponse(
+        {
+            "message": "Status pembayaran berhasil diperbarui.",
+            "booking_id": booking.id,
+            "booking_code": booking.booking_code,
+            "payment_status": booking.payment_status,
+            "payment_status_label": booking.get_payment_status_display(),
+            "updated_at": booking.updated_at.isoformat(),
+        },
+        status=200,
     )
