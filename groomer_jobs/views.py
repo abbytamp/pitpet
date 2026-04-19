@@ -19,7 +19,7 @@ def daily_job_list(request):
     offset_days = int(request.GET.get("days", 0))
     today = date.today() + timedelta(days=offset_days)
     
-    task_statuses = [booking.Status.SCHEDULED, Booking.Status.SERVICE_STARTED]
+    task_statuses = [Booking.Status.SCHEDULED, Booking.Status.SERVICE_STARTED]
 
     bookings = (
         Booking.objects.filter(
