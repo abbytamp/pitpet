@@ -251,11 +251,14 @@ def staff_booking_detail(request, booking_id):
         "total_harga": f"{booking.total_harga:,.0f}".replace(",", "."),
         "pet_items": pet_items,
         "can_cancel": booking.status == Booking.Status.SCHEDULED,
+        "can_mark_paid": (
+            booking.payment_status == Booking.PaymentStatus.UNPAID
+            and booking.status == Booking.Status.SERVICE_COMPLETED
+        ),
         "grooming_notes": grooming_notes,
     }
 
     return render(request, "booking/staff_booking_detail.html", context)
-
 
 # Calculate size label (nanti ganti dengan defined method di model pet)
 def _get_pet_size_label(pet):
@@ -904,14 +907,27 @@ def booking_history_detail(request, booking_id):
     if not _is_customer(request.user):
         return redirect("login")
 
+    from groomer_jobs.models import GroomingServiceForm
+
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "groomer", "groomer__user")
-        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
+        .prefetch_related(
+            "items__pet",
+            "items__package",
+            "items__additionals__additional",
+        ),
         id=booking_id,
         customer=request.user,
     )
 
+    grooming_forms = {
+        form.booking_item_id: form
+        for form in GroomingServiceForm.objects.filter(booking_item__booking=booking)
+    }
+
     pet_items = []
+    grooming_notes_parts = []
+
     for item in booking.items.all():
         additionals = []
         for additional in item.additionals.all():
@@ -919,6 +935,8 @@ def booking_history_detail(request, booking_id):
                 "name": additional.additional.name,
                 "harga": additional.harga,
             })
+
+        grooming_form = grooming_forms.get(item.id)
 
         pet_items.append({
             "pet_name": item.pet.name,
@@ -930,7 +948,25 @@ def booking_history_detail(request, booking_id):
             "subtotal": item.subtotal,
         })
 
-    grooming_notes = booking.grooming_notes if booking.grooming_notes else "belum tersedia"
+        if grooming_form:
+            note_lines = [
+                f"{item.pet.name}",
+                f"Kondisi bulu: {grooming_form.kondisi_bulu}",
+                f"Kondisi kulit: {grooming_form.kondisi_kulit}",
+                f"Kondisi telinga: {grooming_form.kondisi_telinga}",
+                f"Kondisi kuku: {grooming_form.kondisi_kuku}",
+                f"Perilaku hewan: {grooming_form.perilaku_hewan}",
+            ]
+
+            if grooming_form.catatan_tambahan:
+                note_lines.append(f"Catatan tambahan: {grooming_form.catatan_tambahan}")
+
+            if grooming_form.foto_bukti_layanan:
+                note_lines.append(f"Foto bukti layanan: {grooming_form.foto_bukti_layanan.url}")
+
+            grooming_notes_parts.append("\n".join(note_lines))
+
+    grooming_notes = "\n\n".join(grooming_notes_parts) if grooming_notes_parts else "belum tersedia"
 
     context = {
         "booking": booking,
@@ -948,7 +984,6 @@ def booking_history_detail(request, booking_id):
     }
 
     return render(request, "booking/history_detail.html", context)
-
 
 @login_required
 def staff_booking_history_all(request):
@@ -1020,13 +1055,26 @@ def staff_booking_history_detail(request, booking_id):
     if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
         return HttpResponseForbidden("403 Forbidden: hanya staff operasional yang dapat mengakses halaman ini.")
 
+    from groomer_jobs.models import GroomingServiceForm
+
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "groomer", "groomer__user")
-        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
+        .prefetch_related(
+            "items__pet",
+            "items__package",
+            "items__additionals__additional",
+        ),
         id=booking_id,
     )
 
+    grooming_forms = {
+        form.booking_item_id: form
+        for form in GroomingServiceForm.objects.filter(booking_item__booking=booking)
+    }
+
     pet_items = []
+    grooming_notes_parts = []
+
     for item in booking.items.all():
         additionals = []
         for additional in item.additionals.all():
@@ -1034,6 +1082,8 @@ def staff_booking_history_detail(request, booking_id):
                 "name": additional.additional.name,
                 "harga": additional.harga,
             })
+
+        grooming_form = grooming_forms.get(item.id)
 
         pet_items.append({
             "pet_name": item.pet.name,
@@ -1045,7 +1095,25 @@ def staff_booking_history_detail(request, booking_id):
             "subtotal": item.subtotal,
         })
 
-    grooming_notes = booking.grooming_notes if booking.grooming_notes else "belum tersedia"
+        if grooming_form:
+            note_lines = [
+                f"{item.pet.name}",
+                f"Kondisi bulu: {grooming_form.kondisi_bulu}",
+                f"Kondisi kulit: {grooming_form.kondisi_kulit}",
+                f"Kondisi telinga: {grooming_form.kondisi_telinga}",
+                f"Kondisi kuku: {grooming_form.kondisi_kuku}",
+                f"Perilaku hewan: {grooming_form.perilaku_hewan}",
+            ]
+
+            if grooming_form.catatan_tambahan:
+                note_lines.append(f"Catatan tambahan: {grooming_form.catatan_tambahan}")
+
+            if grooming_form.foto_bukti_layanan:
+                note_lines.append(f"Foto bukti layanan: {grooming_form.foto_bukti_layanan.url}")
+
+            grooming_notes_parts.append("\n".join(note_lines))
+
+    grooming_notes = "\n\n".join(grooming_notes_parts) if grooming_notes_parts else "belum tersedia"
 
     context = {
         "booking": booking,
