@@ -8,12 +8,10 @@ from django.views.decorators.http import require_http_methods
 def staff_cancel_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     now = timezone.localtime()
-    # Hanya staff, status scheduled, dan waktu sekarang < waktu mulai
-    booking_start = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
+    # Hanya staff dan status scheduled, tanpa cek waktu mulai
     if (
         request.user.role == User.Role.STAFF and
-        booking.status == Booking.Status.SCHEDULED and
-        now < booking_start
+        booking.status == Booking.Status.SCHEDULED
     ):
         if request.method == "POST":
             booking.status = Booking.Status.CANCELLED
@@ -48,6 +46,7 @@ from booking.utils import (
     get_available_slots,
     get_package_price_for_pet,
     get_pet_animal_type,
+    get_dog_size,
     is_working_day,
     is_slot_available,
     meets_minimum_lead_time,
@@ -89,7 +88,13 @@ def staff_booking_schedule(request):
         )
 
     # Ambil semua groomer aktif untuk tipe layanan
-    groomers = Groomer.objects.select_related('user').filter(service_type=service_type, is_deleted=False)
+    # Jika ingin menampilkan groomer yang sudah dihapus untuk tanggal sebelum/sama dengan deleted_at,
+    # gunakan all_objects dan filter manual
+    from django.db.models import Q
+    groomers = Groomer.all_objects.select_related('user').filter(
+        Q(is_deleted=False, service_type=service_type) |
+        Q(is_deleted=True, service_type=service_type, deleted_at__gte=datetime.combine(tanggal, datetime.min.time()))
+    )
 
     # Tentukan slot waktu per 30 menit (mengikuti aturan booking)
     from booking.utils import WORK_START, WORK_END, SLOT_MINUTES
@@ -214,7 +219,7 @@ def staff_booking_detail(request, booking_id):
 
         for additional in item.additionals.all():
             additionals.append({
-                "name": additional.additional.name,
+                "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
                 "duration": additional.durasi,
             })
             total_pet_duration += additional.durasi
@@ -223,7 +228,7 @@ def staff_booking_detail(request, booking_id):
             "pet_name": item.pet.name,
             "pet_type": item.pet.jenis,
             "pet_size": _get_pet_size_label(item.pet),
-            "package_name": item.package.name if item.package else "-",
+            "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
             "package_duration": item.durasi_paket,
             "additionals": additionals,
             "total_pet_duration": total_pet_duration,
@@ -244,6 +249,7 @@ def staff_booking_detail(request, booking_id):
         "payment_status_label": booking.get_payment_status_display(),
         "time_range": f"{booking.waktu_mulai.strftime('%H:%M')} - {booking.waktu_selesai.strftime('%H:%M')}",
         "total_duration": booking.total_durasi,
+        "total_harga": f"{booking.total_harga:,.0f}".replace(",", "."),
         "pet_items": pet_items,
         "can_cancel": booking.status == Booking.Status.SCHEDULED,
         "can_mark_paid": (
@@ -255,139 +261,19 @@ def staff_booking_detail(request, booking_id):
 
     return render(request, "booking/staff_booking_detail.html", context)
 
-
-def _iter_booking_slots(booking, slot_minutes=30):
-    """
-    Menghasilkan semua slot waktu yang dipakai booking:
-    contoh 08:00-09:30 -> 08:00, 08:30, 09:00
-    """
-    current = datetime.combine(booking.tanggal, booking.waktu_mulai)
-    end = datetime.combine(booking.tanggal, booking.waktu_selesai)
-    step = timedelta(minutes=slot_minutes)
-
-    slots = []
-    while current < end:
-        slots.append(current.strftime("%H:%M"))
-        current += step
-    return slots
-
 # Calculate size label (nanti ganti dengan defined method di model pet)
 def _get_pet_size_label(pet):
     pet_type = (pet.jenis or "").lower()
-    weight = pet.berat
 
     if pet_type == "cat":
         return ""
 
     if pet_type == "dog":
-        if weight is None:
+        if pet.berat is None:
             return "-"
-        if 2 <= weight <= 10:
-            return "S"
-        if 11 <= weight <= 25:
-            return "M"
-        if 26 <= weight <= 45:
-            return "L"
-        if weight > 45:
-            return "XL"
+        return get_dog_size(float(pet.berat))
 
     return "-"
-
-
-@login_required
-def staff_booking_detail(request, booking_id):
-    if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
-        return HttpResponseForbidden("403 Forbidden: hanya staff operasional yang dapat mengakses halaman ini.")
-
-    booking = get_object_or_404(
-        Booking.objects.select_related("customer", "groomer", "groomer__user")
-        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
-        id=booking_id,
-    )
-
-    pet_items = []
-    for item in booking.items.all():
-        additionals = []
-        total_pet_duration = item.durasi_paket
-
-        for additional in item.additionals.all():
-            additionals.append({
-                "name": additional.additional.name,
-                "duration": additional.durasi,
-            })
-            total_pet_duration += additional.durasi
-
-        pet_items.append({
-            "pet_name": item.pet.name,
-            "pet_type": item.pet.jenis,
-            "pet_size": _get_pet_size_label(item.pet),
-            "package_name": item.package.name if item.package else "-",
-            "package_duration": item.durasi_paket,
-            "additionals": additionals,
-            "total_pet_duration": total_pet_duration,
-        })
-
-    context = {
-        "booking": booking,
-        "owner_name": booking.customer.full_name,
-        "owner_phone": booking.customer.phone_number,
-        "service_type_label": booking.get_service_type_display(),
-        "groomer_name": booking.groomer.user.full_name,
-        "address": booking.alamat,
-        "status": booking.status,
-        "status_label": booking.get_status_display(),
-        "payment_status": booking.payment_status,
-        "payment_status_label": booking.get_payment_status_display(),
-        "time_range": f"{booking.waktu_mulai.strftime('%H:%M')} - {booking.waktu_selesai.strftime('%H:%M')}",
-        "total_duration": booking.total_durasi,
-        "pet_items": pet_items,
-        "can_cancel": booking.status == Booking.Status.SCHEDULED,
-        "can_mark_paid": (
-            booking.payment_status == Booking.PaymentStatus.UNPAID
-            and booking.status == Booking.Status.SERVICE_COMPLETED
-        ),
-    }
-
-    return render(request, "booking/staff_booking_detail.html", context)
-
-
-def _iter_booking_slots(booking, slot_minutes=30):
-    """
-    Menghasilkan semua slot waktu yang dipakai booking:
-    contoh 08:00-09:30 -> 08:00, 08:30, 09:00
-    """
-    current = datetime.combine(booking.tanggal, booking.waktu_mulai)
-    end = datetime.combine(booking.tanggal, booking.waktu_selesai)
-    step = timedelta(minutes=slot_minutes)
-
-    slots = []
-    while current < end:
-        slots.append(current.strftime("%H:%M"))
-        current += step
-    return slots
-
-# Calculate size label (nanti ganti dengan defined method di model pet)
-def _get_pet_size_label(pet):
-    pet_type = (pet.jenis or "").lower()
-    weight = pet.berat
-
-    if pet_type == "cat":
-        return ""
-
-    if pet_type == "dog":
-        if weight is None:
-            return "-"
-        if 2 <= weight <= 10:
-            return "S"
-        if 11 <= weight <= 25:
-            return "M"
-        if 26 <= weight <= 45:
-            return "L"
-        if weight > 45:
-            return "XL"
-
-    return "-"
-
 
 def _is_customer(user) -> bool:
     return user.is_authenticated and user.role == User.Role.CUSTOMER
@@ -700,6 +586,7 @@ def booking_create(request):
                 booking=booking,
                 pet=item["pet"],
                 package=item["package"],
+                package_name=item["package"].name,
                 harga_paket=item["harga_paket"],
                 durasi_paket=item["durasi_paket"],
                 subtotal=item["subtotal"],
@@ -714,6 +601,7 @@ def booking_create(request):
                     BookingItemAdditional(
                         booking_item=created_item,
                         additional=add["additional"],
+                        additional_name=add["additional"].name,
                         harga=add["harga"],
                         durasi=add["durasi"],
                     )
@@ -797,7 +685,7 @@ def cancel_booking(request, booking_id):
 
 
 
-# Halaman booking aktif (tidak cancelled)
+# Halaman booking aktif
 @login_required
 def my_bookings(request):
     if not _is_customer(request.user):
@@ -807,7 +695,10 @@ def my_bookings(request):
         Booking.objects.select_related("groomer", "groomer__user")
         .prefetch_related("items__pet")
         .filter(customer=request.user)
-        .exclude(status=Booking.Status.CANCELLED)
+        .filter(
+            models.Q(status__in=[Booking.Status.SCHEDULED, Booking.Status.SERVICE_STARTED])
+            | models.Q(status=Booking.Status.SERVICE_COMPLETED, payment_status=Booking.PaymentStatus.UNPAID)
+        )
         .order_by("-tanggal", "-waktu_mulai")
     )
 
@@ -826,10 +717,6 @@ def reschedule_booking(request, booking_id):
         customer=request.user,
     )
 
-    now = timezone.localtime()
-    booking_datetime = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
-    time_diff = booking_datetime - now
-
     if booking.status != Booking.Status.SCHEDULED:
         messages.error(request, "Booking tidak dapat di-reschedule.")
         return redirect("booking:my_bookings")
@@ -838,18 +725,22 @@ def reschedule_booking(request, booking_id):
         messages.error(request, "Booking sudah pernah di-reschedule sebelumnya.")
         return redirect("booking:my_bookings")
 
-    if time_diff < timedelta(hours=2):
+    now = timezone.localtime()
+    booking_datetime = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
+    if booking_datetime - now < timedelta(hours=2):
         messages.error(request, "Perubahan jadwal kurang dari 2 jam. Silakan hubungi staff untuk perubahan jadwal.")
         return redirect("booking:my_bookings")
 
-    min_date = (timezone.localdate() + timedelta(days=1)).isoformat()
-    max_date = (timezone.localdate() + timedelta(days=MAX_BOOKING_DAYS)).isoformat()
+    today = timezone.localdate()
+    min_date = today.isoformat()
+    max_date = (today + timedelta(days=MAX_BOOKING_DAYS)).isoformat()
 
     context = {
         "booking": booking,
         "groomer": booking.groomer,
         "groomer_name": booking.groomer.user.full_name,
-        "service_type": booking.get_service_type_display(),
+        "service_type": booking.service_type,
+        "service_type_display": booking.get_service_type_display(),
         "total_durasi": booking.total_durasi,
         "min_date": min_date,
         "max_date": max_date,
@@ -889,6 +780,8 @@ def api_reschedule_slots(request, booking_id):
                 "message": "Hari Senin libur. Silakan pilih tanggal lain.",
             }
         )
+
+    from .utils import get_available_slots
 
     groomer = booking.groomer
     duration = booking.total_durasi
@@ -933,11 +826,16 @@ def reschedule_booking_submit(request, booking_id):
         return redirect("booking:my_bookings")
 
     if booking_datetime - now < timedelta(hours=2):
-        messages.error(request, "Perubahan jadwal kurang dari 2 jam.")
+        messages.error(request, "Perubahan jadwal kurang dari 2 jam. Silakan hubungi staff untuk perubahan jadwal.")
         return redirect("booking:my_bookings")
 
+    groomer_id_raw = request.POST.get("groomer_id", "").strip()
     tanggal_raw = request.POST.get("tanggal", "").strip()
     waktu_mulai_raw = request.POST.get("waktu_mulai", "").strip()
+
+    if not groomer_id_raw:
+        messages.error(request, "Groomer wajib dipilih.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
 
     if not tanggal_raw:
         messages.error(request, "Tanggal wajib diisi.")
@@ -948,34 +846,52 @@ def reschedule_booking_submit(request, booking_id):
         return redirect("booking:reschedule_booking", booking_id=booking_id)
 
     try:
+        groomer_id = int(groomer_id_raw)
         tanggal = datetime.strptime(tanggal_raw, "%Y-%m-%d").date()
         waktu_mulai = datetime.strptime(waktu_mulai_raw, "%H:%M").time()
     except ValueError as e:
-        messages.error(request, f"Format tanggal atau waktu tidak valid: {str(e)}")
+        messages.error(request, "Format groomer, tanggal, atau waktu tidak valid.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    today = timezone.localdate()
+    max_date = today + timedelta(days=MAX_BOOKING_DAYS)
+    if tanggal < today or tanggal > max_date:
+        messages.error(request, "Tanggal booking harus antara hari ini hingga 7 hari ke depan.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    if not is_working_day(tanggal):
+        messages.error(request, "Hari Senin libur. Silakan pilih tanggal lain.")
+        return redirect("booking:reschedule_booking", booking_id=booking_id)
+
+    try:
+        new_groomer = Groomer.objects.get(id=groomer_id, user__is_active=True)
+    except Groomer.DoesNotExist:
+        messages.error(request, "Groomer tidak valid atau tidak aktif.")
         return redirect("booking:reschedule_booking", booking_id=booking_id)
 
     if not meets_minimum_lead_time(tanggal, waktu_mulai):
         messages.error(request, "Booking/reschedule hanya bisa dipilih minimal H+2 jam dari sekarang.")
         return redirect("booking:reschedule_booking", booking_id=booking_id)
 
-    if booking.original_tanggal is None:
-        booking.original_tanggal = booking.tanggal
-        booking.original_waktu_mulai = booking.waktu_mulai
-        booking.original_waktu_selesai = booking.waktu_selesai
-
-    if not is_slot_available(booking.groomer.id, tanggal, booking.total_durasi, booking.service_type, waktu_mulai):
+    if not is_slot_available(new_groomer.id, tanggal, booking.total_durasi, booking.service_type, waktu_mulai):
         messages.error(request, "Slot yang dipilih sudah terisi. Silakan pilih waktu lain.")
         return redirect("booking:reschedule_booking", booking_id=booking_id)
 
     end_time = calculate_end_time(waktu_mulai, booking.total_durasi, tanggal)
 
+    if booking.original_tanggal is None:
+        booking.original_tanggal = booking.tanggal
+        booking.original_waktu_mulai = booking.waktu_mulai
+        booking.original_waktu_selesai = booking.waktu_selesai
+
+    booking.groomer = new_groomer
     booking.tanggal = tanggal
     booking.waktu_mulai = waktu_mulai
     booking.waktu_selesai = end_time
     booking.is_rescheduled = True
     booking.save()
 
-    messages.success(request, f"Jadwal booking berhasil diubah ke {tanggal} {waktu_mulai} - {end_time}.")
+    messages.success(request, f"Booking berhasil di-reschedule ke {new_groomer.user.full_name} pada {tanggal} {waktu_mulai} - {end_time}.")
     return redirect("booking:my_bookings")
 
 
@@ -986,10 +902,14 @@ def booking_history(request):
         return redirect("login")
 
     status_filter = request.GET.get('status', 'all')
+
     bookings = Booking.objects.select_related("groomer", "groomer__user") \
         .prefetch_related("items__pet", "items__package") \
         .filter(customer=request.user) \
-        .filter(status__in=[Booking.Status.CANCELLED, Booking.Status.SERVICE_COMPLETED], payment_status__in=[Booking.PaymentStatus.PAID, Booking.PaymentStatus.UNPAID]) \
+        .filter(
+            models.Q(status=Booking.Status.CANCELLED) |
+            (models.Q(status=Booking.Status.SERVICE_COMPLETED) & models.Q(payment_status=Booking.PaymentStatus.PAID))
+        ) \
         .order_by("-tanggal", "-waktu_mulai")
 
     if status_filter == 'paid':
@@ -1005,33 +925,73 @@ def booking_history_detail(request, booking_id):
     if not _is_customer(request.user):
         return redirect("login")
 
+    from groomer_jobs.models import GroomingServiceForm
+
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "groomer", "groomer__user")
-        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
+        .prefetch_related(
+            "items__pet",
+            "items__package",
+            "items__additionals__additional",
+        ),
         id=booking_id,
         customer=request.user,
     )
 
+    is_history_booking = (
+        booking.status == Booking.Status.CANCELLED
+        or (
+            booking.status == Booking.Status.SERVICE_COMPLETED
+            and booking.payment_status == Booking.PaymentStatus.PAID
+        )
+    )
+    if not is_history_booking:
+        messages.error(request, "Booking ini belum masuk riwayat.")
+        return redirect("booking:my_bookings")
+
+    grooming_forms = {
+        form.booking_item_id: form
+        for form in GroomingServiceForm.objects.filter(booking_item__booking=booking)
+    }
+
     pet_items = []
+    grooming_summaries = []
+
     for item in booking.items.all():
         additionals = []
         for additional in item.additionals.all():
             additionals.append({
-                "name": additional.additional.name,
+                "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
                 "harga": additional.harga,
             })
+
+        grooming_form = grooming_forms.get(item.id)
 
         pet_items.append({
             "pet_name": item.pet.name,
             "pet_type": item.pet.jenis,
-            "package_name": item.package.name if item.package else "-",
+            "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
             "package_price": item.harga_paket,
             "durasi_paket": item.durasi_paket,
             "additionals": additionals,
             "subtotal": item.subtotal,
         })
 
-    grooming_notes = booking.grooming_notes if booking.grooming_notes else "belum tersedia"
+        if grooming_form:
+            grooming_summaries.append(
+                {
+                    "pet_name": item.pet.name,
+                    "kondisi_bulu": grooming_form.kondisi_bulu,
+                    "kondisi_kulit": grooming_form.kondisi_kulit,
+                    "kondisi_telinga": grooming_form.kondisi_telinga,
+                    "kondisi_kuku": grooming_form.kondisi_kuku,
+                    "perilaku_hewan": grooming_form.perilaku_hewan,
+                    "catatan_tambahan": grooming_form.catatan_tambahan,
+                    "foto_bukti_url": grooming_form.foto_bukti_layanan.url if grooming_form.foto_bukti_layanan else None,
+                }
+            )
+
+    grooming_notes = "belum tersedia" if not grooming_summaries else None
 
     context = {
         "booking": booking,
@@ -1045,11 +1005,11 @@ def booking_history_detail(request, booking_id):
         "status": booking.get_status_display(),
         "payment_status": booking.get_payment_status_display(),
         "pet_items": pet_items,
+        "grooming_summaries": grooming_summaries,
         "grooming_notes": grooming_notes,
     }
 
     return render(request, "booking/history_detail.html", context)
-
 
 @login_required
 def staff_booking_history_all(request):
@@ -1121,32 +1081,65 @@ def staff_booking_history_detail(request, booking_id):
     if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
         return HttpResponseForbidden("403 Forbidden: hanya staff operasional yang dapat mengakses halaman ini.")
 
+    from groomer_jobs.models import GroomingServiceForm
+
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "groomer", "groomer__user")
-        .prefetch_related("items__pet", "items__package", "items__additionals__additional"),
+        .prefetch_related(
+            "items__pet",
+            "items__package",
+            "items__additionals__additional",
+        ),
         id=booking_id,
     )
 
+    grooming_forms = {
+        form.booking_item_id: form
+        for form in GroomingServiceForm.objects.filter(booking_item__booking=booking)
+    }
+
     pet_items = []
+    grooming_notes_parts = []
+
     for item in booking.items.all():
         additionals = []
         for additional in item.additionals.all():
             additionals.append({
-                "name": additional.additional.name,
+                "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
                 "harga": additional.harga,
             })
+
+        grooming_form = grooming_forms.get(item.id)
 
         pet_items.append({
             "pet_name": item.pet.name,
             "pet_type": item.pet.jenis,
-            "package_name": item.package.name if item.package else "-",
+            "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
             "package_price": item.harga_paket,
             "durasi_paket": item.durasi_paket,
             "additionals": additionals,
             "subtotal": item.subtotal,
         })
 
-    grooming_notes = booking.grooming_notes if booking.grooming_notes else "belum tersedia"
+        if grooming_form:
+            note_lines = [
+                f"{item.pet.name}",
+                f"Kondisi bulu: {grooming_form.kondisi_bulu}",
+                f"Kondisi kulit: {grooming_form.kondisi_kulit}",
+                f"Kondisi telinga: {grooming_form.kondisi_telinga}",
+                f"Kondisi kuku: {grooming_form.kondisi_kuku}",
+                f"Perilaku hewan: {grooming_form.perilaku_hewan}",
+            ]
+
+            if grooming_form.catatan_tambahan:
+                note_lines.append(f"Catatan tambahan: {grooming_form.catatan_tambahan}")
+
+            if grooming_form.foto_bukti_layanan:
+                note_lines.append(f"Foto bukti layanan: {grooming_form.foto_bukti_layanan.url}")
+
+            grooming_notes_parts.append("\n".join(note_lines))
+
+    grooming_notes = "\n\n".join(grooming_notes_parts) if grooming_notes_parts else "belum tersedia"
 
     context = {
         "booking": booking,

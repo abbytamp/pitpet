@@ -90,14 +90,14 @@
                             </h4>
                         </div>
                         <div class="text-sm text-gray-600 space-y-1">
-                            <p>Paket: <span class="font-medium">{{ item.package.name }}</span> ({{ item.durasi_paket }} menit)</p>
+                            <p>Paket: <span class="font-medium">{{ item.package_name|default:item.package.name|default:"-" }}</span> ({{ item.durasi_paket }} menit)</p>
                             <p>Harga Paket: <span class="font-medium">Rp {{ item.harga_paket|rupiah }}</span></p>
 
                             {% if item.additionals.all %}
                             <p>Additional:</p>
                             <ul class="ml-4">
                                 {% for add in item.additionals.all %}
-                                <li>- {{ add.additional.name }} (Rp {{ add.harga|rupiah }})</li>
+                                <li>- {{ add.additional_name|default:add.additional.name|default:"-" }} (Rp {{ add.harga|rupiah }})</li>
                                 {% endfor %}
                             </ul>
                             {% endif %}

@@ -1,4 +1,5 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -6,6 +7,7 @@ from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from booking.models import Booking, BookingItem
+from booking.utils import get_dog_size
 from .models import GroomingServiceForm
 
 @login_required
@@ -75,32 +77,17 @@ def daily_job_list(request):
     return render(request, "groomer_jobs/daily_job_list.html", context)
 
 def get_pet_size_label(pet):
-    """
-    Menghitung size hewan berdasarkan aturan, nanati ganti pakai field size dari model Pet
-    - Cat: tidak tampilkan size
-    - Dog:
-        S  = 2-10 kg
-        M  = 11-25 kg
-        L  = 26-45 kg
-        XL = >45 kg
-    """
     pet_type = (pet.jenis or "").lower()
-    weight = pet.berat
 
     if pet_type == "cat":
         return ""
 
     if pet_type == "dog":
-        if weight is None:
+        if pet.berat is None:
             return "-"
-        if 2 <= weight <= 10:
-            return "S"
-        if 11 <= weight <= 25:
-            return "M"
-        if 26 <= weight <= 45:
-            return "L"
-        if weight > 45:
-            return "XL"
+        return get_dog_size(float(pet.berat))
+
+    return "-"
 
     return "-"
 
@@ -109,11 +96,32 @@ def booking_belongs_to_groomer(booking, user):
 
 
 def can_start_booking(booking):
-    return booking.status == Booking.Status.SCHEDULED
+    if booking.status != Booking.Status.SCHEDULED:
+        return False
+
+    now = timezone.localtime()
+
+    booking_start = timezone.make_aware(
+        datetime.combine(booking.tanggal, booking.waktu_mulai)
+    )
+
+    return now >= booking_start
 
 
 def can_complete_booking(booking):
-    return booking.status == Booking.Status.SERVICE_STARTED
+    if booking.status != Booking.Status.SERVICE_STARTED:
+        return False
+
+    now = timezone.localtime()
+
+    booking_end = timezone.make_aware(
+        datetime.combine(booking.tanggal, booking.waktu_selesai)
+    )
+
+    # boleh complete 15 menit sebelum selesai, antisipasi groomer selesai lebih cepat dari estimasi
+    allowed_complete_time = booking_end - timedelta(minutes=15)
+
+    return now >= allowed_complete_time
 
 @login_required
 def job_detail(request, booking_id):
@@ -144,7 +152,7 @@ def job_detail(request, booking_id):
 
         for additional in item.additionals.all():
             additionals.append({
-                "name": additional.additional.name,
+                "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
                 "duration": additional.durasi,
             })
             total_pet_duration += additional.durasi
@@ -154,7 +162,7 @@ def job_detail(request, booking_id):
             "pet_name": item.pet.name,
             "pet_type": item.pet.jenis,
             "pet_size": get_pet_size_label(item.pet),
-            "package_name": item.package.name,
+            "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
             "package_duration": item.durasi_paket,
             "additionals": additionals,
             "total_pet_duration": total_pet_duration,
@@ -175,6 +183,8 @@ def job_detail(request, booking_id):
         "status_label": booking.get_status_display(),
         "total_duration": booking.total_durasi,
         "pet_items": pet_items,
+        "show_start_service": booking.status == Booking.Status.SCHEDULED,
+        "show_complete_service": booking.status == Booking.Status.SERVICE_STARTED,
         "can_start_service": can_start_booking(booking),
         "can_complete_service": can_complete_booking(booking),
         "can_show_pet_note_button": booking.status == Booking.Status.SERVICE_STARTED,
@@ -214,7 +224,7 @@ def update_booking_status(request, booking_id):
 
     if next_action == "start_service":
         if not can_start_booking(booking):
-            messages.error(request, "Status booking ini tidak dapat diubah ke service started.")
+            messages.error(request, "Layanan hanya dapat dimulai sesuai waktu pada jadwal.")
             return redirect("groomer_jobs:job_detail", booking_id=booking.id)
 
         booking.status = Booking.Status.SERVICE_STARTED
@@ -224,7 +234,7 @@ def update_booking_status(request, booking_id):
 
     if next_action == "complete_service":
         if not can_complete_booking(booking):
-            messages.error(request, "Status booking ini tidak dapat diubah ke service completed.")
+            messages.error(request, "Layanan hanya dapat diselesaikan minimal 15 menit sebelum waktu selesai pada jadwal.")
             return redirect("groomer_jobs:job_detail", booking_id=booking.id)
 
         if not all_grooming_forms_completed(booking):

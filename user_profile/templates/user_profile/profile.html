@@ -128,6 +128,31 @@
         </div>
     </div>
 
+    <!-- Error Info Modal -->
+    <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl">
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">Gagal Menghapus Hewan</h3>
+            <div class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
+                <p id="errorModalText"></p>
+                <div class="hidden" id="errorModalRawMessages">
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if 'error' in message.tags %}
+                                <span class="error-modal-message">{{ message }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeErrorModal()"
+                    class="px-4 sm:px-6 py-2 rounded-full bg-[#34C1D4] text-white font-bold hover:bg-[#2daab8] transition text-sm">
+                    Oke
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function confirmDeletePet(url, petName) {
             document.getElementById('deletePetName').textContent = petName;
@@ -143,10 +168,36 @@
             modal.classList.remove('flex');
         }
 
+        function openErrorModal() {
+            const modal = document.getElementById('errorModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeErrorModal() {
+            const modal = document.getElementById('errorModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
         // Close modal when clicking outside
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) closeDeleteModal();
         });
+
+        document.getElementById('errorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeErrorModal();
+        });
+
+        const errorMessages = Array.from(document.querySelectorAll('.error-modal-message'))
+            .map((el) => el.textContent.trim())
+            .filter(Boolean);
+        const uniqueErrorMessages = [...new Set(errorMessages)];
+
+        if (uniqueErrorMessages.length > 0) {
+            document.getElementById('errorModalText').textContent = uniqueErrorMessages[uniqueErrorMessages.length - 1];
+            openErrorModal();
+        }
     </script>
 
 </body>

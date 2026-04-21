@@ -127,6 +127,7 @@ class BookingItem(models.Model):
         on_delete=models.PROTECT,
         related_name="booking_items",
     )
+    package_name = models.CharField(max_length=120, null=True, blank=True)
     harga_paket = models.DecimalField(max_digits=12, decimal_places=2)
     durasi_paket = models.PositiveIntegerField(help_text="Durasi paket dalam menit")
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
@@ -149,6 +150,7 @@ class BookingItemAdditional(models.Model):
         on_delete=models.PROTECT,
         related_name="booking_item_additionals",
     )
+    additional_name = models.CharField(max_length=120, null=True, blank=True)
     harga = models.DecimalField(max_digits=12, decimal_places=2)
     durasi = models.PositiveIntegerField(help_text="Durasi additional dalam menit")
 
