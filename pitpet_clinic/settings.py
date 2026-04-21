@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import dj_database_url
 from pathlib import Path
 import os
 #import dj_database_url
@@ -29,9 +29,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-o8x0s)al*l0*fgf8+9d&5us+c04yxa0cr6+v215!@18!1%ac@9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+# ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ['*']  
 
 
 # Application definition
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -93,17 +95,22 @@ WSGI_APPLICATION = 'pitpet_clinic.wsgi.application'
         #'NAME': BASE_DIR / 'db.sqlite3',
     #}
 #}
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'pitpet_db'),
-        'USER': os.getenv('DB_USER', 'pitpet_user'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'password_kamu'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DB_NAME', 'pitpet_db'),
+#         'USER': os.getenv('DB_USER', 'pitpet_user'),
+#         'PASSWORD': os.getenv('DB_PASSWORD', 'password_kamu'),
+#         'HOST': os.getenv('DB_HOST', 'localhost'),
+#         'PORT': os.getenv('DB_PORT', '5432'),
+#     }
+# }
 
+DATABASES = {
+    'default': dj_database_url.config(
+        default='sqlite:///db.sqlite3'
+    )
+}
 # Use DATABASE_URL from .env or environment variables
 #DATABASES = {
     #'default': dj_database_url.config(
@@ -149,6 +156,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
