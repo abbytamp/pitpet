@@ -75,8 +75,7 @@ def register_customer(request):
         form = RegisterCustomerForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            # user.password = form.cleaned_data['password']
-            user.set_password(form.cleaned_data['password'])
+            user.password = form.cleaned_data['password']
             user.role = 'customer'
             user.save()
             messages.success(request, "Registration successful. Please login.")
