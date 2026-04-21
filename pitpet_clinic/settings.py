@@ -33,9 +33,14 @@ DEBUG = False
 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 # ALLOWED_HOSTS = ['*']  
-ALLOWED_HOSTS = ['.railway.app']
+ALLOWED_HOSTS = [
+    'web-production-a62b0.up.railway.app',
+    '.railway.app'
+]
+
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.railway.app"
+    "https://*.railway.app",
+    "https://web-production-a62b0.up.railway.app"
 ]
 
 
@@ -64,7 +69,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'accounts.middleware.NoCacheForAuthenticatedPagesMiddleware',
+    # 'accounts.middleware.NoCacheForAuthenticatedPagesMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -166,6 +171,9 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -175,7 +183,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
 AUTHENTICATION_BACKENDS = [
-    'accounts.backends.CustomAuthBackend',
+    # 'accounts.backends.CustomAuthBackend',
 ]
 
 
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
