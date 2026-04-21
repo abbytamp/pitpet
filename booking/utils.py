@@ -11,13 +11,15 @@ from django.utils import timezone
 from booking.models import Booking
 
 
+WORKING_DAYS = [1, 2, 3, 4, 5, 6]  # Tuesday(1) to Sunday(6)
 WORK_START = time(8, 0)
 WORK_END = time(17, 0)
-OFF_DAY = 0  # Monday
-SLOT_MINUTES = 30
+OFF_DAY = 0  # Monday (kept for backward compatibility)
+SLOT_DURATION = 30
+SLOT_MINUTES = SLOT_DURATION
 HOME_BUFFER_MINUTES = 30
 MAX_BOOKING_DAYS = 7
-CLINIC_ADDRESS = "PitPet Clinic - Jl. PitPet No. 123, Jakarta"
+CLINIC_ADDRESS = "Ruko BIBC, Jl. Karang Tengah Raya No.RT06/06, Lb. Bulus, Kec. Cilandak, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12440"
 TRANSPORT_FEES = [
     {"range": "0-10 km", "fee": 0},
     {"range": "11-20 km", "fee": 25000},
@@ -58,6 +60,33 @@ def round_up_to_next_slot(dt: datetime) -> datetime:
     return rounded.replace(second=0, microsecond=0)
 
 
+def is_working_day(date_obj) -> bool:
+    return date_obj.weekday() in WORKING_DAYS
+
+
+def get_first_bookable_date():
+    """Return earliest selectable date based on day-off and same-day +2h rule."""
+    today = timezone.localdate()
+    max_date = today + timedelta(days=MAX_BOOKING_DAYS)
+
+    current = today
+    while current <= max_date:
+        if not is_working_day(current):
+            current += timedelta(days=1)
+            continue
+
+        if current == today:
+            min_dt = round_up_to_next_slot(timezone.localtime() + timedelta(hours=2))
+            # If min start already reaches/passes work end, skip today entirely.
+            if min_dt.time() >= WORK_END:
+                current += timedelta(days=1)
+                continue
+
+        return current
+
+    return today
+
+
 def get_package_price_for_pet(package, pet) -> Decimal:
     animal_type = get_pet_animal_type(pet)
     if animal_type == "cat":
@@ -75,7 +104,7 @@ def _as_datetime(date_obj, time_obj) -> datetime:
 def _with_buffer(start_dt: datetime, end_dt: datetime, service_type: str) -> BookingWindow:
     if service_type == Booking.ServiceType.HOME:
         gap = timedelta(minutes=HOME_BUFFER_MINUTES)
-        return BookingWindow(start=start_dt - gap, end=end_dt + gap)
+        return BookingWindow(start=start_dt - gap, end=end_dt)
     return BookingWindow(start=start_dt, end=end_dt)
 
 
@@ -98,13 +127,27 @@ def can_fit_in_working_hours(date_obj, start_time: time, duration_minutes: int, 
     if start_dt < visible_start or end_dt > visible_end:
         return False
 
-    # For home service, keep the hidden travel buffer inside working hours too.
+    # For home service, keep the hidden travel buffer before the booking inside working hours too.
     buffered = _with_buffer(start_dt, end_dt, service_type)
     return buffered.start >= visible_start and buffered.end <= visible_end
 
 
-def calculate_end_time(start_time: time, duration_minutes: int) -> time:
-    end_dt = _as_datetime(timezone.localdate(), start_time) + timedelta(minutes=duration_minutes)
+def meets_minimum_lead_time(date_obj, start_time: time, lead_hours: int = 2) -> bool:
+    today = timezone.localdate()
+    if date_obj > today:
+        return True
+    if date_obj < today:
+        return False
+
+    min_dt = round_up_to_next_slot(timezone.localtime() + timedelta(hours=lead_hours))
+    requested_start_dt = _as_datetime(date_obj, start_time)
+    return requested_start_dt >= _as_datetime(date_obj, min_dt.time())
+
+
+def calculate_end_time(start_time: time, duration_minutes: int, date_obj=None) -> time:
+    if date_obj is None:
+        date_obj = timezone.localdate()
+    end_dt = _as_datetime(date_obj, start_time) + timedelta(minutes=duration_minutes)
     return end_dt.time()
 
 
@@ -146,10 +189,13 @@ def _active_booking_qs(groomer_id: int, date_obj) -> QuerySet[Booking]:
 
 
 def is_slot_available(groomer_id: int, date_obj, duration_minutes: int, service_type: str, start_time: time) -> bool:
-    if date_obj.weekday() == OFF_DAY:
+    if not is_working_day(date_obj):
         return False
 
     if duration_minutes <= 0:
+        return False
+
+    if not meets_minimum_lead_time(date_obj, start_time):
         return False
 
     if not can_fit_in_working_hours(date_obj, start_time, duration_minutes, service_type):
@@ -167,7 +213,7 @@ def is_slot_available(groomer_id: int, date_obj, duration_minutes: int, service_
 
 
 def get_available_slots(groomer_id: int, date_obj, duration_minutes: int, service_type: str) -> list[dict[str, str]]:
-    if date_obj.weekday() == OFF_DAY:
+    if not is_working_day(date_obj):
         return []
 
     if duration_minutes <= 0:

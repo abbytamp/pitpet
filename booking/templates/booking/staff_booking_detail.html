@@ -79,17 +79,16 @@
         </div>
 
         <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p class="text-xs text-gray-500">Total Harga</p>
+          <p class="text-sm font-semibold text-gray-900">Rp {{ total_harga }}  </p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
           <p class="text-xs text-gray-500">Catatan Booking</p>
           <p class="text-sm font-semibold text-gray-900">
             {{ booking.catatan|default:"-" }}
           </p>
         </div>
-
-        {% comment %} <div class="bg-gray-50 border border-gray-100 rounded-xl p-3">
-          <p class="text-xs text-gray-500">Status Pembayaran</p>
-          <p class="text-sm font-semibold text-gray-900">{{ payment_status_label }}</p>
-        </div> {% endcomment %}
-
       </div>
     </div>
 
@@ -141,13 +140,6 @@
            class="px-6 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition">
           Cancel Booking
         </a>
-        {% endif %}
-
-        {% if can_mark_paid %}
-        <button type="button"
-                class="px-6 py-2 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition">
-          Mark as Paid
-        </button>
         {% endif %}
       </div>
     </div>

@@ -79,6 +79,7 @@ class Groomer(models.Model):
     service_type = models.CharField(max_length=10, choices=ServiceType.choices)
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     objects = ActiveGroomerManager()
     all_objects = models.Manager()

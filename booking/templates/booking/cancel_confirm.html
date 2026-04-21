@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Konfirmasi Batal Booking{% endblock title %}
+
+{% block content %}
+<section class="max-w-xl mx-auto px-4 py-10">
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+        <h1 class="text-xl font-bold text-gray-900">Batalkan Booking?</h1>
+        <p class="text-sm text-gray-600 mt-2">
+            Booking {{ booking.booking_code }} pada {{ booking.tanggal|date:"l, j F Y" }}
+            ({{ booking.waktu_mulai|time:"H:i" }} - {{ booking.waktu_selesai|time:"H:i" }}) akan dibatalkan.
+        </p>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+            <form method="post" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="px-5 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors">
+                    Ya, Batalkan
+                </button>
+            </form>
+            <a href="{% url 'booking:detail' booking.id %}" class="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                Kembali
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock content %}

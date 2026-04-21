@@ -3,6 +3,7 @@ import re
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from pet.models import Pet
+from booking.models import Booking, BookingItem
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
@@ -53,7 +54,6 @@ def update_profile_api(request):
             "phone_number": user.phone_number
         }
     }, status=200)
-
 
 @login_required
 def edit_profile_view(request):
@@ -175,6 +175,25 @@ def delete_pet(request, pet_id):
     pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
 
     if request.method == 'POST':
+        has_active_booking = BookingItem.objects.filter(
+            pet_id=pet.id,
+            booking__customer=request.user,
+        ).filter(
+            booking__status__in=[
+                Booking.Status.SCHEDULED,
+                Booking.Status.SERVICE_STARTED,
+            ]
+        ).exists() or BookingItem.objects.filter(
+            pet_id=pet.id,
+            booking__customer=request.user,
+            booking__status=Booking.Status.SERVICE_COMPLETED,
+            booking__payment_status=Booking.PaymentStatus.UNPAID,
+        ).exists()
+
+        if has_active_booking:
+            messages.error(request, "Hewan tidak dapat dihapus karena masih memiliki booking aktif.")
+            return redirect('user_profile:profile')
+
         pet.soft_delete()
         messages.success(request, "Hewan peliharaan berhasil dihapus.")
         return redirect('user_profile:profile')
@@ -189,6 +208,27 @@ def delete_pet_api(request, pet_id):
         pet = Pet.objects.get(id=pet_id, owner=request.user)
     except Pet.DoesNotExist:
         return JsonResponse({"error": "Hewan tidak ditemukan."}, status=404)
+
+    has_active_booking = BookingItem.objects.filter(
+        pet_id=pet.id,
+        booking__customer=request.user,
+    ).filter(
+        booking__status__in=[
+            Booking.Status.SCHEDULED,
+            Booking.Status.SERVICE_STARTED,
+        ]
+    ).exists() or BookingItem.objects.filter(
+        pet_id=pet.id,
+        booking__customer=request.user,
+        booking__status=Booking.Status.SERVICE_COMPLETED,
+        booking__payment_status=Booking.PaymentStatus.UNPAID,
+    ).exists()
+
+    if has_active_booking:
+        return JsonResponse(
+            {"error": "Hewan tidak dapat dihapus karena masih memiliki booking aktif."},
+            status=400,
+        )
 
     pet.soft_delete()
     return JsonResponse({"message": "Hewan peliharaan berhasil dihapus."}, status=200)

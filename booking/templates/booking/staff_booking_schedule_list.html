@@ -17,7 +17,12 @@
         </div>
     <button type="submit" class="bg-[#2BBDBD] text-white px-6 py-2 rounded font-semibold hover:bg-teal-600">Lihat Jadwal</button>
     </form>
-    {% if groomers %}
+    {% if is_off_day %}
+        <div class="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900">
+            <p class="font-semibold">Hari Senin libur</p>
+            <p class="text-sm mt-1">Jadwal slot tidak ditampilkan pada hari Senin.</p>
+        </div>
+    {% elif groomers %}
         {% for groomer in groomers %}
         <div class="mb-10">
             <h2 class="font-bold text-xl mb-4 flex items-center gap-2">
@@ -53,6 +58,25 @@
                             <div class="text-xs text-gray-600 truncate">Hewan: {{ item.pet_name }}</div>
                             <div class="flex gap-2 mt-2">
                                 <a href="{% url 'booking:staff_booking_detail' item.booking_id %}" class="text-[#2BBDBD] hover:underline text-xs font-semibold">Lihat Detail</a>
+                            </div>
+                        </div>
+                    {% elif item.type == 'buffer' %}
+                        <div class="rounded-lg border-2 border-dashed border-amber-300 bg-amber-50 shadow-sm p-4 flex flex-col gap-2">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <span class="inline-block bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-xs font-semibold">
+                                    BUFFER
+                                </span>
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                    {{ item.start }}
+                                </span>
+                            </div>
+                            <div class="font-bold text-amber-800 text-base truncate">{% if item.booking_codes|length == 1 %}{{ item.booking_codes.0 }}{% else %}Buffer{% endif %}</div>
+                            <div class="text-xs text-amber-700 truncate">
+                                {% if item.booking_codes|length == 1 %}
+                                    Buffer slot untuk {{ item.booking_codes.0 }}
+                                {% else %}
+                                    Buffer slot tumpang tindih
+                                {% endif %}
                             </div>
                         </div>
                     {% else %}

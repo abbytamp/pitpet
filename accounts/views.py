@@ -1,17 +1,33 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.db.models import Q
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.views import View
 import json
-from .forms import LoginForm, RegisterCustomerForm, RegisterStaffManagerForm, ProfileForm
+from .forms import LoginForm, RegisterCustomerForm, RegisterStaffManagerForm, ProfileForm, ChangePasswordForm
 from .models import User, Groomer
 from django.utils import timezone
 from booking.models import Booking
+
+
+ROLE_DASHBOARD_REDIRECTS = {
+    'customer': 'customer_dashboard',
+    'staff': 'staff_dashboard',
+    'groomer': 'groomer_dashboard',
+    'manager': 'manager_dashboard',
+    'superadmin': 'superadmin_dashboard',
+}
+
+
+def _redirect_to_role_dashboard(user):
+    target = ROLE_DASHBOARD_REDIRECTS.get(getattr(user, 'role', None))
+    if target:
+        return redirect(target)
+    return None
 
 @login_required
 @user_passes_test(lambda u: u.role == 'superadmin')
@@ -375,7 +391,29 @@ def edit_profile_view(request):
     return render(request, 'accounts/edit_profile.html', context)
 
 @login_required(login_url='login')
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "POST"])
 def change_password_view(request):
-    """Redirect to change password page"""
-    return render(request, 'accounts/change_password.html')
+    """Allow staff/groomer/manager to change their password securely."""
+    user = request.user
+
+    if user.role not in ['staff', 'groomer', 'manager']:
+        redirected = _redirect_to_role_dashboard(user)
+        if redirected:
+            return redirected
+        return HttpResponseForbidden("Forbidden")
+
+    if request.method == 'POST':
+        form = ChangePasswordForm(request.POST, user=user)
+        if form.is_valid():
+            user.set_password(form.cleaned_data['new_password'])
+            user.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Password berhasil diubah')
+            return redirect('profile')
+    else:
+        form = ChangePasswordForm(user=user)
+
+    return render(request, 'accounts/change_password.html', {
+        'form': form,
+        'user': user,
+    })

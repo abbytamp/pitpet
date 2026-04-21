@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load booking_extras %}
 
 {% block title %}Booking Berhasil{% endblock title %}
 
@@ -11,13 +12,13 @@
 
     <div class="bg-white border rounded-xl p-5 space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <p><span class="font-medium">Booking ID:</span> #{{ booking.id }}</p>
+            <p><span class="font-medium">Booking ID:</span> {{ booking.booking_code }}</p>
             <p><span class="font-medium">Layanan:</span> {{ booking.get_service_type_display }}</p>
             <p><span class="font-medium">Groomer:</span> {{ booking.groomer.user.full_name }}</p>
             <p><span class="font-medium">Tanggal:</span> {{ booking.tanggal }}</p>
             <p><span class="font-medium">Waktu:</span> {{ booking.waktu_mulai }} - {{ booking.waktu_selesai }}</p>
             <p><span class="font-medium">Total Durasi:</span> {{ booking.total_durasi }} menit</p>
-            <p><span class="font-medium">Total Harga:</span> Rp {{ booking.total_harga|floatformat:0 }}</p>
+            <p><span class="font-medium">Total Harga:</span> Rp {{ booking.total_harga|rupiah }}</p>
             <p><span class="font-medium">Payment:</span> {{ booking.get_payment_status_display }}</p>
         </div>
 
@@ -46,15 +47,15 @@
                 {% for item in booking.items.all %}
                 <div class="border rounded-lg p-3 text-sm">
                     <p class="font-medium">{{ item.pet.name }}</p>
-                    <p>{{ item.package.name }} - {{ item.durasi_paket }} menit - Rp {{ item.harga_paket|floatformat:0 }}</p>
+                    <p>{{ item.package_name|default:item.package.name|default:"-" }} - {{ item.durasi_paket }} menit - Rp {{ item.harga_paket|rupiah }}</p>
                     {% if item.additionals.all %}
                     <ul class="mt-1 text-gray-600 list-disc list-inside">
                         {% for add in item.additionals.all %}
-                        <li>{{ add.additional.name }} (+{{ add.durasi }} menit) - Rp {{ add.harga|floatformat:0 }}</li>
+                        <li>{{ add.additional_name|default:add.additional.name|default:"-" }} (+{{ add.durasi }} menit) - Rp {{ add.harga|rupiah }}</li>
                         {% endfor %}
                     </ul>
                     {% endif %}
-                    <p class="mt-2 font-medium">Subtotal: Rp {{ item.subtotal|floatformat:0 }}</p>
+                    <p class="mt-2 font-medium">Subtotal: Rp {{ item.subtotal|rupiah }}</p>
                 </div>
                 {% endfor %}
             </div>

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponseBadRequest
 from accounts.models import Groomer, User
+from booking.models import Booking
 from packages.decorators import staff_required
 from .forms import GroomerForm, GroomerCreateForm, GroomerEditForm
 
@@ -114,17 +115,15 @@ def groomer_delete(request, groomer_id: int):
         Groomer.objects.select_related("user"), id=groomer_id
     )
 
-    # TODO: check for active bookings when booking feature is implemented
-    # if groomer has active bookings, deny deletion
-    # has_active_booking = Booking.objects.filter(
-    #     groomer=groomer, status__in=['scheduled', 'in_progress']
-    # ).exists()
-    # if has_active_booking:
-    #     messages.error(
-    #         request,
-    #         f'Tidak dapat menghapus groomer yang memiliki booking aktif.'
-    #     )
-    #     return redirect('groomer:groomer_list')
+    active_booking_statuses = [
+        Booking.Status.SCHEDULED,
+        Booking.Status.SERVICE_STARTED,
+    ]
+
+    has_active_booking = groomer.bookings.filter(status__in=active_booking_statuses).exists()
+    if has_active_booking:
+        messages.error(request, "Tidak dapat menghapus groomer yang masih memiliki booking aktif.")
+        return redirect('groomer:groomer_list')
 
     groomer.soft_delete()
     messages.success(request, f'Groomer {groomer.user.full_name} berhasil dihapus.')

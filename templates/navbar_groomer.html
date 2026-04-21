@@ -1,35 +1,66 @@
 {% load static %}
 
-<nav class="bg-white shadow-sm">
+<nav class="bg-white shadow-sm sticky top-0 z-50">
 
-  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center">
 
     <!-- LOGO kiri -->
     <div class="flex items-center">
       <a href="{% url 'groomer_dashboard' %}">
-        <img src="{% static 'images/logo_pitpet.png' %}" alt="PITPET Logo" class="h-12 w-auto">
+        <img src="{% static 'images/logo_pitpet.png' %}" alt="PITPET Logo" class="h-10 sm:h-12 w-auto">
       </a>
     </div>
 
-    <!-- MENU kanan -->
-    <div class="ml-auto flex items-center gap-8 font-semibold text-gray-700 text-lg">
+    <!-- MENU kanan - Desktop -->
+    <div class="hidden md:ml-auto md:flex items-center gap-6 lg:gap-8 font-semibold text-gray-700 text-base lg:text-lg">
 
-      <a href="{% url 'groomer_dashboard' %}" class="hover:text-[#F5A623]">
+      <a href="{% url 'groomer_dashboard' %}" class="hover:text-[#F5A623] whitespace-nowrap">
         Home
       </a>
 
-      <a href="{% url 'groomer_jobs:daily_job_list' %}" class="hover:text-[#F5A623]">
+      <a href="{% url 'groomer_jobs:daily_job_list' %}" class="hover:text-[#F5A623] whitespace-nowrap">
         Tugas
+      </a>
+
+      <a href="{% url 'profile' %}" class="hover:text-[#F5A623] whitespace-nowrap">
+        Profile
       </a>
 
       <!-- LOGOUT BUTTON -->
       <a href="{% url 'logout' %}"
-        class="bg-[#F5A623] text-white px-6 py-2 rounded-full hover:bg-orange-500 transition">
+        class="bg-[#F5A623] text-white px-4 sm:px-6 py-2 rounded-full hover:bg-orange-500 transition text-sm sm:text-base whitespace-nowrap">
         Log Out
       </a>
 
     </div>
 
+    <!-- Mobile Menu Button -->
+    <button id="groomer-mobile-menu-btn" class="md:hidden ml-auto p-2 text-gray-700" onclick="toggleGroomerMobileMenu()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+
+  </div>
+
+  <!-- Mobile Menu Dropdown -->
+  <div id="groomer-mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100">
+    <div class="px-4 py-3 space-y-2">
+      <a href="{% url 'groomer_dashboard' %}" class="block py-2 text-gray-700 font-semibold hover:text-[#F5A623]">Home</a>
+      <a href="{% url 'groomer_jobs:daily_job_list' %}" class="block py-2 text-gray-700 font-semibold hover:text-[#F5A623]">Tugas</a>
+<<<<<<< HEAD
+=======
+      <a href="{% url 'profile' %}" class="block py-2 text-gray-700 font-semibold hover:text-[#F5A623]">Profile</a>
+>>>>>>> c4b1cccd06c59a6c7a8b959cc6c8057e2991fa96
+      <a href="{% url 'logout' %}" class="block py-2 text-[#F5A623] font-semibold">Log Out</a>
+    </div>
   </div>
 
 </nav>
+
+<script>
+  function toggleGroomerMobileMenu() {
+    const menu = document.getElementById('groomer-mobile-menu');
+    menu.classList.toggle('hidden');
+  }
+</script>

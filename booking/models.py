@@ -13,9 +13,6 @@ class Booking(models.Model):
 
     class Status(models.TextChoices):
         SCHEDULED = "scheduled", "Scheduled"
-        # Status hanya SCHEDULED, SERVICE_STARTED, SERVICE_COMPLETED, dan CANCELLED 
-        # ON_THE_WAY = "on_the_way", "On the way"
-        # ARRIVED = "arrived", "Arrived"
         SERVICE_STARTED = "service_started", "Service started"
         SERVICE_COMPLETED = "service_completed", "Service completed"
         CANCELLED = "cancelled", "Cancelled"
@@ -53,6 +50,10 @@ class Booking(models.Model):
         default=PaymentStatus.UNPAID,
     )
     is_rescheduled = models.BooleanField(default=False)
+    original_tanggal = models.DateField(null=True, blank=True)
+    original_waktu_mulai = models.TimeField(null=True, blank=True)
+    original_waktu_selesai = models.TimeField(null=True, blank=True)
+    grooming_notes = models.TextField(null=True, blank=True, help_text="Catatan hasil grooming yang diisi oleh groomer setelah layanan selesai")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -60,9 +61,59 @@ class Booking(models.Model):
         db_table = "bookings"
         ordering = ["-tanggal", "-waktu_mulai", "-id"]
 
-    def __str__(self):
-        return f"Booking #{self.id} - {self.customer.username} ({self.tanggal} {self.waktu_mulai})"
+    @property
+    def booking_code(self) -> str:
+        if not self.pk:
+            return "BK-000"
+        return f"BK-{self.pk:03d}"
 
+    def __str__(self):
+        return f"Booking {self.booking_code} - {self.customer.username} ({self.tanggal} {self.waktu_mulai})"
+
+    @property
+    def can_reschedule(self):
+        if self.status != Booking.Status.SCHEDULED:
+            return False
+        if self.is_rescheduled:
+            return False
+        from django.utils import timezone
+        from datetime import datetime, timedelta
+        now = timezone.localtime()
+        booking_datetime = timezone.make_aware(datetime.combine(self.tanggal, self.waktu_mulai))
+        return (booking_datetime - now) >= timedelta(hours=2)
+
+    @property
+    def time_diff_hours(self):
+        from django.utils import timezone
+        from datetime import datetime, timedelta
+        now = timezone.localtime()
+        booking_datetime = timezone.make_aware(datetime.combine(self.tanggal, self.waktu_mulai))
+        diff = booking_datetime - now
+        return diff.total_seconds() / 3600 if diff.total_seconds() > 0 else 0
+    
+    @property
+    def can_cancel(self):
+        if self.status != Booking.Status.SCHEDULED:
+            return False
+
+        from django.utils import timezone
+        from datetime import datetime, timedelta
+
+        now = timezone.localtime()
+        booking_datetime = timezone.make_aware(
+            datetime.combine(self.tanggal, self.waktu_mulai)
+        )
+        return (booking_datetime - now) >= timedelta(hours=2)
+
+    @property
+    def cancel_block_message(self):
+        if self.status != Booking.Status.SCHEDULED:
+            return "Booking tidak dapat dibatalkan."
+
+        if not self.can_cancel:
+            return "Sisa waktu kurang dari 2 jam, harap lapor via Whatsapp ke staff untuk melakukan pembatalan."
+
+        return ""
 
 class BookingItem(models.Model):
     booking = models.ForeignKey(
@@ -76,6 +127,7 @@ class BookingItem(models.Model):
         on_delete=models.PROTECT,
         related_name="booking_items",
     )
+    package_name = models.CharField(max_length=120, null=True, blank=True)
     harga_paket = models.DecimalField(max_digits=12, decimal_places=2)
     durasi_paket = models.PositiveIntegerField(help_text="Durasi paket dalam menit")
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
@@ -84,7 +136,7 @@ class BookingItem(models.Model):
         db_table = "booking_items"
 
     def __str__(self):
-        return f"BookingItem #{self.id} - Booking #{self.booking_id}"
+        return f"BookingItem #{self.id} - Booking BK-{self.booking_id:03d}"
 
 
 class BookingItemAdditional(models.Model):
@@ -98,6 +150,7 @@ class BookingItemAdditional(models.Model):
         on_delete=models.PROTECT,
         related_name="booking_item_additionals",
     )
+    additional_name = models.CharField(max_length=120, null=True, blank=True)
     harga = models.DecimalField(max_digits=12, decimal_places=2)
     durasi = models.PositiveIntegerField(help_text="Durasi additional dalam menit")
 
