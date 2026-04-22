@@ -27,25 +27,40 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY = 'django-insecure-o8x0s)al*l0*fgf8+9d&5us+c04yxa0cr6+v215!@18!1%ac@9'
+# SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-only-key') ini yg trkhir
+# SECRET_KEY = os.getenv('SECRET_KEY')
+
+# if not SECRET_KEY:
+#     raise ValueError("SECRET_KEY is not set!")
+
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-only-key')
 # SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# DEBUG = True
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 # ALLOWED_HOSTS = ['*']  
+# ALLOWED_HOSTS = [
+#     "127.0.0.1",
+#     "localhost",
+#     'web-production-a62b0.up.railway.app',
+#     '.railway.app'
+# ]
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
-    'web-production-a62b0.up.railway.app',
-    '.railway.app'
+    ".railway.app"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://*.railway.app",
     "https://web-production-a62b0.up.railway.app"
 ]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SECURE_SSL_REDIRECT = False  # nanti bisa True kalau sudah full HTTPS
 
 
 # Application definition
@@ -138,10 +153,23 @@ WSGI_APPLICATION = 'pitpet_clinic.wsgi.application'
 #     )
 # }
 
+# DATABASES = { # untuk local aman
+#     'default': dj_database_url.config(
+#         default=os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3'),
+#         conn_max_age=600,
+#     )
+# }
+
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=os.getenv("DATABASE_URL"),
+#         conn_max_age=600
+#     )
+# }
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3'),
-        conn_max_age=600,
+        default='sqlite:///db.sqlite3',
+        conn_max_age=600
     )
 }
 # Use DATABASE_URL from .env or environment variables
