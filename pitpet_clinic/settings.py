@@ -26,7 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-o8x0s)al*l0*fgf8+9d&5us+c04yxa0cr6+v215!@18!1%ac@9'
+# SECRET_KEY = 'django-insecure-o8x0s)al*l0*fgf8+9d&5us+c04yxa0cr6+v215!@18!1%ac@9'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-only-key')
+# SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -34,6 +36,8 @@ DEBUG = False
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 # ALLOWED_HOSTS = ['*']  
 ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
     'web-production-a62b0.up.railway.app',
     '.railway.app'
 ]
@@ -63,8 +67,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -115,9 +119,29 @@ WSGI_APPLICATION = 'pitpet_clinic.wsgi.application'
 #     }
 # }
 
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default='sqlite:///db.sqlite3'
+#     )
+# }
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         conn_max_age=600,
+#         ssl_require=True
+#     )
+# }
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3'),
+#         conn_max_age=600,
+#         ssl_require=True
+#     )
+# }
+
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3'
+        default=os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3'),
+        conn_max_age=600,
     )
 }
 # Use DATABASE_URL from .env or environment variables
@@ -165,14 +189,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
 # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -182,10 +208,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
 
-AUTHENTICATION_BACKENDS = [
-    # 'accounts.backends.CustomAuthBackend',
-]
+# AUTHENTICATION_BACKENDS = [
+#     # 'accounts.backends.CustomAuthBackend',
+# ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 
 LOGGING = {
