@@ -242,6 +242,7 @@ def staff_booking_detail(request, booking_id):
         "owner_phone": booking.customer.phone_number,
         "service_type_label": booking.get_service_type_display(),
         "groomer_name": booking.groomer.user.full_name,
+        "groomer_phone": booking.groomer.user.phone_number,
         "address": booking.alamat,
         "status": booking.status,
         "status_label": booking.get_status_display(),
