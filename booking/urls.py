@@ -5,6 +5,7 @@ from . import views
 app_name = "booking"
 
 urlpatterns = [
+    path("history/<int:booking_id>/review/", views.booking_review_create, name="booking_review_create"),
     path("staff/schedule/", views.staff_booking_schedule, name="staff_booking_schedule"),
     path("staff/schedule/<int:booking_id>/", views.staff_booking_detail, name="staff_booking_detail"),
     path("staff/cancel/<int:booking_id>/", views.staff_cancel_booking, name="staff_cancel_booking"),

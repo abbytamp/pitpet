@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-o8x0s)al*l0*fgf8+9d&5us+c04yxa0cr6+v215!@18!1%ac@9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 ALLOWED_HOSTS = ['*']  
@@ -107,9 +107,14 @@ WSGI_APPLICATION = 'pitpet_clinic.wsgi.application'
 # }
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3'
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'pitpet_db',
+        'USER': 'pitpet_user',
+        'PASSWORD': 'admin123',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 # Use DATABASE_URL from .env or environment variables
 #DATABASES = {
