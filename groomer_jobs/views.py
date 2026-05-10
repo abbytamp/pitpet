@@ -16,6 +16,8 @@ def daily_job_list(request):
 
     if user.role != "groomer":
         return HttpResponseForbidden("Hanya groomer yang dapat mengakses halaman ini.")
+    
+    auto_cancel_expired_scheduled_bookings(user)
 
     # testing, balikin ke date.today() aja nanti
     offset_days = int(request.GET.get("days", 0))
@@ -94,10 +96,53 @@ def get_pet_size_label(pet):
 def booking_belongs_to_groomer(booking, user):
     return booking.groomer.user == user
 
+def get_booking_end_datetime(booking):
+    return timezone.make_aware(
+        datetime.combine(booking.tanggal, booking.waktu_selesai)
+    )
+    
+def auto_cancel_expired_scheduled_bookings(user):
+    now = timezone.localtime()
 
-def can_start_booking(booking):
-    if booking.status != Booking.Status.SCHEDULED:
+    scheduled_bookings = Booking.objects.filter(
+        groomer__user=user,
+        status=Booking.Status.SCHEDULED,
+    )
+
+    expired_ids = []
+
+    for booking in scheduled_bookings:
+        booking_end = get_booking_end_datetime(booking)
+
+        if now > booking_end:
+            expired_ids.append(booking.id)
+
+    if expired_ids:
+        Booking.objects.filter(id__in=expired_ids).update(
+            status=Booking.Status.CANCELLED,
+            updated_at=now,
+        )
+        
+def has_unfinished_previous_booking(booking):
+    previous_booking = (
+        Booking.objects.filter(
+            groomer=booking.groomer,
+            tanggal=booking.tanggal,
+            waktu_mulai__lt=booking.waktu_mulai,
+        )
+        .exclude(status=Booking.Status.CANCELLED)
+        .order_by("-waktu_mulai")
+        .first()
+    )
+
+    if not previous_booking:
         return False
+
+    return previous_booking.status != Booking.Status.SERVICE_COMPLETED
+
+def get_start_block_reason(booking):
+    if booking.status != Booking.Status.SCHEDULED:
+        return "invalid_status"
 
     now = timezone.localtime()
 
@@ -105,8 +150,23 @@ def can_start_booking(booking):
         datetime.combine(booking.tanggal, booking.waktu_mulai)
     )
 
-    return now >= booking_start
+    booking_end = timezone.make_aware(
+        datetime.combine(booking.tanggal, booking.waktu_selesai)
+    )
 
+    if now < booking_start:
+        return "before_start_time"
+
+    if now > booking_end:
+        return "after_end_time"
+
+    if has_unfinished_previous_booking(booking):
+        return "previous_not_completed"
+
+    return ""
+
+def can_start_booking(booking):
+    return get_start_block_reason(booking) == ""
 
 def can_complete_booking(booking):
     if booking.status != Booking.Status.SERVICE_STARTED:
@@ -129,6 +189,8 @@ def job_detail(request, booking_id):
 
     if user.role != "groomer":
         return HttpResponseForbidden("Hanya groomer yang dapat mengakses halaman ini.")
+    
+    auto_cancel_expired_scheduled_bookings(user)
 
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "groomer__user")
@@ -186,6 +248,7 @@ def job_detail(request, booking_id):
         "show_start_service": booking.status == Booking.Status.SCHEDULED,
         "show_complete_service": booking.status == Booking.Status.SERVICE_STARTED,
         "can_start_service": can_start_booking(booking),
+        "start_block_reason": get_start_block_reason(booking),
         "can_complete_service": can_complete_booking(booking),
         "can_show_pet_note_button": booking.status == Booking.Status.SERVICE_STARTED,
         "all_forms_completed": all_grooming_forms_completed(booking),
@@ -223,8 +286,25 @@ def update_booking_status(request, booking_id):
     next_action = request.POST.get("action")
 
     if next_action == "start_service":
-        if not can_start_booking(booking):
-            messages.error(request, "Layanan hanya dapat dimulai sesuai waktu pada jadwal.")
+        auto_cancel_expired_scheduled_bookings(user)
+        booking.refresh_from_db()
+        
+        if booking.status == Booking.Status.CANCELLED:
+            messages.error(request, "Booking sudah melewati waktu selesai dan otomatis dibatalkan.")
+            return redirect("groomer_jobs:daily_job_list")
+
+        start_block_reason = get_start_block_reason(booking)
+
+        if start_block_reason:
+            if start_block_reason == "previous_not_completed":
+                messages.error(request, "Layanan belum dapat dimulai karena pekerjaan sebelumnya belum selesai.")
+            elif start_block_reason == "before_start_time":
+                messages.error(request, "Layanan hanya dapat dimulai sesuai waktu pada jadwal.")
+            elif start_block_reason == "after_end_time":
+                messages.error(request, "Booking sudah melewati waktu selesai dan tidak dapat dimulai.")
+            else:
+                messages.error(request, "Layanan tidak dapat dimulai.")
+
             return redirect("groomer_jobs:job_detail", booking_id=booking.id)
 
         booking.status = Booking.Status.SERVICE_STARTED

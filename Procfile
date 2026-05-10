@@ -1,0 +1,1 @@
+web: gunicorn pitpet_clinic.wsgi
