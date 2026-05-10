@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'groomer',
     'groomer_jobs',
     'booking',
+    'reports',
 ]
 
 MIDDLEWARE = [
