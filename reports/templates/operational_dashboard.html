@@ -115,12 +115,16 @@
         </div>
     </div>
 
-    <!-- Monthly Bookings -->
+    <!-- Trend Section (Booking / Layanan Selesai) -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold text-primary">Monthly Bookings</h6>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 id="trend-title" class="m-0 font-weight-bold text-primary">Booking per Bulan</h6>
+                    <div class="btn-group" role="group" aria-label="Jenis Data" id="jenis-toggle">
+                        <button type="button" class="btn btn-sm btn-primary active" id="jenis-booking">Jumlah Booking</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="jenis-layanan">Jumlah Layanan Selesai</button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <canvas id="monthly-bookings-chart"></canvas>
@@ -160,46 +164,7 @@
 <script>
 let monthlyBookingsChart;
 let serviceDistributionChart;
-
-document.addEventListener('DOMContentLoaded', function() {
-    loadDashboard('this_month');
-    document.getElementById('periode-select').addEventListener('change', function() {
-        loadDashboard(this.value);
-    });
-});
-
-function loadDashboard(periode) {
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('error').style.display = 'none';
-    document.getElementById('kpi-cards').style.display = 'none';
-
-    Promise.all([
-        fetch(`/reports/operational-dashboard?periode=${periode}`).then(res => res.json()),
-        fetch(`/reports/trend?periode=${periode}`).then(res => res.json())
-    ]).then(([dashboardData, trendData]) => {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('kpi-cards').style.display = 'flex';
-
-        // Update KPI Cards
-        document.getElementById('total-booking').textContent = formatNumber(dashboardData.kpi_cards.total_booking);
-        document.getElementById('total-layanan-selesai').textContent = formatNumber(dashboardData.kpi_cards.total_layanan_selesai);
-        document.getElementById('total-pendapatan').textContent = formatRupiah(dashboardData.kpi_cards.total_pendapatan);
-        document.getElementById('rata-rata-rating').textContent = dashboardData.kpi_cards.rata_rata_rating.toFixed(1);
-
-        // Update Monthly Bookings Chart
-        updateMonthlyBookingsChart(trendData.trend);
-
-        // Update Service Distribution Chart
-        updateServiceDistributionChart(dashboardData.service_distribution);
-
-        // Update Top Performer
-        updateTopPerformer(dashboardData.top_performer_groomer);
-    }).catch(error => {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('error').style.display = 'block';
-        console.error('Error loading dashboard:', error);
-    });
-}
+let currentJenisData = 'booking';
 
 function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -209,11 +174,36 @@ function formatRupiah(amount) {
     return 'Rp ' + amount.toLocaleString('id-ID');
 }
 
-function updateMonthlyBookingsChart(trendData) {
+function formatDateLabel(isoDate) {
+    try {
+        const d = new Date(isoDate);
+        return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch (e) {
+        return isoDate;
+    }
+}
+
+function setTrendTitle(apiResponse) {
+    const gran = apiResponse.granularity;
+    const jenisLabel = currentJenisData === 'booking' ? 'Booking' : 'Layanan Selesai';
+    let periodLabel = '';
+    if (apiResponse.start_date && apiResponse.end_date) {
+        periodLabel = apiResponse.start_date === apiResponse.end_date ? formatDateLabel(apiResponse.start_date) : `${formatDateLabel(apiResponse.start_date)} - ${formatDateLabel(apiResponse.end_date)}`;
+    }
+
+    const map = { hour: 'per Jam', day: 'per Hari', week: 'per Minggu', month: 'per Bulan' };
+    const title = `${jenisLabel} ${map[gran] || ''}${periodLabel ? ' - ' + periodLabel : ''}`;
+    document.getElementById('trend-title').textContent = title;
+}
+
+function updateTrendChart(data) {
     const ctx = document.getElementById('monthly-bookings-chart').getContext('2d');
-    const labels = trendData.map(item => item.month);
-    const totalBooking = trendData.map(item => item.total_booking);
-    const totalLayananSelesai = trendData.map(item => item.total_layanan_selesai);
+    const labels = data.map(d => d.label);
+    const values = data.map(d => d.value);
+    const isBooking = currentJenisData === 'booking';
+    const backgroundColor = isBooking ? 'rgba(54, 162, 235, 0.5)' : 'rgba(75, 192, 192, 0.5)';
+    const borderColor = isBooking ? 'rgba(54, 162, 235, 1)' : 'rgba(75, 192, 192, 1)';
+    const labelText = isBooking ? 'Jumlah Booking' : 'Jumlah Layanan Selesai';
 
     if (monthlyBookingsChart) {
         monthlyBookingsChart.destroy();
@@ -224,20 +214,24 @@ function updateMonthlyBookingsChart(trendData) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Total Booking',
-                data: totalBooking,
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }, {
-                label: 'Total Layanan Selesai',
-                data: totalLayananSelesai,
-                backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                borderColor: 'rgba(75, 192, 192, 1)',
+                label: labelText,
+                data: values,
+                backgroundColor: backgroundColor,
+                borderColor: borderColor,
                 borderWidth: 1
             }]
         },
         options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y.toString();
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true
@@ -302,5 +296,77 @@ function updateTopPerformer(performer) {
         container.innerHTML = '<p>No data available</p>';
     }
 }
+
+function loadDashboard(periode) {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('kpi-cards').style.display = 'none';
+
+    const jenis = currentJenisData;
+
+    Promise.all([
+        fetch(`/reports/operational-dashboard?periode=${periode}`).then(res => {
+            if (!res.ok) throw new Error('Failed to load dashboard');
+            return res.json();
+        }),
+        fetch(`/reports/api/trend?periode=${periode}&jenis_data=${jenis}`).then(res => {
+            if (!res.ok) throw new Error('Failed to load trend');
+            return res.json();
+        })
+    ]).then(([dashboardData, trendData]) => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('kpi-cards').style.display = 'flex';
+
+        // Update KPI Cards
+        document.getElementById('total-booking').textContent = formatNumber(dashboardData.kpi_cards.total_booking);
+        document.getElementById('total-layanan-selesai').textContent = formatNumber(dashboardData.kpi_cards.total_layanan_selesai);
+        document.getElementById('total-pendapatan').textContent = formatRupiah(dashboardData.kpi_cards.total_pendapatan);
+        document.getElementById('rata-rata-rating').textContent = dashboardData.kpi_cards.rata_rata_rating.toFixed(1);
+
+        // update title
+        setTrendTitle(trendData);
+
+        // Update Trend Chart
+        updateTrendChart(trendData.data || []);
+
+        // Update Service Distribution Chart
+        updateServiceDistributionChart(dashboardData.service_distribution);
+
+        // Update Top Performer
+        updateTopPerformer(dashboardData.top_performer_groomer);
+    }).catch(error => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        console.error('Error loading dashboard:', error);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // initial load
+    loadDashboard('this_month');
+
+    document.getElementById('periode-select').addEventListener('change', function() {
+        loadDashboard(this.value);
+    });
+
+    // jenis toggle
+    document.getElementById('jenis-booking').addEventListener('click', function() {
+        currentJenisData = 'booking';
+        this.classList.add('btn-primary');
+        this.classList.remove('btn-outline-secondary');
+        document.getElementById('jenis-layanan').classList.remove('btn-primary');
+        document.getElementById('jenis-layanan').classList.add('btn-outline-secondary');
+        loadDashboard(document.getElementById('periode-select').value);
+    });
+
+    document.getElementById('jenis-layanan').addEventListener('click', function() {
+        currentJenisData = 'layanan_selesai';
+        this.classList.add('btn-primary');
+        this.classList.remove('btn-outline-secondary');
+        document.getElementById('jenis-booking').classList.remove('btn-primary');
+        document.getElementById('jenis-booking').classList.add('btn-outline-secondary');
+        loadDashboard(document.getElementById('periode-select').value);
+    });
+});
 </script>
 {% endblock %}
