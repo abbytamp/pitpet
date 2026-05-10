@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">
+      Form Rekomendasi Paket
+    </h1>
+    <p class="text-gray-500 mt-1">
+      Isi kondisi hewan peliharaanmu agar sistem dapat merekomendasikan paket grooming yang paling sesuai.
+    </p>
+  </div>
+
+  <div class="glass p-6 rounded-3xl shadow-sm border border-gray-100">
+    <form method="POST" action="{% url 'recommendations:recommendation_form' %}" class="space-y-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Jenis Hewan -->
+      <section class="rounded-2xl border border-gray-200 bg-white p-5">
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-gray-800">
+            1. Pilih Jenis Hewan <span class="text-red-500">*</span>
+          </label>
+          <p class="text-sm text-gray-500 mt-1">
+            Pilih jenis hewan yang ingin direkomendasikan paket grooming-nya.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="radio" name="animal_type" value="dog"
+                   class="h-4 w-4"
+                   {% if form.animal_type.value == "dog" %}checked{% endif %}>
+            <span class="text-sm font-medium text-gray-800">Anjing</span>
+          </label>
+
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="radio" name="animal_type" value="cat"
+                   class="h-4 w-4"
+                   {% if form.animal_type.value == "cat" %}checked{% endif %}>
+            <span class="text-sm font-medium text-gray-800">Kucing</span>
+          </label>
+        </div>
+
+        {% if form.animal_type.errors %}
+          <p class="text-sm text-red-600 mt-3">{{ form.animal_type.errors.0 }}</p>
+        {% endif %}
+      </section>
+
+      <!-- Kondisi Bulu -->
+      <section class="rounded-2xl border border-gray-200 bg-white p-5">
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-gray-800">
+            2. Kondisi Bulu
+          </label>
+          <p class="text-sm text-gray-500 mt-1">
+            Pilih satu atau lebih kondisi bulu yang sesuai.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="checkbox" name="fur_conditions" value="thick_long_fur"
+                   class="h-4 w-4"
+                   {% if "thick_long_fur" in form.fur_conditions.value %}checked{% endif %}>
+            <span class="text-sm text-gray-800">Bulu tebal/panjang</span>
+          </label>
+
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="checkbox" name="fur_conditions" value="dull_shedding_fur"
+                   class="h-4 w-4"
+                   {% if "dull_shedding_fur" in form.fur_conditions.value %}checked{% endif %}>
+            <span class="text-sm text-gray-800">Bulu rontok/kusam</span>
+          </label>
+
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="checkbox" name="fur_conditions" value="matted_fur"
+                   class="h-4 w-4"
+                   {% if "matted_fur" in form.fur_conditions.value %}checked{% endif %}>
+            <span class="text-sm text-gray-800">Bulu kusut/gimbal</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Kondisi Kulit -->
+      <section class="rounded-2xl border border-gray-200 bg-white p-5">
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-gray-800">
+            3. Kondisi Kulit
+          </label>
+          <p class="text-sm text-gray-500 mt-1">
+            Pilih satu atau lebih kondisi kulit yang sesuai.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="checkbox" name="skin_conditions" value="fleas"
+                   class="h-4 w-4"
+                   {% if "fleas" in form.skin_conditions.value %}checked{% endif %}>
+            <span class="text-sm text-gray-800">Berkutu</span>
+          </label>
+
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="checkbox" name="skin_conditions" value="fungus_irritation"
+                   class="h-4 w-4"
+                   {% if "fungus_irritation" in form.skin_conditions.value %}checked{% endif %}>
+            <span class="text-sm text-gray-800">Berjamur/iritasi</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Kondisi Lainnya -->
+      <section class="rounded-2xl border border-gray-200 bg-white p-5">
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-gray-800">
+            4. Kondisi Lainnya
+          </label>
+          <p class="text-sm text-gray-500 mt-1">
+            Pilih satu atau lebih kondisi lainnya yang sesuai.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="checkbox" name="additional_conditions" value="long_nails"
+                   class="h-4 w-4"
+                   {% if "long_nails" in form.additional_conditions.value %}checked{% endif %}>
+            <span class="text-sm text-gray-800">Kuku panjang</span>
+          </label>
+
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="checkbox" name="additional_conditions" value="dirty_ears"
+                   class="h-4 w-4"
+                   {% if "dirty_ears" in form.additional_conditions.value %}checked{% endif %}>
+            <span class="text-sm text-gray-800">Telinga kotor</span>
+          </label>
+
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+            <input type="checkbox" name="additional_conditions" value="styling"
+                   class="h-4 w-4"
+                   {% if "styling" in form.additional_conditions.value %}checked{% endif %}>
+            <span class="text-sm text-gray-800">Ingin styling/potong model</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Catatan -->
+      <div class="rounded-2xl bg-orange-50 border border-orange-100 px-5 py-4">
+        <p class="text-sm text-gray-600">
+          <span class="font-semibold text-gray-800">Catatan:</span>
+          Jenis hewan wajib dipilih dan minimal satu kondisi harus dicentang agar sistem dapat menampilkan rekomendasi paket.
+        </p>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex items-center gap-3 pt-1">
+        <button type="submit"
+                class="px-6 py-3 rounded-xl font-semibold text-white bg-[#F5A623] hover:bg-orange-500 transition">
+          Submit
+        </button>
+
+        <a href="{% url 'package_catalog' %}"
+           class="px-6 py-3 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-gray-800 transition">
+          Cancel
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}
