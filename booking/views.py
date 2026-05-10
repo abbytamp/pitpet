@@ -1029,6 +1029,9 @@ def booking_history_detail(request, booking_id):
             )
 
     grooming_notes = "belum tersedia" if not grooming_summaries else None
+    
+    # Get review if exists
+    review = getattr(booking, 'review', None)
 
     context = {
         "booking": booking,
@@ -1044,6 +1047,7 @@ def booking_history_detail(request, booking_id):
         "pet_items": pet_items,
         "grooming_summaries": grooming_summaries,
         "grooming_notes": grooming_notes,
+        "review": review,
     }
 
     return render(request, "booking/history_detail.html", context)
