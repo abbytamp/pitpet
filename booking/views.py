@@ -965,14 +965,13 @@ def booking_history_detail(request, booking_id):
     from groomer_jobs.models import GroomingServiceForm
 
     booking = get_object_or_404(
-        Booking.objects.select_related("customer", "groomer", "groomer__user")
+        Booking.objects.select_related("customer", "groomer", "groomer__user", "review", "review__customer")
         .prefetch_related(
             "items__pet",
             "items__package",
             "items__additionals__additional",
         ),
         id=booking_id,
-        customer=request.user,
     )
 
     is_history_booking = (
@@ -1054,16 +1053,17 @@ def booking_history_detail(request, booking_id):
 
 @login_required
 def staff_booking_history_all(request):
-    if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
-        return HttpResponseForbidden("403 Forbidden: hanya staff operasional yang dapat mengakses halaman ini.")
+    if not request.user.is_authenticated or request.user.role not in [User.Role.STAFF, User.Role.MANAGER]:
+        return HttpResponseForbidden("403 Forbidden: hanya staff operasional atau manager yang dapat mengakses halaman ini.")
 
     search_query = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', 'all')
+    rating_filter = request.GET.get('rating', 'all')
     page = _to_int(request.GET.get('page'), 1)
     per_page = 10
 
     bookings = (
-        Booking.objects.select_related("customer", "groomer", "groomer__user")
+        Booking.objects.select_related("customer", "groomer", "groomer__user", "review", "review__customer")
         .prefetch_related("items__pet", "items__package")
         .filter(status__in=[Booking.Status.CANCELLED, Booking.Status.SERVICE_COMPLETED])
         .order_by("-tanggal", "-waktu_mulai")
@@ -1080,6 +1080,17 @@ def staff_booking_history_all(request):
     elif status_filter == 'cancelled':
         bookings = bookings.filter(status=Booking.Status.CANCELLED)
 
+    # Filter by rating (only applies when rating is a number 1-5)
+    if rating_filter != 'all':
+        try:
+            rating_value = int(rating_filter)
+            if 1 <= rating_value <= 5:
+                # Only include bookings that have a review with the specified rating
+                bookings = bookings.filter(review__rating=rating_value)
+        except (ValueError, TypeError):
+            # Invalid rating filter, ignore
+            pass
+
     total_count = bookings.count()
     total_pages = (total_count + per_page - 1) // per_page
     offset = (page - 1) * per_page
@@ -1088,6 +1099,10 @@ def staff_booking_history_all(request):
     booking_list = []
     for booking in bookings:
         pet_names = [item.pet.name for item in booking.items.all()]
+        # Get rating if exists
+        rating = getattr(booking, 'review', None)
+        rating_value = rating.rating if rating else None
+
         booking_list.append({
             'id': booking.id,
             'tanggal': booking.tanggal,
@@ -1101,12 +1116,14 @@ def staff_booking_history_all(request):
             'status_label': booking.get_status_display(),
             'payment_status': booking.payment_status,
             'payment_status_label': booking.get_payment_status_display(),
+            'rating': rating_value,
         })
 
     context = {
         'bookings': booking_list,
         'search_query': search_query,
         'status_filter': status_filter,
+        'rating_filter': rating_filter,
         'page': page,
         'total_pages': total_pages,
         'total_count': total_count,
@@ -1119,13 +1136,13 @@ def staff_booking_history_all(request):
 
 @login_required
 def staff_booking_history_detail(request, booking_id):
-    if not request.user.is_authenticated or request.user.role != User.Role.STAFF:
-        return HttpResponseForbidden("403 Forbidden: hanya staff operasional yang dapat mengakses halaman ini.")
+    if not request.user.is_authenticated or request.user.role not in [User.Role.STAFF, User.Role.MANAGER]:
+        return HttpResponseForbidden("403 Forbidden: hanya staff operasional atau manager yang dapat mengakses halaman ini.")
 
     from groomer_jobs.models import GroomingServiceForm
 
     booking = get_object_or_404(
-        Booking.objects.select_related("customer", "groomer", "groomer__user")
+        Booking.objects.select_related("customer", "groomer", "groomer__user", "review", "review__customer")
         .prefetch_related(
             "items__pet",
             "items__package",
@@ -1182,6 +1199,9 @@ def staff_booking_history_detail(request, booking_id):
 
     grooming_notes = "\n\n".join(grooming_notes_parts) if grooming_notes_parts else "belum tersedia"
 
+    # Get review if exists
+    review = getattr(booking, 'review', None)
+
     context = {
         "booking": booking,
         "customer_name": booking.customer.full_name,
@@ -1200,6 +1220,7 @@ def staff_booking_history_detail(request, booking_id):
         "catatan": booking.catatan,
         "pet_items": pet_items,
         "grooming_notes": grooming_notes,
+        "review": review,
     }
 
     return render(request, "booking/staff_booking_history_detail.html", context)
@@ -1387,3 +1408,199 @@ def api_update_payment_status(request, booking_id):
         },
         status=200,
     )
+
+
+@login_required
+@require_http_methods(["GET"])
+def staff_booking_history_api(request):
+    """API endpoint for staff/manager to get booking history list with review and rating filter."""
+    if request.user.role not in [User.Role.STAFF, User.Role.MANAGER]:
+        return JsonResponse({"error": "403 Forbidden: hanya staff operasional atau manager yang dapat mengakses data ini."}, status=403)
+
+    search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', 'all')
+    rating_filter = request.GET.get('rating', 'all')
+
+    bookings_qs = (
+        Booking.objects.select_related("customer", "groomer", "groomer__user", "review", "review__customer")
+        .prefetch_related("items__pet", "items__package")
+        .filter(status__in=[Booking.Status.CANCELLED, Booking.Status.SERVICE_COMPLETED])
+        .order_by("-tanggal", "-waktu_mulai")
+    )
+
+    if search_query:
+        bookings_qs = bookings_qs.filter(
+            models.Q(customer__full_name__icontains=search_query) |
+            models.Q(items__pet__name__icontains=search_query)
+        ).distinct()
+
+    if status_filter == 'paid':
+        bookings_qs = bookings_qs.filter(payment_status=Booking.PaymentStatus.PAID, status=Booking.Status.SERVICE_COMPLETED)
+    elif status_filter == 'cancelled':
+        bookings_qs = bookings_qs.filter(status=Booking.Status.CANCELLED)
+
+    # Rating filtering (exact match)
+    if rating_filter != 'all':
+        try:
+            rating_val = int(rating_filter)
+            if 1 <= rating_val <= 5:
+                bookings_qs = bookings_qs.filter(review__rating=rating_val)
+        except (ValueError, TypeError):
+            pass
+
+    data = []
+    for booking in bookings_qs:
+        pet_names = [item.pet.name for item in booking.items.all()]
+        review_obj = getattr(booking, 'review', None)
+        review_data = None
+        if review_obj:
+            review_data = {
+                "rating": review_obj.rating,
+                "comment": review_obj.comment,
+                "created_at": review_obj.created_at.isoformat(),
+                "customer_name": review_obj.customer.full_name,
+            }
+
+        data.append({
+            "id": booking.id,
+            "booking_code": booking.booking_code,
+            "tanggal": booking.tanggal.isoformat(),
+            "waktu_mulai": booking.waktu_mulai.strftime("%H:%M"),
+            "waktu_selesai": booking.waktu_selesai.strftime("%H:%M"),
+            "service_type": booking.service_type,
+            "service_type_label": booking.get_service_type_display(),
+            "groomer": {
+                "id": booking.groomer.id,
+                "name": booking.groomer.user.full_name,
+                "phone": booking.groomer.user.phone_number,
+            },
+            "customer": {
+                "id": booking.customer.id,
+                "name": booking.customer.full_name,
+                "phone": booking.customer.phone_number,
+            },
+            "total_durasi": booking.total_durasi,
+            "total_harga": float(booking.total_harga),
+            "status": booking.status,
+            "status_label": booking.get_status_display(),
+            "payment_status": booking.payment_status,
+            "payment_status_label": booking.get_payment_status_display(),
+            "pet_names": pet_names,
+            "review": review_data,
+        })
+
+    return JsonResponse({
+        "bookings": data,
+        "total_count": len(data),
+    }, status=200)
+
+
+
+@login_required
+@require_http_methods(["GET"])
+def staff_booking_detail_api(request, booking_id):
+    """API endpoint for staff to get booking detail with review data."""
+    if not request.user.is_authenticated or request.user.role not in [User.Role.STAFF, User.Role.MANAGER]:
+        return JsonResponse({"error": "403 Forbidden: hanya staff operasional atau manager yang dapat mengakses data ini."}, status=403)
+
+    from groomer_jobs.models import GroomingServiceForm
+
+    booking = get_object_or_404(
+        Booking.objects.select_related(
+            "customer", "groomer", "groomer__user", "review", "review__customer"
+        )
+        .prefetch_related(
+            "items__pet",
+            "items__package",
+            "items__additionals__additional",
+        ),
+        id=booking_id,
+    )
+
+    # Build pet items
+    pet_items = []
+    for item in booking.items.all():
+        additionals = []
+        for additional in item.additionals.all():
+            additionals.append({
+                "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
+                "harga": float(additional.harga),
+            })
+
+        pet_items.append({
+            "pet_name": item.pet.name,
+            "pet_type": item.pet.jenis,
+            "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
+            "package_price": float(item.harga_paket),
+            "durasi_paket": item.durasi_paket,
+            "additionals": additionals,
+            "subtotal": float(item.subtotal),
+        })
+
+    # Get grooming forms if any
+    grooming_forms = {
+        form.booking_item_id: form
+        for form in GroomingServiceForm.objects.filter(booking_item__booking=booking)
+    }
+
+    grooming_summaries = []
+    for item in booking.items.all():
+        grooming_form = grooming_forms.get(item.id)
+        if grooming_form:
+            grooming_summaries.append({
+                "pet_name": item.pet.name,
+                "kondisi_bulu": grooming_form.kondisi_bulu,
+                "kondisi_kulit": grooming_form.kondisi_kulit,
+                "kondisi_telinga": grooming_form.kondisi_telinga,
+                "kondisi_kuku": grooming_form.kondisi_kuku,
+                "perilaku_hewan": grooming_form.perilaku_hewan,
+                "catatan_tambahan": grooming_form.catatan_tambahan,
+                "foto_bukti_url": grooming_form.foto_bukti_layanan.url if grooming_form.foto_bukti_layanan else None,
+            })
+
+    # Get review if exists
+    review = getattr(booking, 'review', None)
+    review_data = None
+    if review:
+        review_data = {
+            "rating": review.rating,
+            "comment": review.comment,
+            "created_at": review.created_at.isoformat(),
+            "customer_name": review.customer.full_name,
+        }
+
+    response = {
+        "booking": {
+            "id": booking.id,
+            "booking_code": booking.booking_code,
+            "tanggal": booking.tanggal.isoformat(),
+            "waktu_mulai": booking.waktu_mulai.strftime("%H:%M"),
+            "waktu_selesai": booking.waktu_selesai.strftime("%H:%M"),
+            "service_type": booking.service_type,
+            "service_type_label": booking.get_service_type_display(),
+            "groomer": {
+                "id": booking.groomer.id,
+                "name": booking.groomer.user.full_name,
+                "phone": booking.groomer.user.phone_number,
+            },
+            "customer": {
+                "id": booking.customer.id,
+                "name": booking.customer.full_name,
+                "phone": booking.customer.phone_number,
+            },
+            "total_durasi": booking.total_durasi,
+            "total_harga": float(booking.total_harga),
+            "status": booking.status,
+            "status_label": booking.get_status_display(),
+            "payment_status": booking.payment_status,
+            "payment_status_label": booking.get_payment_status_display(),
+            "catatan": booking.catatan,
+            "alamat": booking.alamat,
+        },
+        "pet_items": pet_items,
+        "grooming_summaries": grooming_summaries,
+        "grooming_notes": grooming_summaries[0] if grooming_summaries else "belum tersedia",
+        "review": review_data,
+    }
+
+    return JsonResponse(response, status=200)

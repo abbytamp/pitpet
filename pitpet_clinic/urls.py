@@ -14,5 +14,6 @@ urlpatterns = [
     path('groomer-jobs/', include('groomer_jobs.urls')),
     path('booking/', include(('booking.urls', 'booking'), namespace='booking')),
     path('api/slots/', booking_views.api_slots, name='api_slots'),
+    path('api/bookings/history/all/', booking_views.staff_booking_history_api, name='staff_booking_history_api'),
     path('recommendations/', include('recommendations.urls')),
 ]
