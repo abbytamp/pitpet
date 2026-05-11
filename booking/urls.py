@@ -11,6 +11,7 @@ urlpatterns = [
     path("staff/cancel/<int:booking_id>/", views.staff_cancel_booking, name="staff_cancel_booking"),
     path("staff/history/all/", views.staff_booking_history_all, name="staff_booking_history_all"),
     path("staff/history/all/<int:booking_id>/", views.staff_booking_history_detail, name="staff_booking_history_detail"),
+    path("staff/api/<int:booking_id>/", views.staff_booking_detail_api, name="staff_booking_detail_api"),
     path("create/", views.booking_create, name="create"),
     path("<int:booking_id>/", views.booking_detail, name="detail"),
     path("success/<int:booking_id>/", views.booking_success, name="success"),
