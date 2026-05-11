@@ -17,4 +17,10 @@ urlpatterns = [
         views.report_trend,
         name="report-trend"
     ),
+    # API endpoint matching PBI: /reports/api/trend
+    path(
+        "api/trend",
+        views.report_trend_api,
+        name="report-trend-api"
+    ),
 ]
