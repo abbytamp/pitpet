@@ -9,11 +9,12 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-import dj_database_url
+# import dj_database_url
 from pathlib import Path
 import os
 #import dj_database_url
 from dotenv import load_dotenv
+
 
 # Load .env file
 load_dotenv()
@@ -29,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-o8x0s)al*l0*fgf8+9d&5us+c04yxa0cr6+v215!@18!1%ac@9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 ALLOWED_HOSTS = ['*']  
@@ -51,6 +52,8 @@ INSTALLED_APPS = [
     'groomer',
     'groomer_jobs',
     'booking',
+    'recommendations',
+    'reports',
 ]
 
 MIDDLEWARE = [
@@ -107,9 +110,14 @@ WSGI_APPLICATION = 'pitpet_clinic.wsgi.application'
 # }
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3'
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'pitpet_db',
+        'USER': 'pitpet_user',
+        'PASSWORD': 'admin123',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 # Use DATABASE_URL from .env or environment variables
 #DATABASES = {

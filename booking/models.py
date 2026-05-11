@@ -1,12 +1,28 @@
+
 from django.conf import settings
 from django.db import models
-
 from accounts.models import Groomer
 from packages.models import Package
 from pet.models import Pet
 
 
+class BookingReview(models.Model):
+    booking = models.OneToOneField('Booking', on_delete=models.CASCADE, related_name='review')
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField()
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('booking', 'customer')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Review for Booking #{self.booking_id} by {self.customer.full_name}"
+
+
 class Booking(models.Model):
+    tanggal = models.DateField()
     class ServiceType(models.TextChoices):
         CLINIC = "clinic", "Clinic"
         HOME = "home", "Home"
@@ -27,12 +43,14 @@ class Booking(models.Model):
         related_name="bookings",
     )
     service_type = models.CharField(max_length=10, choices=ServiceType.choices)
+
     groomer = models.ForeignKey(
         Groomer,
         on_delete=models.PROTECT,
         related_name="bookings",
     )
-    tanggal = models.DateField()
+
+
     waktu_mulai = models.TimeField()
     waktu_selesai = models.TimeField()
     total_durasi = models.PositiveIntegerField(help_text="Total durasi dalam menit")

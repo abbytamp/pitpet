@@ -1,3 +1,39 @@
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import timedelta
+from .forms import BookingReviewForm
+from .models import BookingReview
+@login_required
+def booking_review_create(request, booking_id):
+    booking = get_object_or_404(
+        Booking.objects.select_related("customer", "groomer", "groomer__user"),
+        id=booking_id,
+        customer=request.user,
+    )
+    # Hanya bisa review jika status completed & paid
+    if not (booking.status == Booking.Status.SERVICE_COMPLETED and booking.payment_status == Booking.PaymentStatus.PAID):
+        messages.error(request, "Review hanya dapat diberikan untuk booking yang sudah selesai dan sudah dibayar.")
+        return redirect("booking:history_detail", booking_id=booking.id)
+
+    # Sudah ada review?
+    if hasattr(booking, "review"):
+        messages.error(request, "Review sudah pernah dibuat untuk booking ini.")
+        return redirect("booking:history_detail", booking_id=booking.id)
+
+
+    if request.method == "POST":
+        form = BookingReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.booking = booking
+            review.customer = request.user
+            review.save()
+            messages.success(request, "Review berhasil dikirim")
+            return redirect("booking:history_detail", booking_id=booking.id)
+    else:
+        form = BookingReviewForm()
+
+    return render(request, "booking/review_form.html", {"form": form, "booking": booking})
 
 # Cancel booking oleh staff (pastikan ada di bawah dan tidak error import)
 from django.contrib import messages
@@ -993,6 +1029,9 @@ def booking_history_detail(request, booking_id):
             )
 
     grooming_notes = "belum tersedia" if not grooming_summaries else None
+    
+    # Get review if exists
+    review = getattr(booking, 'review', None)
 
     context = {
         "booking": booking,
@@ -1008,6 +1047,7 @@ def booking_history_detail(request, booking_id):
         "pet_items": pet_items,
         "grooming_summaries": grooming_summaries,
         "grooming_notes": grooming_notes,
+        "review": review,
     }
 
     return render(request, "booking/history_detail.html", context)

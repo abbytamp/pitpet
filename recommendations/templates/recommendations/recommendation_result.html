@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-orange-50 py-10 px-4">
+  <div class="max-w-4xl mx-auto">
+
+    <div class="bg-white rounded-3xl shadow-md border border-orange-100 p-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-4">
+        Hasil Rekomendasi Paket Grooming
+      </h1>
+
+      <p class="text-gray-600 mb-6">
+        Page sementara
+      </p>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">
+          Input yang Dipilih
+        </h2>
+
+        <p class="mb-2">
+          <span class="font-semibold">Jenis Hewan:</span>
+          {{ recommendation_input.animal_type }}
+        </p>
+
+        <p class="font-semibold mb-2">Kondisi:</p>
+        <ul class="list-disc list-inside text-gray-700">
+          {% for condition in recommendation_input.conditions %}
+            <li>{{ condition }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <a href="{% url 'recommendations:recommendation_form' %}"
+         class="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition">
+        Back
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

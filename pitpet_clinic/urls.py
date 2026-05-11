@@ -7,10 +7,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('packages/', include('packages.urls')),
+    path('reports/', include('reports.urls')),
     path('', lambda request: redirect('login')),
     path('user-profile/', include('user_profile.urls')),
     path('groomer/', include('groomer.urls')),
     path('groomer-jobs/', include('groomer_jobs.urls')),
     path('booking/', include(('booking.urls', 'booking'), namespace='booking')),
     path('api/slots/', booking_views.api_slots, name='api_slots'),
+    path('recommendations/', include('recommendations.urls')),
 ]
