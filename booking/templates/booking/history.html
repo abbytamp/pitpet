@@ -87,7 +87,11 @@
                     {% empty %}
                     <tr>
                         <td colspan="9" class="px-4 py-12 text-center text-gray-400">
-                            Belum ada riwayat booking.
+                            {% if search_query %}
+                                Tidak ada riwayat dengan kata kunci <span class="font-semibold text-gray-600">"{{ search_query }}"</span>.
+                            {% else %}
+                                Belum ada riwayat booking.
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

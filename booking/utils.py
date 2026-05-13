@@ -156,9 +156,11 @@ def _iter_candidate_starts(date_obj, duration_minutes: int, service_type: str) -
     work_end_dt = _as_datetime(date_obj, WORK_END)
 
     earliest_dt = work_start_dt
+    now = timezone.localtime().replace(tzinfo=None)  # make naive
     today = timezone.localdate()
+    # Untuk hari ini, slot hanya boleh >= sekarang + 2 jam
     if date_obj == today:
-        min_dt = round_up_to_next_slot(timezone.localtime() + timedelta(hours=2))
+        min_dt = round_up_to_next_slot(now + timedelta(hours=2))
         earliest_dt = max(work_start_dt, _as_datetime(date_obj, min_dt.time()))
 
     if earliest_dt >= work_end_dt:
@@ -171,6 +173,11 @@ def _iter_candidate_starts(date_obj, duration_minutes: int, service_type: str) -
         visible_end = current + timedelta(minutes=duration_minutes)
         if visible_end > work_end_dt:
             break
+
+        # Filter ekstra: untuk hari ini, slot mulai < sekarang + 2 jam tidak boleh muncul
+        if date_obj == today and current < (now + timedelta(hours=2)):
+            current += step
+            continue
 
         if can_fit_in_working_hours(date_obj, current.time(), duration_minutes, service_type):
             candidates.append(current)

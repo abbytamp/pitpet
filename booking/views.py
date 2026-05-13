@@ -278,7 +278,6 @@ def staff_booking_detail(request, booking_id):
         "owner_phone": booking.customer.phone_number,
         "service_type_label": booking.get_service_type_display(),
         "groomer_name": booking.groomer.user.full_name,
-        "groomer_phone": booking.groomer.user.phone_number,
         "address": booking.alamat,
         "status": booking.status,
         "status_label": booking.get_status_display(),
@@ -765,7 +764,7 @@ def reschedule_booking(request, booking_id):
     now = timezone.localtime()
     booking_datetime = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_mulai))
     if booking_datetime - now < timedelta(hours=2):
-        messages.error(request, "Perubahan jadwal kurang dari 2 jam. Silakan hubungi staff untuk perubahan jadwal.")
+        messages.error(request, "Perubahan jadwal kurang dari 2 jam. Silakan hubungi staff untuk perubahan jadwal")
         return redirect("booking:my_bookings")
 
     today = timezone.localdate()
@@ -939,6 +938,7 @@ def booking_history(request):
         return redirect("login")
 
     status_filter = request.GET.get('status', 'all')
+    search_query = request.GET.get('search', '').strip()
 
     bookings = Booking.objects.select_related("groomer", "groomer__user") \
         .prefetch_related("items__pet", "items__package") \
@@ -949,12 +949,19 @@ def booking_history(request):
         ) \
         .order_by("-tanggal", "-waktu_mulai")
 
+    if search_query:
+        bookings = bookings.filter(
+            models.Q(groomer__user__full_name__icontains=search_query) |
+            models.Q(items__pet__name__icontains=search_query) |
+            models.Q(items__package__name__icontains=search_query)
+        ).distinct()
+
     if status_filter == 'paid':
         bookings = bookings.filter(payment_status=Booking.PaymentStatus.PAID, status=Booking.Status.SERVICE_COMPLETED)
     elif status_filter == 'cancelled':
         bookings = bookings.filter(status=Booking.Status.CANCELLED)
 
-    return render(request, "booking/history.html", {"bookings": bookings, "status_filter": status_filter})
+    return render(request, "booking/history.html", {"bookings": bookings, "status_filter": status_filter, "search_query": search_query})
 
 
 @login_required
@@ -1136,6 +1143,7 @@ def staff_booking_history_all(request):
 
 @login_required
 def staff_booking_history_detail(request, booking_id):
+
     if not request.user.is_authenticated or request.user.role not in [User.Role.STAFF, User.Role.MANAGER]:
         return HttpResponseForbidden("403 Forbidden: hanya staff operasional atau manager yang dapat mengakses halaman ini.")
 
@@ -1156,8 +1164,9 @@ def staff_booking_history_detail(request, booking_id):
         for form in GroomingServiceForm.objects.filter(booking_item__booking=booking)
     }
 
+
     pet_items = []
-    grooming_notes_parts = []
+    grooming_summaries = []
 
     for item in booking.items.all():
         additionals = []
@@ -1180,24 +1189,18 @@ def staff_booking_history_detail(request, booking_id):
         })
 
         if grooming_form:
-            note_lines = [
-                f"{item.pet.name}",
-                f"Kondisi bulu: {grooming_form.kondisi_bulu}",
-                f"Kondisi kulit: {grooming_form.kondisi_kulit}",
-                f"Kondisi telinga: {grooming_form.kondisi_telinga}",
-                f"Kondisi kuku: {grooming_form.kondisi_kuku}",
-                f"Perilaku hewan: {grooming_form.perilaku_hewan}",
-            ]
+            grooming_summaries.append({
+                "pet_name": item.pet.name,
+                "kondisi_bulu": grooming_form.kondisi_bulu,
+                "kondisi_kulit": grooming_form.kondisi_kulit,
+                "kondisi_telinga": grooming_form.kondisi_telinga,
+                "kondisi_kuku": grooming_form.kondisi_kuku,
+                "perilaku_hewan": grooming_form.perilaku_hewan,
+                "catatan_tambahan": grooming_form.catatan_tambahan,
+                "foto_bukti_url": grooming_form.foto_bukti_layanan.url if grooming_form.foto_bukti_layanan else None,
+            })
 
-            if grooming_form.catatan_tambahan:
-                note_lines.append(f"Catatan tambahan: {grooming_form.catatan_tambahan}")
-
-            if grooming_form.foto_bukti_layanan:
-                note_lines.append(f"Foto bukti layanan: {grooming_form.foto_bukti_layanan.url}")
-
-            grooming_notes_parts.append("\n".join(note_lines))
-
-    grooming_notes = "\n\n".join(grooming_notes_parts) if grooming_notes_parts else "belum tersedia"
+    grooming_notes = "belum tersedia" if not grooming_summaries else None
 
     # Get review if exists
     review = getattr(booking, 'review', None)
@@ -1219,6 +1222,7 @@ def staff_booking_history_detail(request, booking_id):
         "payment_status_label": booking.get_payment_status_display(),
         "catatan": booking.catatan,
         "pet_items": pet_items,
+        "grooming_summaries": grooming_summaries,
         "grooming_notes": grooming_notes,
         "review": review,
     }
@@ -1325,31 +1329,33 @@ def api_slots(request):
     duration = _to_int(request.GET.get("duration"))
     service_type = request.GET.get("service_type", "").strip()
 
-    if groomer_id <= 0:
-        return JsonResponse({"error": "groomer_id wajib diisi."}, status=400)
-    if not date_raw:
-        return JsonResponse({"error": "date wajib diisi."}, status=400)
-    if duration <= 0:
-        return JsonResponse({"error": "duration wajib > 0."}, status=400)
-    if service_type not in [Booking.ServiceType.CLINIC, Booking.ServiceType.HOME]:
-        return JsonResponse({"error": "service_type tidak valid."}, status=400)
+    # Validasi input, jika tidak valid tetap return 200 dengan slots kosong dan pesan ramah
+    if groomer_id <= 0 or not date_raw or duration <= 0 or service_type not in [Booking.ServiceType.CLINIC, Booking.ServiceType.HOME]:
+        return JsonResponse({
+            "slots": [],
+            "message": "Tidak ada slot tersedia untuk tanggal ini."
+        }, status=200)
 
     try:
         date_obj = datetime.strptime(date_raw, "%Y-%m-%d").date()
     except ValueError:
-        return JsonResponse({"error": "Format date tidak valid."}, status=400)
+        return JsonResponse({
+            "slots": [],
+            "message": "Tidak ada slot tersedia untuk tanggal ini."
+        }, status=200)
 
     today = timezone.localdate()
     if date_obj < today or date_obj > today + timedelta(days=MAX_BOOKING_DAYS):
-        return JsonResponse({"error": "Tanggal di luar range booking."}, status=400)
+        return JsonResponse({
+            "slots": [],
+            "message": "Tidak ada slot tersedia untuk tanggal ini."
+        }, status=200)
 
     if not is_working_day(date_obj):
-        return JsonResponse(
-            {
-                "slots": [],
-                "message": "Hari Senin libur. Silakan pilih tanggal lain.",
-            }
-        )
+        return JsonResponse({
+            "slots": [],
+            "message": "Hari Senin libur. Silakan pilih tanggal lain."
+        }, status=200)
 
     groomer = (
         Groomer.objects.select_related("user")
@@ -1357,16 +1363,18 @@ def api_slots(request):
         .first()
     )
     if not groomer:
-        return JsonResponse({"error": "Groomer tidak tersedia."}, status=404)
+        return JsonResponse({
+            "slots": [],
+            "message": "Tidak ada slot tersedia untuk tanggal ini."
+        }, status=200)
 
     slots = get_available_slots(groomer.id, date_obj, duration, service_type)
     return JsonResponse(
         {
             "slots": slots,
-            "message": None
-            if slots
-            else "Tidak ada slot tersedia untuk groomer ini pada tanggal tersebut, silakan pilih tanggal atau groomer lain.",
-        }
+            "message": None if slots else "Tidak ada slot tersedia untuk tanggal ini.",
+        },
+        status=200
     )
 
 @login_required
