@@ -2,24 +2,28 @@
 {% block title %}Beri Review{% endblock %}
 {% block content %}
 <section class="max-w-xl mx-auto px-4 py-8">
-  <h1 class="text-2xl font-bold mb-4">Beri Review</h1>
-  <form method="post">
-    {% csrf_token %}
-    <div class="mb-4">
-      <label class="block font-semibold mb-2">Rating <span class="text-red-500">*</span></label>
-      {{ form.rating }}
-      {% if form.rating.errors %}
-        <p class="text-red-600 text-sm mt-1">{{ form.rating.errors.0 }}</p>
-      {% endif %}
-    </div>
-    <div class="mb-4">
-      <label class="block font-semibold mb-2">Komentar</label>
-      {{ form.comment }}
-      {% if form.comment.errors %}
-        <p class="text-red-600 text-sm mt-1">{{ form.comment.errors.0 }}</p>
-      {% endif %}
-    </div>
-    <button type="submit" class="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">Kirim Review</button>
-  </form>
+  <div class="bg-[#FFF8ED] rounded-2xl shadow p-6 sm:p-8 border border-gray-100">
+    <h1 class="text-2xl font-bold mb-6 text-[#F5A623] text-center">Beri Review</h1>
+    <form method="post" class="space-y-6">
+      {% csrf_token %}
+      <div class="mb-4">
+        <label class="block font-semibold mb-2 text-[#2BBDBD]">Rating <span class="text-red-500">*</span></label>
+        <div class="flex items-center gap-2">
+          {{ form.rating }}
+        </div>
+        {% if form.rating.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ form.rating.errors.0 }}</p>
+        {% endif %}
+      </div>
+      <div class="mb-4">
+        <label class="block font-semibold mb-2 text-[#2BBDBD]">Komentar</label>
+        {{ form.comment|add_class:'bg-white border border-[#F5A623] rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#2BBDBD]' }}
+        {% if form.comment.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ form.comment.errors.0 }}</p>
+        {% endif %}
+      </div>
+      <button type="submit" class="w-full py-2 px-4 bg-[#F5A623] text-white font-semibold rounded-lg hover:bg-[#2BBDBD] hover:text-white transition">Kirim Review</button>
+    </form>
+  </div>
 </section>
 {% endblock %}

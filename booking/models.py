@@ -129,7 +129,7 @@ class Booking(models.Model):
             return "Booking tidak dapat dibatalkan."
 
         if not self.can_cancel:
-            return "Sisa waktu kurang dari 2 jam, harap lapor via Whatsapp ke staff untuk melakukan pembatalan."
+            return "Sisa waktu kurang dari 2 jam, harap lapor via Whatsapp ke staff untuk melakukan pembatalan"
 
         return ""
 
