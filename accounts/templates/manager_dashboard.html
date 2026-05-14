@@ -28,6 +28,29 @@
         </div>
     </div>
 
+    <!-- Top Performer Groomer Section -->
+    <div class="bg-white rounded-2xl shadow p-6 mb-10">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Top Performer Groomer</h2>
+            <span class="text-sm text-gray-500">Periode: {{ periode.start|date:'d M Y' }} - {{ periode.end|date:'d M Y' }}</span>
+        </div>
+        {% if top_performers and top_performers|length > 0 %}
+        <div class="space-y-3">
+            {% for g in top_performers %}
+            <div class="flex items-center bg-teal-50 rounded-xl p-4 border border-teal-100">
+                <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-[#34C1D4] text-white font-bold text-lg mr-4">{{ g.rank }}</div>
+                <div class="flex-1">
+                    <div class="font-bold text-gray-800 text-lg">{{ g.nama }}</div>
+                    <div class="text-sm text-gray-500">{{ g.total }} layanan selesai</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-gray-50 rounded-xl p-6 text-center text-gray-500 font-semibold">Belum ada data top performer untuk periode ini</div>
+        {% endif %}
+    </div>
+
     <!-- Quick Access -->
     <div class="bg-white rounded-2xl shadow p-6 mb-10">
         <h2 class="text-xl font-bold text-gray-900 mb-4">Menu Utama</h2>

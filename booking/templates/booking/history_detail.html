@@ -18,6 +18,8 @@
         </a>
     </div>
 
+
+
     <!-- MAIN CARD -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
@@ -189,6 +191,17 @@
                     <p class="text-sm text-gray-400 italic">Belum ada catatan grooming.</p>
                 {% endif %}
             </div>
+
+            {# Tombol Beri Review: hanya jika service_completed, paid, dan belum review #}
+            {% if booking.status == 'service_completed' and payment_status == 'Paid' and not review %}
+            <div class="flex justify-end mt-8">
+                <a href="{% url 'booking:booking_review_create' booking.id %}"
+                   class="px-6 py-2 rounded-lg text-sm font-semibold shadow hover:brightness-90 transition"
+                   style="background-color: #2BBDBD; color: white;">
+                    Beri Review
+                </a>
+            </div>
+            {% endif %}
 
             <!-- REVIEW -->
             {% if review %}
