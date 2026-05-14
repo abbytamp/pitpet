@@ -176,7 +176,58 @@ def groomer_dashboard(request):
 def manager_dashboard(request):
     if request.user.role != 'manager':
         return redirect('login')
-    return render(request, 'manager_dashboard.html', {'user': request.user})
+
+    from django.db.models import Count
+    from booking.models import Booking
+    from accounts.models import Groomer
+
+    # Ambil periode dari query param, default bulan ini
+    import datetime
+    today = timezone.localdate()
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    if not start_date or not end_date:
+        start_date = today.replace(day=1)
+        end_date = today
+    else:
+        start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+
+    # Query top 3 groomer (termasuk yang sudah dihapus)
+    top_groomers = (
+        Booking.objects.filter(
+            status=Booking.Status.SERVICE_COMPLETED,
+            tanggal__range=(start_date, end_date),
+            groomer__isnull=False
+        )
+        .values('groomer')
+        .annotate(total=Count('id'))
+        .order_by('-total')[:3]
+    )
+
+    # Ambil data nama groomer (termasuk yang sudah dihapus)
+    groomer_ids = [g['groomer'] for g in top_groomers]
+    groomer_map = {g.id: g for g in Groomer.all_objects.select_related('user').filter(id__in=groomer_ids)}
+
+    top_performers = []
+    for idx, g in enumerate(top_groomers, 1):
+        groomer_obj = groomer_map.get(g['groomer'])
+        if groomer_obj:
+            nama = groomer_obj.user.full_name
+        else:
+            nama = 'Groomer dihapus'
+        top_performers.append({
+            'rank': idx,
+            'nama': nama,
+            'total': g['total'],
+        })
+
+    context = {
+        'user': request.user,
+        'top_performers': top_performers,
+        'periode': {'start': start_date, 'end': end_date},
+    }
+    return render(request, 'manager_dashboard.html', context)
 
 @login_required
 def superadmin_dashboard(request):
