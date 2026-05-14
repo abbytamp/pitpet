@@ -52,7 +52,10 @@
                     </div>
                     <div class="col-span-2">
                         <p class="text-gray-400">Jadwal Lama</p>
-                        <p class="font-semibold text-gray-800">{{ booking.tanggal }} {{ booking.waktu_mulai }} - {{ booking.waktu_selesai }}</p>
+                        <p class="font-semibold text-gray-800">
+                            {{ booking.tanggal }}
+                            {{ booking.waktu_mulai|time:'H:i' }} - {{ booking.waktu_selesai|time:'H:i' }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -166,7 +169,7 @@
                         });
                         slotsContainer.innerHTML = html;
                     } else {
-                        slotsContainer.innerHTML = '<p class="col-span-3 text-red-500 text-sm text-center py-4">' + (data.message || 'Tidak ada slot tersedia untuk tanggal tersebut. Silakan pilih tanggal lain.') + '</p>';
+                        slotsContainer.innerHTML = '<p class="col-span-3 text-gray-500 text-sm text-center py-4">' + (data.message || 'Tidak ada slot tersedia untuk tanggal ini.') + '</p>';
                     }
                 })
                 .catch(error => {
