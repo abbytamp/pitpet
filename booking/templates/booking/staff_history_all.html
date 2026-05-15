@@ -24,6 +24,7 @@
                     class="px-3 sm:px-4 py-2 border border-gray-200 rounded-lg sm:rounded-xl bg-white text-sm sm:text-base">
                 <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
                 <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Paid</option>
+                <option value="unpaid" {% if status_filter == 'unpaid' %}selected{% endif %}>Unpaid</option>
                 <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
             </select>
 
