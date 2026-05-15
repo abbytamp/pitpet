@@ -241,20 +241,21 @@ def operational_dashboard(request):
         for item in service_distribution_query
     ]
 
-    top_performer_query = (
-        bookings.filter(status="service_completed").values("groomer__id", "groomer__user__full_name").annotate(
-            total_layanan=Count("id"), rata_rata_rating=Avg("review__rating")
-        ).order_by("-total_layanan", "-rata_rata_rating").first()
+    top_groomers_query = (
+        bookings.filter(status="service_completed")
+        .values("groomer__id", "groomer__user__full_name")
+        .annotate(total_layanan=Count("id"))
+        .order_by("-total_layanan")[:3]
     )
 
-    top_performer_groomer = None
-    if top_performer_query:
-        top_performer_groomer = {
-            "groomer_id": top_performer_query["groomer__id"],
-            "groomer_name": top_performer_query["groomer__user__full_name"],
-            "total_layanan": top_performer_query["total_layanan"],
-            "rata_rata_rating": round(top_performer_query["rata_rata_rating"] or 0, 1),
-        }
+    top_groomers = []
+    for idx, g in enumerate(top_groomers_query, start=1):
+        top_groomers.append({
+            "rank": idx,
+            "groomer_id": g["groomer__id"],
+            "groomer_name": g["groomer__user__full_name"],
+            "total_layanan": g["total_layanan"],
+        })
 
     response_data = {
         "periode": periode,
@@ -268,7 +269,7 @@ def operational_dashboard(request):
             "rata_rata_rating": round(rata_rata_rating, 1),
         },
         "service_distribution": service_distribution,
-        "top_performer_groomer": top_performer_groomer,
+        "top_groomers": top_groomers,
     }
 
     return JsonResponse(response_data, status=200)

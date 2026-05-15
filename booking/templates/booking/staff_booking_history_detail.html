@@ -163,7 +163,54 @@
                     </div>
                 {% else %}
                     <p class="text-sm text-gray-400 italic mt-2 text-left">Belum ada catatan grooming</p>
-                {% endif %}
+
+                                {% endif %}
+
+                                {# Mark as Paid Button: Directly below grooming notes, right aligned, teal #2BBDBD #}
+                                {% if payment_status == 'unpaid' and status == 'service_completed' %}
+                                <div class="flex justify-end mt-6">
+                                    <button id="mark-paid-btn" type="button"
+                                        class="px-6 py-2 rounded-xl font-semibold text-white transition"
+                                        style="background-color: #2BBDBD;">
+                                        Mark as Paid
+                                    </button>
+                                </div>
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const btn = document.getElementById('mark-paid-btn');
+                                        if (btn) {
+                                            btn.addEventListener('click', function() {
+                                                if (!confirm('Apakah Anda yakin ingin menandai booking ini sebagai sudah dibayar?')) return;
+                                                btn.disabled = true;
+                                                btn.textContent = 'Memproses...';
+                                                fetch("/booking/api/bookings/{{ booking.id }}/payment-status/", {
+                                                    method: "PUT",
+                                                    headers: {
+                                                        'X-CSRFToken': '{{ csrf_token }}',
+                                                        'Content-Type': 'application/json',
+                                                    },
+                                                })
+                                                .then(response => response.json().then(data => ({status: response.status, body: data})))
+                                                .then(({status, body}) => {
+                                                    if (status === 200) {
+                                                        alert('Status pembayaran berhasil diperbarui menjadi Paid');
+                                                        window.location.reload();
+                                                    } else {
+                                                        alert(body.message || 'Gagal memperbarui status pembayaran.');
+                                                        btn.disabled = false;
+                                                        btn.textContent = 'Mark as Paid';
+                                                    }
+                                                })
+                                                .catch(() => {
+                                                    alert('Terjadi kesalahan jaringan.');
+                                                    btn.disabled = false;
+                                                    btn.textContent = 'Mark as Paid';
+                                                });
+                                            });
+                                        }
+                                    });
+                                </script>
+                                {% endif %}
 
                 {# REVIEW: tampilkan jika ada review, sama seperti history_detail.html #}
                 {% if review %}
@@ -194,4 +241,7 @@
                 {% endif %}
 
 </section>
+
+
+
 {% endblock content %}
