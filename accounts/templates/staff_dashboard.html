@@ -1,74 +1,320 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-    <div class="mb-10">
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">Staff Workspace</h1>
-        <p class="text-gray-600">Hello, {{ user.full_name }}. Ready to help our furry friends today?</p>
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-1"
+            style="color: #111827;">
+            Staff Workspace
+        </h1>
+
+        <p class="text-gray-600 text-sm">
+            Hello, {{ user.full_name }}. Ready to help the operational?
+        </p>
     </div>
 
-    <!-- Quick Actions (aligned with navbar Data dropdown) -->
-    <div class="bg-white rounded-2xl shadow p-6 mb-10">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Data Management</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="{% url 'staff_customer_list' %}" class="block p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition text-center">
-                <svg class="w-8 h-8 mx-auto mb-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+    <!-- Custom Style -->
+    <style>
+
+        :root {
+            --orange: #F5A623;
+            --teal: #2BBDBD;
+            --cream: #FFF8ED;
+        }
+
+        .glass-card {
+            background: rgba(255, 248, 237, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .dashboard-card {
+            transition: all 0.25s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        .booking-card {
+            transition: all 0.25s ease;
+        }
+
+        .booking-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        }
+
+        .bg-scheduled {
+            background-color: #FEF3C7;
+        }
+
+        .text-scheduled {
+            color: #92400E;
+        }
+
+        .bg-started {
+            background-color: #DBEAFE;
+        }
+
+        .text-started {
+            color: #1D4ED8;
+        }
+
+        .bg-completed {
+            background-color: #DCFCE7;
+        }
+
+        .text-completed {
+            color: #15803D;
+        }
+
+        .bg-cancelled {
+            background-color: #FEE2E2;
+        }
+
+        .text-cancelled {
+            color: #B91C1C;
+        }
+
+    </style>
+
+    <!-- Data Management -->
+    <div class="glass-card rounded-3xl shadow-lg p-6 mb-10 border border-orange-100">
+
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-xl font-semibold"
+                style="color: #F5A623;">
+                Data Management
+            </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            <!-- Data Customer -->
+            <a href="{% url 'staff_customer_list' %}"
+               class="dashboard-card rounded-3xl p-5 text-white relative overflow-hidden"
+               style="background: linear-gradient(135deg, #F5A623 0%, #ffbf57 100%);">
+
+                <div class="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8"></div>
+
+                <svg class="w-9 h-9 mb-3"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <p class="font-semibold text-blue-700">Data Customer</p>
-                <p class="text-sm text-gray-500">Lihat dan kelola data customer</p>
+
+                <h3 class="text-lg font-semibold mb-1">
+                    Data Customer
+                </h3>
+
+                <p class="text-white/90 text-xs">
+                    Lihat dan kelola seluruh data customer grooming.
+                </p>
             </a>
-            <a href="{% url 'groomer:groomer_list' %}" class="block p-4 bg-green-50 rounded-xl hover:bg-green-100 transition text-center">
-                <svg class="w-8 h-8 mx-auto mb-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+
+            <!-- Data Groomer -->
+            <a href="{% url 'groomer:groomer_list' %}"
+               class="dashboard-card rounded-3xl p-5 text-white relative overflow-hidden"
+               style="background: linear-gradient(135deg, #2BBDBD 0%, #57d6d6 100%);">
+
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-8 -mb-8"></div>
+
+                <svg class="w-9 h-9 mb-3"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <p class="font-semibold text-green-700">Data Groomer</p>
-                <p class="text-sm text-gray-500">Lihat data groomer yang tersedia</p>
+
+                <h3 class="text-lg font-semibold mb-1">
+                    Data Groomer
+                </h3>
+
+                <p class="text-white/90 text-xs">
+                    Pantau groomer aktif dan informasi ketersediaannya.
+                </p>
             </a>
-            <a href="{% url 'package_list' %}" class="block p-4 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition text-center">
-                <svg class="w-8 h-8 mx-auto mb-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+
+            <!-- Data Paket -->
+            <a href="{% url 'package_list' %}"
+               class="dashboard-card rounded-3xl p-5 text-white relative overflow-hidden"
+               style="background: linear-gradient(135deg, #F5A623 0%, #ffbf57 100%);">
+
+                <div class="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8"></div>
+
+                <svg class="w-9 h-9 mb-3"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                <p class="font-semibold text-yellow-700">Data Paket</p>
-                <p class="text-sm text-gray-500">Kelola paket grooming</p>
+
+                <h3 class="text-lg font-semibold mb-1">
+                    Data Paket
+                </h3>
+
+                <p class="text-white/90 text-xs">
+                    Atur paket grooming dan layanan yang tersedia.
+                </p>
             </a>
+
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-        <!-- Tombol Lihat Seluruh Slot Jadwal -->
-    <!-- Slot kosong, tidak ada tombol jadwal -->
+    <!-- Booking Management -->
+    <div class="mb-8">
 
-        <!-- Riwayat Section (aligned with navbar Riwayat) -->
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-xl font-semibold"
+                style="color: #178C8C;">
+                Manajemen Booking
+            </h2>
+        </div>
 
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+            <!-- Scheduled -->
+            <div class="booking-card bg-white rounded-3xl border border-gray-100 p-5">
+
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 bg-scheduled">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-6 w-6 text-scheduled"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor"
+                         stroke-width="2">
+
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+
+                <p class="text-xs text-gray-500 mb-1">
+                    Scheduled
+                </p>
+
+                <p class="text-3xl font-bold text-gray-900">
+                    {{ scheduled_count }}
+                </p>
+
+                <p class="text-xs text-gray-400 mt-1">
+                    Booking terjadwal
+                </p>
+            </div>
+
+            <!-- Service Started -->
+            <div class="booking-card bg-white rounded-3xl border border-gray-100 p-5">
+
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 bg-started">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-6 w-6 text-started"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor"
+                         stroke-width="2">
+
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M13 16h-1v-4h-1m4 0h-1v-4h-1m-4 0h-1v-4h-1" />
+                    </svg>
+                </div>
+
+                <p class="text-xs text-gray-500 mb-1">
+                    Service Started
+                </p>
+
+                <p class="text-3xl font-bold text-gray-900">
+                    {{ started_count }}
+                </p>
+
+                <p class="text-xs text-gray-400 mt-1">
+                    Booking sedang berjalan
+                </p>
+            </div>
+
+            <!-- Service Completed -->
+            <div class="booking-card bg-white rounded-3xl border border-gray-100 p-5">
+
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 bg-completed">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-6 w-6 text-completed"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor"
+                         stroke-width="2">
+
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+
+                <p class="text-xs text-gray-500 mb-1">
+                    Service Completed
+                </p>
+
+                <p class="text-3xl font-bold text-gray-900">
+                    {{ completed_count }}
+                </p>
+
+                <p class="text-xs text-gray-400 mt-1">
+                    Booking selesai
+                </p>
+            </div>
+
+            <!-- Cancelled -->
+            <div class="booking-card bg-white rounded-3xl border border-gray-100 p-5">
+
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 bg-cancelled">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-6 w-6 text-cancelled"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor"
+                         stroke-width="2">
+
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </div>
+
+                <p class="text-xs text-gray-500 mb-1">
+                    Cancelled
+                </p>
+
+                <p class="text-3xl font-bold text-gray-900">
+                    {{ cancelled_count }}
+                </p>
+
+                <p class="text-xs text-gray-400 mt-1">
+                    Booking dibatalkan
+                </p>
+            </div>
+
+        </div>
     </div>
 
-    <!-- Booking Management (aligned with readme: staff can view, update, cancel bookings) -->
-    <div class="bg-white rounded-2xl shadow p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-900">Manajemen Booking</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-white rounded-xl p-4 border-l-4 border-blue-500">
-                <p class="text-sm text-gray-500 mb-1">Scheduled</p>
-                <p class="text-3xl font-bold text-gray-900">{{ scheduled_count }}</p>
-            </div>
-            <div class="bg-white rounded-xl p-4 border-l-4 border-orange-500">
-                <p class="text-sm text-gray-500 mb-1">Service started</p>
-                <p class="text-3xl font-bold text-gray-900">{{ started_count }}</p>
-            </div>
-            <div class="bg-white rounded-xl p-4 border-l-4 border-green-500">
-                <p class="text-sm text-gray-500 mb-1">Service completed</p>
-                <p class="text-3xl font-bold text-gray-900">{{ completed_count }}</p>
-            </div>
-            <div class="bg-white rounded-xl p-4 border-l-4 border-red-500">
-                <p class="text-sm text-gray-500 mb-1">Cancelled</p>
-                <p class="text-3xl font-bold text-gray-900">{{ cancelled_count }}</p>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}

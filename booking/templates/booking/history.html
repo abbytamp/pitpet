@@ -25,6 +25,7 @@
     </form>
 
     <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <!-- Tabel Desktop -->
         <div class="hidden md:block overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-100">
@@ -88,6 +89,58 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        <!-- List/Card Mobile -->
+        <div class="block md:hidden">
+            <div class="divide-y divide-gray-100">
+                {% for booking in bookings %}
+                <div class="p-4 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">ID Booking</span>
+                        <span class="text-sm font-semibold text-gray-900">#{{ booking.id }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Tanggal</span>
+                        <span class="text-sm text-gray-700">{{ booking.tanggal }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Waktu</span>
+                        <span class="text-sm text-gray-700">{{ booking.waktu_mulai|time:'H:i' }} - {{ booking.waktu_selesai|time:'H:i' }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Hewan</span>
+                        <span class="text-sm text-gray-900 font-medium">{% for item in booking.items.all %}{{ item.pet.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Groomer</span>
+                        <span class="text-sm text-gray-700">{{ booking.groomer.user.full_name }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Layanan</span>
+                        <span class="text-sm text-gray-700">{{ booking.get_service_type_display }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Status</span>
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold 
+                            {% if booking.status == 'service_completed' %}bg-green-100 text-green-700
+                            {% else %}bg-red-100 text-red-700{% endif %}">
+                            {{ booking.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="flex justify-end mt-2">
+                        <a href="{% url 'booking:history_detail' booking.id %}" class="text-[#34C1D4] hover:text-[#2daab8] font-semibold text-sm">Detail</a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="px-4 py-12 text-center text-gray-400">
+                    {% if search_query %}
+                        Tidak ada riwayat dengan kata kunci <span class="font-semibold text-gray-600">"{{ search_query }}"</span>.
+                    {% else %}
+                        Belum ada riwayat booking.
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </section>

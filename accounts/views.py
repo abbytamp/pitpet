@@ -32,13 +32,29 @@ def _redirect_to_role_dashboard(user):
 @login_required
 @user_passes_test(lambda u: u.role == 'superadmin')
 def superadmin_staff_list(request):
-    staffs = User.objects.filter(role='staff').order_by('full_name')
+    query = request.GET.get('search', '').strip()
+    staffs = User.objects.filter(role='staff')
+    if query:
+        staffs = staffs.filter(
+            Q(full_name__icontains=query) |
+            Q(username__icontains=query) |
+            Q(phone_number__icontains=query)
+        )
+    staffs = staffs.order_by('full_name')
     return render(request, 'superadmin/staff_list.html', {'staffs': staffs})
 
 @login_required
 @user_passes_test(lambda u: u.role == 'superadmin')
 def superadmin_manager_list(request):
-    managers = User.objects.filter(role='manager').order_by('full_name')
+    query = request.GET.get('search', '').strip()
+    managers = User.objects.filter(role='manager')
+    if query:
+        managers = managers.filter(
+            Q(full_name__icontains=query) |
+            Q(username__icontains=query) |
+            Q(phone_number__icontains=query)
+        )
+    managers = managers.order_by('full_name')
     return render(request, 'superadmin/manager_list.html', {'managers': managers})
 
 def login_view(request):

@@ -22,19 +22,19 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
         <!-- HEADER -->
-        <div class="bg-[#F9A828] px-6 py-5">
-            <h1 class="text-xl font-bold text-white">Detail Riwayat Layanan</h1>
-            <p class="text-white/75 text-sm mt-0.5">Booking #{{ booking.id }}</p>
+        <div class="bg-[#F9A828] px-4 sm:px-6 py-5">
+            <h1 class="text-lg sm:text-xl font-bold text-white">Detail Riwayat Layanan</h1>
+            <p class="text-white/75 text-xs sm:text-sm mt-0.5">Booking #{{ booking.id }}</p>
         </div>
 
-        <div class="p-6 space-y-8">
+        <div class="p-4 sm:p-6 space-y-8">
 
             <!-- INFORMASI BOOKING -->
             <div>
                 <!-- Title + Status Badges sejajar -->
-                <div class="flex items-center justify-between mb-3">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
                     <h2 class="text-base font-bold text-gray-800">Informasi Booking</h2>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <span class="px-3 py-1 rounded-full text-xs font-semibold
                             {% if booking.status == 'service_completed' %}
                                 bg-green-100 text-green-700
@@ -54,26 +54,28 @@
                     </div>
                 </div>
 
-                <div class="border border-gray-100 rounded-xl overflow-hidden">
-                    <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-                        <span class="text-sm text-gray-500">Nama Customer</span>
-                        <span class="text-sm font-semibold text-gray-800">{{ customer_name }}</span>
-                    </div>
-                    <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-                        <span class="text-sm text-gray-500">Tanggal Booking</span>
-                        <span class="text-sm font-semibold text-gray-800">{{ booking_date }}</span>
-                    </div>
-                    <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-                        <span class="text-sm text-gray-500">Jam Layanan</span>
-                        <span class="text-sm font-semibold text-gray-800">{{ booking_time }}</span>
-                    </div>
-                    <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-                        <span class="text-sm text-gray-500">Jenis Layanan</span>
-                        <span class="text-sm font-semibold text-gray-800">{{ service_type }}</span>
-                    </div>
-                    <div class="flex justify-between items-center px-4 py-3">
-                        <span class="text-sm text-gray-500">Groomer</span>
-                        <span class="text-sm font-semibold text-gray-800">{{ groomer_name }}</span>
+                <div class="border border-gray-100 rounded-xl p-2 sm:p-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <div class="bg-gray-50 rounded-lg p-3 flex flex-col">
+                            <span class="text-xs text-gray-500 mb-1">Nama Customer</span>
+                            <span class="text-sm font-semibold text-gray-800">{{ customer_name }}</span>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 flex flex-col">
+                            <span class="text-xs text-gray-500 mb-1">Tanggal Booking</span>
+                            <span class="text-sm font-semibold text-gray-800">{{ booking_date }}</span>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 flex flex-col">
+                            <span class="text-xs text-gray-500 mb-1">Jam Layanan</span>
+                            <span class="text-sm font-semibold text-gray-800">{{ booking_time }}</span>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 flex flex-col">
+                            <span class="text-xs text-gray-500 mb-1">Jenis Layanan</span>
+                            <span class="text-sm font-semibold text-gray-800">{{ service_type }}</span>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 flex flex-col">
+                            <span class="text-xs text-gray-500 mb-1">Groomer</span>
+                            <span class="text-sm font-semibold text-gray-800">{{ groomer_name }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -84,7 +86,7 @@
 
                 <div class="space-y-4">
                     {% for item in pet_items %}
-                    <div class="border border-gray-100 rounded-xl overflow-hidden">
+                    <div class="border border-gray-100 rounded-xl p-2 sm:p-4">
 
                         <!-- Pet Header -->
                         <div class="bg-[#FFF8EC] px-4 py-3 border-b border-gray-100">
@@ -92,16 +94,16 @@
                             <p class="text-xs text-amber-700 mt-0.5">{{ item.pet_type }}</p>
                         </div>
 
-                        <div class="px-4 py-3 space-y-2.5 text-sm">
-                            <div class="flex justify-between">
+                        <div class="px-4 py-3 space-y-2.5 text-xs sm:text-sm">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-0">
                                 <span class="text-gray-500">Paket</span>
                                 <span class="font-semibold text-gray-800">{{ item.package_name }}</span>
                             </div>
-                            <div class="flex justify-between">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-0">
                                 <span class="text-gray-500">Durasi</span>
                                 <span class="font-medium text-gray-800">{{ item.durasi_paket }} menit</span>
                             </div>
-                            <div class="flex justify-between">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-0">
                                 <span class="text-gray-500">Harga Paket</span>
                                 <span class="font-semibold text-gray-800">Rp {{ item.package_price|floatformat:0 }}</span>
                             </div>
@@ -111,7 +113,7 @@
                                 <p class="text-gray-500 mb-2">Additional</p>
                                 <div class="space-y-1.5">
                                     {% for add in item.additionals %}
-                                    <div class="flex justify-between border border-gray-100 rounded-lg px-3 py-2">
+                                    <div class="flex flex-col sm:flex-row justify-between border border-gray-100 rounded-lg px-3 py-2 gap-1 sm:gap-0">
                                         <span class="text-gray-700">{{ add.name }}</span>
                                         <span class="font-medium text-gray-800">Rp {{ add.harga|floatformat:0 }}</span>
                                     </div>
@@ -120,7 +122,7 @@
                             </div>
                             {% endif %}
 
-                            <div class="flex justify-between pt-2 border-t border-gray-100">
+                            <div class="flex flex-col sm:flex-row justify-between pt-2 border-t border-gray-100 items-start sm:items-center gap-1 sm:gap-0">
                                 <span class="text-gray-500">Subtotal</span>
                                 <span class="font-bold text-[#F9A828]">Rp {{ item.subtotal|floatformat:0 }}</span>
                             </div>
@@ -134,40 +136,51 @@
             <!-- CATATAN GROOMING -->
             <div>
                 <h2 class="text-base font-bold text-gray-800 mb-3">Catatan Grooming</h2>
-
                 {% if grooming_summaries %}
                     <div class="space-y-4">
                         {% for note in grooming_summaries %}
-                        <div class="border border-gray-100 rounded-xl overflow-hidden">
-
-                            <!-- Pet Name Header -->
-                            <div class="bg-[#FFF8EC] px-4 py-3 border-b border-gray-100">
-                                <p class="font-bold text-sm text-amber-900">{{ note.pet_name }}</p>
+                        <div class="border border-gray-100 rounded-xl p-2 sm:p-4">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 border-b border-gray-100 gap-1 sm:gap-0">
+                                <span class="text-sm text-gray-500">Kondisi Kulit</span>
+                                <span class="text-sm font-semibold text-gray-800">{{ note.kondisi_kulit }}</span>
                             </div>
-
-                            <div>
-                                <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-                                    <span class="text-sm text-gray-500">Kondisi Bulu</span>
-                                    <span class="text-sm font-semibold text-gray-800">{{ note.kondisi_bulu }}</span>
-                                </div>
-
-                                <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-                                    <span class="text-sm text-gray-500">Kondisi Kulit</span>
-                                    <span class="text-sm font-semibold text-gray-800">{{ note.kondisi_kulit }}</span>
-                                </div>
-
-                                <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 border-b border-gray-100 gap-1 sm:gap-0">
+                                <span class="text-sm text-gray-500">Kondisi Telinga</span>
+                                <span class="text-sm font-semibold text-gray-800">{{ note.kondisi_telinga }}</span>
+                            </div>
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 border-b border-gray-100 gap-1 sm:gap-0">
+                                <span class="text-sm text-gray-500">Kondisi Kuku</span>
+                                <span class="text-sm font-semibold text-gray-800">{{ note.kondisi_kuku }}</span>
+                            </div>
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 {% if note.catatan_tambahan %}border-b border-gray-100{% endif %} gap-1 sm:gap-0">
+                                <span class="text-sm text-gray-500">Perilaku</span>
+                                <span class="text-sm font-semibold text-gray-800">{{ note.perilaku_hewan }}</span>
+                            </div>
+                            {% if note.catatan_tambahan %}
+                            <div class="px-4 py-3">
+                                <p class="text-sm text-gray-500 mb-0">Catatan</p>
+                                <p class="text-sm font-semibold text-gray-800 break-words whitespace-pre-line leading-tight">
+                                    {{ note.catatan_tambahan }}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-sm text-gray-400 italic">Belum ada catatan grooming.</p>
+                {% endif %}
+            </div>
                                     <span class="text-sm text-gray-500">Kondisi Telinga</span>
                                     <span class="text-sm font-semibold text-gray-800">{{ note.kondisi_telinga }}</span>
                                 </div>
 
-                                <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 border-b border-gray-100 gap-1 sm:gap-0">
                                     <span class="text-sm text-gray-500">Kondisi Kuku</span>
                                     <span class="text-sm font-semibold text-gray-800">{{ note.kondisi_kuku }}</span>
                                 </div>
 
-                                <div class="flex justify-between items-center px-4 py-3
-                                    {% if note.catatan_tambahan %}border-b border-gray-100{% endif %}">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 {% if note.catatan_tambahan %}border-b border-gray-100{% endif %} gap-1 sm:gap-0">
                                     <span class="text-sm text-gray-500">Perilaku</span>
                                     <span class="text-sm font-semibold text-gray-800">{{ note.perilaku_hewan }}</span>
                                 </div>
