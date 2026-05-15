@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect
 from booking import views as booking_views
+from reports import views as reports_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -13,7 +14,11 @@ urlpatterns = [
     path('groomer/', include('groomer.urls')),
     path('groomer-jobs/', include('groomer_jobs.urls')),
     path('booking/', include(('booking.urls', 'booking'), namespace='booking')),
+    # API endpoints
     path('api/slots/', booking_views.api_slots, name='api_slots'),
     path('api/bookings/history/all/', booking_views.staff_booking_history_api, name='staff_booking_history_api'),
+    path('manager/reports/operational-dashboard-page', reports_views.operational_dashboard_page, name='manager-operational-dashboard-page'),
+    path('manager/api/reports/operational-dashboard', reports_views.operational_dashboard, name='manager-api-operational-dashboard'),
+    path('manager/api/reports/trend', reports_views.report_trend_api, name='manager-api-trend'),
     path('recommendations/', include('recommendations.urls')),
 ]

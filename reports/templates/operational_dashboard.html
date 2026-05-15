@@ -1,162 +1,128 @@
 {% extends "base.html" %}
 
-{% block meta %}
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-{% endblock %}
+{% block title %}Operational Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="h3 mb-4 text-gray-800">Operational Dashboard</h1>
+<div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 grid gap-6 lg:grid-cols-[auto_1fr] lg:items-end lg:justify-between">
+        <div>
+            <h1 class="text-3xl font-semibold text-slate-900">Operational Dashboard</h1>
+            <p class="mt-2 text-slate-500 max-w-2xl">Pantau performa grooming, pendapatan, dan top groomer dalam satu tampilan laporan operasional yang bersih.</p>
+            <p id="active-period-label" class="mt-3 text-sm font-medium text-slate-600">Periode: Mei 2026</p>
         </div>
-    </div>
-
-    <!-- Filter Period -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <label for="periode-select" class="form-label">Select Period:</label>
-                    <select id="periode-select" class="form-select">
-                        <option value="this_month">This Month</option>
-                        <option value="last_month">Last Month</option>
-                        <option value="this_year">This Year</option>
-                        <option value="last_30_days">Last 30 Days</option>
-                        <option value="last_7_days">Last 7 Days</option>
+        <div class="grid gap-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="period-type-select" class="block text-sm font-medium text-slate-700 mb-2">Tipe Periode</label>
+                    <select id="period-type-select" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                        <option value="bulanan">Bulanan</option>
+                        <option value="mingguan">Mingguan</option>
+                        <option value="harian">Harian</option>
+                        <option value="rentang_tanggal">Rentang Tanggal</option>
                     </select>
+                </div>
+                <div id="period-value-container">
+                    <div id="period-value-bulanan">
+                        <label for="period-month-select" class="block text-sm font-medium text-slate-700 mb-2">Pilih Bulan</label>
+                        <select id="period-month-select" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"></select>
+                    </div>
+                    <div id="period-value-mingguan" class="hidden">
+                        <label for="period-week-select" class="block text-sm font-medium text-slate-700 mb-2">Pilih Minggu</label>
+                        <select id="period-week-select" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"></select>
+                    </div>
+                    <div id="period-value-harian" class="hidden">
+                        <label for="period-date-input" class="block text-sm font-medium text-slate-700 mb-2">Pilih Tanggal</label>
+                        <input id="period-date-input" type="date" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                    </div>
+                    <div id="period-value-rentang_tanggal" class="hidden grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="period-start-date-input" class="block text-sm font-medium text-slate-700 mb-2">Tanggal Mulai</label>
+                            <input id="period-start-date-input" type="date" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                        </div>
+                        <div>
+                            <label for="period-end-date-input" class="block text-sm font-medium text-slate-700 mb-2">Tanggal Akhir</label>
+                            <input id="period-end-date-input" type="date" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Loading State -->
-    <div id="loading" class="text-center" style="display: none;">
-        <div class="spinner-border" role="status">
-            <span class="sr-only">Loading...</span>
-        </div>
-        <p>Loading dashboard data...</p>
+    <div id="loading" class="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-600 shadow-sm" style="display: none;">
+        <div class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-slate-300 border-t-sky-500"></div>
+        <p class="text-base font-medium">Memuat dashboard laporan operasional...</p>
     </div>
 
-    <!-- Error State -->
-    <div id="error" class="alert alert-danger" style="display: none;">
+    <div id="error" class="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700 shadow-sm" style="display: none;">
         Gagal memuat dashboard laporan operasional
     </div>
 
-    <!-- KPI Cards -->
-    <div id="kpi-cards" class="row mb-4" style="display: none;">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Total Booking
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-booking">0</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div id="kpi-cards" class="grid gap-6 mb-8 grid-cols-1 lg:grid-cols-4" style="display: none;">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p class="text-sm font-medium text-slate-500">Total Booking</p>
+            <p id="total-booking" class="mt-4 text-3xl font-semibold text-slate-900">0</p>
+            <div class="mt-4 inline-flex items-center rounded-2xl bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-700">Booking</div>
         </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Total Layanan Selesai
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-layanan-selesai">0</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p class="text-sm font-medium text-slate-500">Total Layanan Selesai</p>
+            <p id="total-layanan-selesai" class="mt-4 text-3xl font-semibold text-slate-900">0</p>
+            <div class="mt-4 inline-flex items-center rounded-2xl bg-emerald-100 px-3 py-2 text-sm font-semibold text-emerald-700">Selesai</div>
         </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Total Pendapatan
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-pendapatan">Rp 0</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p class="text-sm font-medium text-slate-500">Total Pendapatan</p>
+            <p id="total-pendapatan" class="mt-4 text-3xl font-semibold text-slate-900">Rp 0</p>
+            <div class="mt-4 inline-flex items-center rounded-2xl bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-700">Pendapatan</div>
         </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Rata-rata Rating
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="rata-rata-rating">0.0</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-star fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p class="text-sm font-medium text-slate-500">Rata-rata Rating</p>
+            <p id="rata-rata-rating" class="mt-4 text-3xl font-semibold text-slate-900">0.0</p>
+            <div class="mt-4 inline-flex items-center rounded-2xl bg-violet-100 px-3 py-2 text-sm font-semibold text-violet-700">Rating</div>
         </div>
     </div>
 
-    <!-- Trend Section (Booking / Layanan Selesai) -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 id="trend-title" class="m-0 font-weight-bold text-primary">Booking per Bulan</h6>
-                    <div class="btn-group" role="group" aria-label="Jenis Data" id="jenis-toggle">
-                        <button type="button" class="btn btn-sm btn-primary active" id="jenis-booking">Jumlah Booking</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="jenis-layanan">Jumlah Layanan Selesai</button>
+    <div class="grid gap-6 xl:grid-cols-[2fr_1fr]">
+        <div class="space-y-6">
+            <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                        <h2 id="trend-title" class="text-xl font-semibold text-slate-900">Monthly Bookings</h2>
+                        <p class="mt-1 text-sm text-slate-500">Visualisasi tren booking dan layanan selesai sesuai periode aktif.</p>
+                    </div>
+                    <div class="inline-flex rounded-3xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
+                        <button id="jenis-booking" class="rounded-2xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white">Jumlah Booking</button>
+                        <button id="jenis-layanan" class="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-700">Jumlah Layanan Selesai</button>
                     </div>
                 </div>
-                <div class="card-body">
-                    <canvas id="monthly-bookings-chart"></canvas>
+                <div class="mt-6">
+                    <canvas id="monthly-bookings-chart" class="h-80"></canvas>
                 </div>
-            </div>
-        </div>
-    </div>
+            </section>
 
-    <!-- Service Distribution -->
-    <div class="row mb-4">
-        <div class="col-6">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold text-primary">Service Distribution</h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="service-distribution-chart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-6">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold text-primary">Top Performer Groomer</h6>
-                </div>
-                <div class="card-body">
-                    <div id="top-performer">
-                        <p>No data available</p>
+            <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Service Distribution</h2>
+                        <p class="mt-1 text-sm text-slate-500">Distribusi layanan grooming berdasarkan jenis.</p>
                     </div>
                 </div>
-            </div>
+                <div class="mt-6">
+                    <canvas id="service-distribution-chart" class="h-72"></canvas>
+                </div>
+            </section>
         </div>
+
+        <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold text-slate-900">Top Performer Groomer</h2>
+                    <p class="mt-1 text-sm text-slate-500">Groomer dengan layanan selesai terbanyak.</p>
+                </div>
+            </div>
+            <div id="top-performer" class="mt-6 text-slate-700">
+                <p class="text-sm text-slate-500">Memuat data...</p>
+            </div>
+        </section>
     </div>
 </div>
 
@@ -165,6 +131,14 @@
 let monthlyBookingsChart;
 let serviceDistributionChart;
 let currentJenisData = 'booking';
+let currentPeriodType = 'bulanan';
+
+function getDateAsISO(date) {
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
+}
 
 function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -183,6 +157,142 @@ function formatDateLabel(isoDate) {
     }
 }
 
+function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const offset = (day + 6) % 7;
+    d.setDate(d.getDate() - offset);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function getWeekLabel(startDate) {
+    const weekNumber = Math.floor((startDate.getDate() - 1) / 7) + 1;
+    const monthLabel = startDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    return `Minggu ${weekNumber} ${monthLabel}`;
+}
+
+function buildMonthOptions() {
+    const select = document.getElementById('period-month-select');
+    select.innerHTML = '';
+    const today = new Date();
+
+    for (let i = 0; i < 12; i++) {
+        const monthStart = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+        const option = document.createElement('option');
+        option.value = `${getDateAsISO(monthStart)}|${getDateAsISO(monthEnd)}`;
+        option.textContent = monthStart.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        select.appendChild(option);
+    }
+}
+
+function buildWeekOptions() {
+    const select = document.getElementById('period-week-select');
+    select.innerHTML = '';
+    const today = new Date();
+    const baseWeekStart = getWeekStart(today);
+
+    for (let i = 0; i < 12; i++) {
+        const weekStart = new Date(baseWeekStart);
+        weekStart.setDate(weekStart.getDate() - (i * 7));
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+
+        const option = document.createElement('option');
+        option.value = `${getDateAsISO(weekStart)}|${getDateAsISO(weekEnd)}`;
+        option.textContent = getWeekLabel(weekStart);
+        select.appendChild(option);
+    }
+}
+
+function setVisiblePeriodControls(type) {
+    const types = ['bulanan', 'mingguan', 'harian', 'rentang_tanggal'];
+    types.forEach(item => {
+        const element = document.getElementById(`period-value-${item}`);
+        if (!element) return;
+        element.classList.toggle('hidden', item !== type);
+    });
+}
+
+function parseRangeValue(value) {
+    if (!value) {
+        return null;
+    }
+    const [startDate, endDate] = value.split('|');
+    return { startDate, endDate };
+}
+
+function showFilterError(message) {
+    const error = document.getElementById('error');
+    error.textContent = message;
+    error.style.display = 'block';
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('kpi-cards').style.display = 'none';
+}
+
+function clearFilterError() {
+    const error = document.getElementById('error');
+    error.style.display = 'none';
+    error.textContent = '';
+}
+
+function getSelectedPeriodRange() {
+    const periodType = document.getElementById('period-type-select').value;
+
+    if (periodType === 'bulanan') {
+        const value = document.getElementById('period-month-select').value;
+        const range = parseRangeValue(value);
+        if (!range) {
+            showFilterError('Silakan pilih bulan.');
+            return null;
+        }
+        return range;
+    }
+
+    if (periodType === 'mingguan') {
+        const value = document.getElementById('period-week-select').value;
+        const range = parseRangeValue(value);
+        if (!range) {
+            showFilterError('Silakan pilih minggu.');
+            return null;
+        }
+        return range;
+    }
+
+    if (periodType === 'harian') {
+        const value = document.getElementById('period-date-input').value;
+        if (!value) {
+            showFilterError('Silakan pilih tanggal.');
+            return null;
+        }
+        return { startDate: value, endDate: value };
+    }
+
+    if (periodType === 'rentang_tanggal') {
+        const startDate = document.getElementById('period-start-date-input').value;
+        const endDate = document.getElementById('period-end-date-input').value;
+        if (!startDate || !endDate) {
+            showFilterError('Silakan pilih tanggal mulai dan tanggal akhir.');
+            return null;
+        }
+        if (new Date(startDate) > new Date(endDate)) {
+            showFilterError('Tanggal mulai harus sebelum tanggal akhir');
+            return null;
+        }
+        return { startDate, endDate };
+    }
+
+    return null;
+}
+
+function setActivePeriodLabel(label) {
+    const container = document.getElementById('active-period-label');
+    if (container) {
+        container.textContent = `Periode: ${label}`;
+    }
+}
+
 function setTrendTitle(apiResponse) {
     const gran = apiResponse.granularity;
     const jenisLabel = currentJenisData === 'booking' ? 'Booking' : 'Layanan Selesai';
@@ -193,7 +303,10 @@ function setTrendTitle(apiResponse) {
 
     const map = { hour: 'per Jam', day: 'per Hari', week: 'per Minggu', month: 'per Bulan' };
     const title = `${jenisLabel} ${map[gran] || ''}${periodLabel ? ' - ' + periodLabel : ''}`;
-    document.getElementById('trend-title').textContent = title;
+    const titleElement = document.getElementById('trend-title');
+    if (titleElement) {
+        titleElement.textContent = title;
+    }
 }
 
 function updateTrendChart(data) {
@@ -201,8 +314,8 @@ function updateTrendChart(data) {
     const labels = data.map(d => d.label);
     const values = data.map(d => d.value);
     const isBooking = currentJenisData === 'booking';
-    const backgroundColor = isBooking ? 'rgba(54, 162, 235, 0.5)' : 'rgba(75, 192, 192, 0.5)';
-    const borderColor = isBooking ? 'rgba(54, 162, 235, 1)' : 'rgba(75, 192, 192, 1)';
+    const backgroundColor = isBooking ? 'rgba(56, 189, 248, 0.7)' : 'rgba(34, 197, 94, 0.7)';
+    const borderColor = isBooking ? 'rgba(14, 165, 233, 1)' : 'rgba(16, 185, 129, 1)';
     const labelText = isBooking ? 'Jumlah Booking' : 'Jumlah Layanan Selesai';
 
     if (monthlyBookingsChart) {
@@ -218,12 +331,15 @@ function updateTrendChart(data) {
                 data: values,
                 backgroundColor: backgroundColor,
                 borderColor: borderColor,
-                borderWidth: 1
+                borderWidth: 1,
+                borderRadius: 12,
+                maxBarThickness: 40
             }]
         },
         options: {
             responsive: true,
             plugins: {
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
@@ -233,9 +349,8 @@ function updateTrendChart(data) {
                 }
             },
             scales: {
-                y: {
-                    beginAtZero: true
-                }
+                y: { beginAtZero: true },
+                x: { grid: { display: false } }
             }
         }
     });
@@ -257,29 +372,25 @@ function updateServiceDistributionChart(serviceData) {
             datasets: [{
                 data: data,
                 backgroundColor: [
-                    'rgba(255, 99, 132, 0.5)',
-                    'rgba(54, 162, 235, 0.5)',
-                    'rgba(255, 205, 86, 0.5)',
-                    'rgba(75, 192, 192, 0.5)',
-                    'rgba(153, 102, 255, 0.5)'
+                    'rgba(56, 189, 248, 0.75)',
+                    'rgba(59, 130, 246, 0.75)',
+                    'rgba(34, 197, 94, 0.75)',
+                    'rgba(234, 179, 8, 0.75)',
+                    'rgba(236, 72, 153, 0.75)'
                 ],
                 borderColor: [
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 205, 86, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)'
+                    'rgba(56, 189, 248, 1)',
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(34, 197, 94, 1)',
+                    'rgba(234, 179, 8, 1)',
+                    'rgba(236, 72, 153, 1)'
                 ],
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            }
+            plugins: { legend: { position: 'top' } }
         }
     });
 }
@@ -288,84 +399,134 @@ function updateTopPerformer(performer) {
     const container = document.getElementById('top-performer');
     if (performer) {
         container.innerHTML = `
-            <h5>${performer.groomer_name}</h5>
-            <p>Total Layanan: ${formatNumber(performer.total_layanan)}</p>
-            <p>Rata-rata Rating: ${performer.rata_rata_rating}</p>
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-sm text-slate-500">Top Groomer</p>
+                        <h3 class="mt-2 text-2xl font-semibold text-slate-900">${performer.groomer_name}</h3>
+                    </div>
+                    <div class="rounded-3xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white">Rank 1</div>
+                </div>
+                <div class="mt-6 grid gap-4">
+                    <div class="rounded-3xl bg-white p-4 shadow-sm">
+                        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Total Layanan</p>
+                        <p class="mt-2 text-xl font-semibold text-slate-900">${formatNumber(performer.total_layanan)}</p>
+                    </div>
+                    <div class="rounded-3xl bg-white p-4 shadow-sm">
+                        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Rata-rata Rating</p>
+                        <p class="mt-2 text-xl font-semibold text-slate-900">${performer.rata_rata_rating}</p>
+                    </div>
+                </div>
+            </div>
         `;
     } else {
-        container.innerHTML = '<p>No data available</p>';
+        container.innerHTML = '<p class="text-slate-500">Belum ada data top performer untuk periode ini.</p>';
     }
 }
 
-function loadDashboard(periode) {
+function loadDashboard() {
+    clearFilterError();
+    const range = getSelectedPeriodRange();
+    if (!range) {
+        return;
+    }
+
+    const { startDate, endDate } = range;
+    const jenis = currentJenisData;
+    const fetchOptions = {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    };
+
+    const params = new URLSearchParams();
+    params.set('periode', currentPeriodType);
+    params.set('start_date', startDate);
+    params.set('end_date', endDate);
+
     document.getElementById('loading').style.display = 'block';
     document.getElementById('error').style.display = 'none';
     document.getElementById('kpi-cards').style.display = 'none';
 
-    const jenis = currentJenisData;
-
     Promise.all([
-        fetch(`/reports/operational-dashboard?periode=${periode}`).then(res => {
-            if (!res.ok) throw new Error('Failed to load dashboard');
+        fetch(`/manager/api/reports/operational-dashboard?${params.toString()}`, fetchOptions).then(res => {
+            if (!res.ok) {
+                if (res.status === 403) throw new Error('Akses ditolak. Hanya manager yang dapat mengakses dashboard ini.');
+                if (res.status === 401) throw new Error('Silakan login terlebih dahulu');
+                throw new Error('Gagal memuat data dashboard');
+            }
             return res.json();
         }),
-        fetch(`/reports/api/trend?periode=${periode}&jenis_data=${jenis}`).then(res => {
-            if (!res.ok) throw new Error('Failed to load trend');
+        fetch(`/manager/api/reports/trend?${params.toString()}&jenis_data=${jenis}`, fetchOptions).then(res => {
+            if (!res.ok) {
+                if (res.status === 403) throw new Error('Akses ditolak');
+                if (res.status === 401) throw new Error('Silakan login terlebih dahulu');
+                throw new Error('Gagal memuat data trend');
+            }
             return res.json();
         })
     ]).then(([dashboardData, trendData]) => {
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('kpi-cards').style.display = 'flex';
+        document.getElementById('kpi-cards').style.display = 'grid';
 
-        // Update KPI Cards
         document.getElementById('total-booking').textContent = formatNumber(dashboardData.kpi_cards.total_booking);
         document.getElementById('total-layanan-selesai').textContent = formatNumber(dashboardData.kpi_cards.total_layanan_selesai);
         document.getElementById('total-pendapatan').textContent = formatRupiah(dashboardData.kpi_cards.total_pendapatan);
         document.getElementById('rata-rata-rating').textContent = dashboardData.kpi_cards.rata_rata_rating.toFixed(1);
 
-        // update title
+        setActivePeriodLabel(dashboardData.periode_label || `${formatDateLabel(dashboardData.start_date)} - ${formatDateLabel(dashboardData.end_date)}`);
         setTrendTitle(trendData);
-
-        // Update Trend Chart
         updateTrendChart(trendData.data || []);
-
-        // Update Service Distribution Chart
         updateServiceDistributionChart(dashboardData.service_distribution);
-
-        // Update Top Performer
         updateTopPerformer(dashboardData.top_performer_groomer);
     }).catch(error => {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = error.message || 'Gagal memuat dashboard laporan operasional';
         console.error('Error loading dashboard:', error);
     });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // initial load
-    loadDashboard('this_month');
+    buildMonthOptions();
+    buildWeekOptions();
+    setVisiblePeriodControls(currentPeriodType);
 
-    document.getElementById('periode-select').addEventListener('change', function() {
-        loadDashboard(this.value);
+    document.getElementById('period-date-input').value = getDateAsISO(new Date());
+    document.getElementById('period-start-date-input').value = getDateAsISO(new Date());
+    document.getElementById('period-end-date-input').value = getDateAsISO(new Date());
+
+    loadDashboard();
+
+    document.getElementById('period-type-select').addEventListener('change', function() {
+        currentPeriodType = this.value;
+        setVisiblePeriodControls(currentPeriodType);
+        loadDashboard();
     });
 
-    // jenis toggle
+    document.getElementById('period-month-select').addEventListener('change', loadDashboard);
+    document.getElementById('period-week-select').addEventListener('change', loadDashboard);
+    document.getElementById('period-date-input').addEventListener('change', loadDashboard);
+    document.getElementById('period-start-date-input').addEventListener('change', loadDashboard);
+    document.getElementById('period-end-date-input').addEventListener('change', loadDashboard);
+
     document.getElementById('jenis-booking').addEventListener('click', function() {
         currentJenisData = 'booking';
-        this.classList.add('btn-primary');
-        this.classList.remove('btn-outline-secondary');
-        document.getElementById('jenis-layanan').classList.remove('btn-primary');
-        document.getElementById('jenis-layanan').classList.add('btn-outline-secondary');
-        loadDashboard(document.getElementById('periode-select').value);
+        this.classList.add('bg-sky-600', 'text-white');
+        this.classList.remove('bg-white', 'text-slate-700');
+        document.getElementById('jenis-layanan').classList.remove('bg-sky-600', 'text-white');
+        document.getElementById('jenis-layanan').classList.add('bg-white', 'text-slate-700');
+        loadDashboard();
     });
 
     document.getElementById('jenis-layanan').addEventListener('click', function() {
         currentJenisData = 'layanan_selesai';
-        this.classList.add('btn-primary');
-        this.classList.remove('btn-outline-secondary');
-        document.getElementById('jenis-booking').classList.remove('btn-primary');
-        document.getElementById('jenis-booking').classList.add('btn-outline-secondary');
-        loadDashboard(document.getElementById('periode-select').value);
+        this.classList.add('bg-sky-600', 'text-white');
+        this.classList.remove('bg-white', 'text-slate-700');
+        document.getElementById('jenis-booking').classList.remove('bg-sky-600', 'text-white');
+        document.getElementById('jenis-booking').classList.add('bg-white', 'text-slate-700');
+        loadDashboard();
     });
 });
 </script>
