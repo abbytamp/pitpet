@@ -170,50 +170,9 @@
         </a>
         {% endif %}
 
-        {% if can_mark_paid %}
-        <button id="mark-paid-btn" type="button"
-                class="px-6 py-2 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700 transition">
-          Tandai Sudah Dibayar
-        </button>
-        {% endif %}
       </div>
     </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const btn = document.getElementById('mark-paid-btn');
-      if (btn) {
-        btn.addEventListener('click', function() {
-          if (!confirm('Apakah Anda yakin ingin menandai booking ini sebagai sudah dibayar?')) return;
-          btn.disabled = true;
-          btn.textContent = 'Memproses...';
-          fetch("/booking/api/update-payment-status/{{ booking.id }}/", {
-            method: "PUT",
-            headers: {
-              'X-CSRFToken': '{{ csrf_token }}',
-              'Content-Type': 'application/json',
-            },
-          })
-          .then(response => response.json().then(data => ({status: response.status, body: data})))
-          .then(({status, body}) => {
-            if (status === 200) {
-              alert('Status pembayaran berhasil diperbarui menjadi Sudah Dibayar.');
-              window.location.reload();
-            } else {
-              alert(body.message || 'Gagal memperbarui status pembayaran.');
-              btn.disabled = false;
-              btn.textContent = 'Tandai Sudah Dibayar';
-            }
-          })
-          .catch(() => {
-            alert('Terjadi kesalahan jaringan.');
-            btn.disabled = false;
-            btn.textContent = 'Tandai Sudah Dibayar';
-          });
-        });
-      }
-    });
-  </script>
 
   </div>
 </div>

@@ -1085,6 +1085,8 @@ def staff_booking_history_all(request):
 
     if status_filter == 'paid':
         bookings = bookings.filter(payment_status=Booking.PaymentStatus.PAID, status=Booking.Status.SERVICE_COMPLETED)
+    elif status_filter == 'unpaid':
+        bookings = bookings.filter(payment_status=Booking.PaymentStatus.UNPAID, status=Booking.Status.SERVICE_COMPLETED)
     elif status_filter == 'cancelled':
         bookings = bookings.filter(status=Booking.Status.CANCELLED)
 
