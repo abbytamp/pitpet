@@ -222,7 +222,7 @@ def operational_dashboard(request):
     if error:
         return JsonResponse({"detail": error}, status=400)
 
-    bookings = Booking.objects.filter(tanggal__range=[start_date, end_date])
+    bookings = Booking.objects.exclude(status='cancelled').filter(tanggal__range=[start_date, end_date])
 
     total_booking = bookings.count()
 
@@ -289,6 +289,7 @@ def report_trend(request):
 
     trend_query = (
         Booking.objects
+        .exclude(status='cancelled')
         .filter(tanggal__range=[start_date, end_date])
         .annotate(month=TruncMonth("tanggal"))
         .values("month")
@@ -356,11 +357,11 @@ def report_trend_api(request):
     for label, a, b in buckets:
         if granularity == "hour":
             hour = a
-            count_qs = Booking.objects.filter(tanggal=start_date, waktu_mulai__hour=hour)
+            count_qs = Booking.objects.exclude(status='cancelled').filter(tanggal=start_date, waktu_mulai__hour=hour)
         else:
             bucket_start = a
             bucket_end = b
-            count_qs = Booking.objects.filter(tanggal__range=[bucket_start, bucket_end])
+            count_qs = Booking.objects.exclude(status='cancelled').filter(tanggal__range=[bucket_start, bucket_end])
 
         if jenis_data == "booking":
             cnt = count_qs.count()
