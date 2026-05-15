@@ -5,7 +5,8 @@ from django.utils import timezone
 from django.db.models import Count, Sum, Avg, Q
 from django.db.models.functions import TruncMonth
 from functools import wraps
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib import messages
 
 # SESUAIKAN IMPORT MODEL INI DENGAN PROJECT KAMU
 from booking.models import Booking
@@ -15,18 +16,29 @@ def manager_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return JsonResponse({"detail": "Authentication required"}, status=401)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                return JsonResponse({"detail": "Authentication required"}, status=401)
+            messages.error(request, "Silakan login terlebih dahulu")
+            return redirect('login')
 
-        # SESUAIKAN BAGIAN ROLE INI DENGAN PROJECT KAMU
-        if getattr(request.user, "role", None) != "manager":
-            return JsonResponse({"detail": "Forbidden"}, status=403)
+        if getattr(request.user, "role", None) not in ["manager", "superadmin"]:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                return JsonResponse({"detail": "Forbidden"}, status=403)
+            messages.error(request, "Anda tidak memiliki akses ke halaman ini")
+            return redirect('login')
 
         return view_func(request, *args, **kwargs)
 
     return wrapper
 
 
-def get_period_range(periode):
+BULAN_INDONESIA = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+]
+
+
+def get_fixed_range(periode):
     today = timezone.now().date()
 
     if periode == "this_day":
@@ -61,22 +73,94 @@ def get_period_range(periode):
     return start_date, end_date
 
 
-def parse_custom_range(request):
-    """Parse optional `start` and `end` query params in YYYY-MM-DD format.
-    Returns (start_date, end_date) or (None, None) if not provided/invalid.
-    """
-    s = request.GET.get("start")
-    e = request.GET.get("end")
-    if not s or not e:
-        return None, None
+def parse_date(value):
+    if not value:
+        return None
     try:
-        start_date = datetime.strptime(s, "%Y-%m-%d").date()
-        end_date = datetime.strptime(e, "%Y-%m-%d").date()
-        if start_date > end_date:
-            return None, None
-        return start_date, end_date
-    except Exception:
-        return None, None
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def parse_period_range(request):
+    periode = request.GET.get("periode", "bulanan")
+    valid_periods = {
+        "harian", "mingguan", "bulanan", "rentang_tanggal",
+        "this_day", "this_month", "last_month", "this_year", "last_30_days", "last_7_days",
+    }
+
+    if periode not in valid_periods:
+        return None, None, None, "Periode tidak valid"
+
+    start_date = parse_date(request.GET.get("start_date"))
+    end_date = parse_date(request.GET.get("end_date"))
+
+    if periode == "rentang_tanggal":
+        if not start_date or not end_date:
+            return None, None, None, "Tanggal mulai harus sebelum tanggal akhir"
+
+    elif periode == "harian":
+        if start_date and not end_date:
+            end_date = start_date
+        if end_date and not start_date:
+            start_date = end_date
+        if not start_date:
+            start_date = timezone.now().date()
+            end_date = start_date
+
+    elif periode == "mingguan":
+        if start_date and not end_date:
+            end_date = start_date + timedelta(days=6)
+        if not start_date:
+            today = timezone.now().date()
+            start_date = today - timedelta(days=today.weekday())
+            end_date = start_date + timedelta(days=6)
+
+    elif periode == "bulanan":
+        if not start_date:
+            today = timezone.now().date()
+            start_date = today.replace(day=1)
+        if not end_date:
+            last_day = calendar.monthrange(start_date.year, start_date.month)[1]
+            end_date = date(start_date.year, start_date.month, last_day)
+
+    else:
+        start_date, end_date = get_fixed_range(periode)
+
+    if start_date is None or end_date is None:
+        return None, None, None, "Periode tidak valid"
+
+    if start_date > end_date:
+        return None, None, None, "Tanggal mulai harus sebelum tanggal akhir"
+
+    return periode, start_date, end_date, None
+
+
+def format_period_label(periode, start_date, end_date):
+    if not start_date or not end_date:
+        return ""
+
+    def format_indonesia(dt):
+        day = str(dt.day)
+        month = BULAN_INDONESIA[dt.month - 1]
+        return f"{day} {month} {dt.year}"
+
+    if periode == "harian":
+        return format_indonesia(start_date)
+
+    if periode == "mingguan":
+        week_number = ((start_date.day - 1) // 7) + 1
+        month_label = BULAN_INDONESIA[start_date.month - 1]
+        return f"Minggu {week_number} {month_label} {start_date.year}"
+
+    if periode == "bulanan":
+        month_label = BULAN_INDONESIA[start_date.month - 1]
+        last_day = calendar.monthrange(start_date.year, start_date.month)[1]
+        if start_date.day == 1 and end_date.day == last_day and end_date.month == start_date.month:
+            return f"{month_label} {start_date.year}"
+        return f"{format_indonesia(start_date)} - {format_indonesia(end_date)}"
+
+    return f"{format_indonesia(start_date)} - {format_indonesia(end_date)}"
 
 
 def build_buckets(start_date: date, end_date: date, granularity: str):
@@ -134,8 +218,9 @@ def build_buckets(start_date: date, end_date: date, granularity: str):
 
 @manager_required
 def operational_dashboard(request):
-    periode = request.GET.get("periode", "this_month")
-    start_date, end_date = get_period_range(periode)
+    periode, start_date, end_date, error = parse_period_range(request)
+    if error:
+        return JsonResponse({"detail": error}, status=400)
 
     bookings = Booking.objects.filter(tanggal__range=[start_date, end_date])
 
@@ -156,23 +241,25 @@ def operational_dashboard(request):
         for item in service_distribution_query
     ]
 
-    top_performer_query = (
-        bookings.filter(status="service_completed").values("groomer__id", "groomer__user__full_name").annotate(
-            total_layanan=Count("id"), rata_rata_rating=Avg("review__rating")
-        ).order_by("-total_layanan", "-rata_rata_rating").first()
+    top_groomers_query = (
+        bookings.filter(status="service_completed")
+        .values("groomer__id", "groomer__user__full_name")
+        .annotate(total_layanan=Count("id"))
+        .order_by("-total_layanan")[:3]
     )
 
-    top_performer_groomer = None
-    if top_performer_query:
-        top_performer_groomer = {
-            "groomer_id": top_performer_query["groomer__id"],
-            "groomer_name": top_performer_query["groomer__user__full_name"],
-            "total_layanan": top_performer_query["total_layanan"],
-            "rata_rata_rating": round(top_performer_query["rata_rata_rating"] or 0, 1),
-        }
+    top_groomers = []
+    for idx, g in enumerate(top_groomers_query, start=1):
+        top_groomers.append({
+            "rank": idx,
+            "groomer_id": g["groomer__id"],
+            "groomer_name": g["groomer__user__full_name"],
+            "total_layanan": g["total_layanan"],
+        })
 
     response_data = {
         "periode": periode,
+        "periode_label": format_period_label(periode, start_date, end_date),
         "start_date": start_date,
         "end_date": end_date,
         "kpi_cards": {
@@ -182,7 +269,7 @@ def operational_dashboard(request):
             "rata_rata_rating": round(rata_rata_rating, 1),
         },
         "service_distribution": service_distribution,
-        "top_performer_groomer": top_performer_groomer,
+        "top_groomers": top_groomers,
     }
 
     return JsonResponse(response_data, status=200)
@@ -190,14 +277,15 @@ def operational_dashboard(request):
 
 @manager_required
 def operational_dashboard_page(request):
-    return render(request, "reports/operational_dashboard.html")
+    return render(request, "operational_dashboard.html")
 
 
 @manager_required
 def report_trend(request):
     # legacy endpoint kept for compatibility (returns per-month aggregation)
-    periode = request.GET.get("periode", "this_month")
-    start_date, end_date = get_period_range(periode)
+    periode, start_date, end_date, error = parse_period_range(request)
+    if error:
+        return JsonResponse({"detail": error}, status=400)
 
     trend_query = (
         Booking.objects
@@ -226,29 +314,25 @@ def report_trend(request):
 
 @manager_required
 def report_trend_api(request):
-    """API endpoint: /reports/api/trend
+    """API endpoint: /manager/api/reports/trend
 
     Query params:
-    - periode: same as operational filters (this_day, this_month, last_7_days, last_30_days, this_year, last_month)
-    - start, end: optional YYYY-MM-DD for custom range (use periode=custom or omit)
+    - periode: same as operational filters (harian, mingguan, bulanan, rentang_tanggal, or legacy values)
+    - start_date, end_date: optional YYYY-MM-DD for range and period selection
     - jenis_data: 'booking' or 'layanan_selesai' (default 'booking')
     - granularity: optional override ['hour','day','week','month']
 
     Returns JSON: { periode, start_date, end_date, granularity, data: [{label,value}, ...] }
     """
-    periode = request.GET.get("periode", "this_month")
+    periode, start_date, end_date, error = parse_period_range(request)
+    if error:
+        return JsonResponse({"detail": error}, status=400)
+
     jenis_data = request.GET.get("jenis_data", "booking")
     granularity_param = request.GET.get("granularity")
 
     if jenis_data not in ("booking", "layanan_selesai"):
         return JsonResponse({"detail": "invalid jenis_data"}, status=400)
-
-    # parse custom range if provided
-    custom_start, custom_end = parse_custom_range(request)
-    if custom_start and custom_end:
-        start_date, end_date = custom_start, custom_end
-    else:
-        start_date, end_date = get_period_range(periode)
 
     # auto-detect granularity if not provided
     if granularity_param in ("hour", "day", "week", "month"):

@@ -278,6 +278,7 @@ def staff_booking_detail(request, booking_id):
         "owner_phone": booking.customer.phone_number,
         "service_type_label": booking.get_service_type_display(),
         "groomer_name": booking.groomer.user.full_name,
+        "groomer_phone": booking.groomer.user.phone_number,
         "address": booking.alamat,
         "status": booking.status,
         "status_label": booking.get_status_display(),
@@ -1398,6 +1399,17 @@ def api_update_payment_status(request, booking_id):
                 "booking_id": booking.id,
                 "payment_status": booking.payment_status,
                 "payment_status_label": booking.get_payment_status_display(),
+            },
+            status=400,
+        )
+
+    if booking.status != Booking.Status.SERVICE_COMPLETED:
+        return JsonResponse(
+            {
+                "message": "Status pembayaran hanya dapat diubah jika status booking sudah SERVICE_COMPLETED.",
+                "booking_id": booking.id,
+                "status": booking.status,
+                "status_label": booking.get_status_display(),
             },
             status=400,
         )
