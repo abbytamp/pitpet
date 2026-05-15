@@ -1403,6 +1403,17 @@ def api_update_payment_status(request, booking_id):
             status=400,
         )
 
+    if booking.status != Booking.Status.SERVICE_COMPLETED:
+        return JsonResponse(
+            {
+                "message": "Status pembayaran hanya dapat diubah jika status booking sudah SERVICE_COMPLETED.",
+                "booking_id": booking.id,
+                "status": booking.status,
+                "status_label": booking.get_status_display(),
+            },
+            status=400,
+        )
+
     booking.payment_status = Booking.PaymentStatus.PAID
     booking.save(update_fields=["payment_status", "updated_at"])
 
