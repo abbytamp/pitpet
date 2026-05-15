@@ -114,9 +114,11 @@ class ProfileForm(forms.ModelForm):
         return full_name
 
     def clean_phone_number(self):
-        phone_number = self.cleaned_data.get('phone_number')
-        if not phone_number or phone_number.strip() == '':
+        phone_number = self.cleaned_data.get('phone_number', '').strip()
+        if not phone_number:
             raise forms.ValidationError('Nomor Telepon tidak boleh kosong.')
+        if not re.match(r'^\d+$', phone_number):
+            raise forms.ValidationError('Nomor telepon hanya boleh angka')
         return phone_number
 
 
