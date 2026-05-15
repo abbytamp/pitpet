@@ -396,6 +396,8 @@ class ProfileAPIView(View):
                 return JsonResponse({'error': 'Full Name tidak boleh kosong.'}, status=400)
             if not phone_number:
                 return JsonResponse({'error': 'Nomor Telepon tidak boleh kosong.'}, status=400)
+            if not phone_number.isdigit():
+                return JsonResponse({'error': 'Nomor telepon hanya boleh angka'}, status=400)
             
             user.full_name = full_name
             user.phone_number = phone_number
