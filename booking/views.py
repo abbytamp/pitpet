@@ -33,7 +33,7 @@ def booking_review_create(request, booking_id):
     else:
         form = BookingReviewForm()
 
-    return render(request, "booking/review_form.html", {"form": form, "booking": booking})
+    return render(request, "booking/review_form.html", {"form": form, "booking": booking, "booking_id": booking.id})
 
 # Cancel booking oleh staff (pastikan ada di bawah dan tidak error import)
 from django.contrib import messages
