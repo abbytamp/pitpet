@@ -2,11 +2,21 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Data Manager</h1>
-        <p class="text-gray-600">Daftar seluruh manager PitPet Clinic.</p>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Data Manager</h1>
+            <p class="text-gray-600">Daftar seluruh manager PitPet Clinic.</p>
+        </div>
+        <!-- Search Bar -->
+        <form class="w-full sm:w-auto" method="get" action="">
+            <div class="flex rounded-xl shadow-sm overflow-hidden border border-gray-200 bg-white">
+                <input type="text" name="search" placeholder="Cari manager..." class="w-full sm:w-64 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2BBDBD]" value="{{ request.GET.search }}">
+                <button type="submit" class="px-4 py-2 bg-[#2BBDBD] hover:bg-teal-700 text-white font-semibold text-sm">Cari</button>
+            </div>
+        </form>
     </div>
-    <div class="bg-white rounded-2xl shadow overflow-hidden">
+    <!-- Desktop Table -->
+    <div class="bg-white rounded-2xl shadow overflow-hidden hidden md:block">
         <table class="w-full">
             <thead class="bg-gray-50">
                 <tr>
@@ -37,6 +47,27 @@
                 {% endif %}
             </tbody>
         </table>
+    </div>
+    <!-- Mobile Card/List -->
+    <div class="md:hidden space-y-3">
+        {% if managers %}
+            {% for manager in managers %}
+            <div class="bg-white rounded-xl shadow p-4">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <p class="font-semibold text-gray-900">{{ manager.full_name }}</p>
+                        <p class="text-sm text-gray-500">@{{ manager.username }}</p>
+                    </div>
+                    <span class="text-xs text-gray-400">#{{ forloop.counter }}</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">📞 {{ manager.phone_number }}</p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="bg-white rounded-xl shadow p-8 text-center text-gray-400">
+                Tidak ada data manager.
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

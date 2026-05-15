@@ -97,7 +97,7 @@
 
             <!-- Buttons -->
             <div class="flex items-center gap-3 pt-6">
-                <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                <button type="submit" class="px-6 py-3 {% if mode == 'create' %}bg-blue-600 hover:bg-blue-700{% else %}bg-[#2BBDBD] hover:bg-teal-700{% endif %} text-white font-semibold rounded-lg transition">
                     {% if mode == 'create' %}
                         Tambah Groomer
                     {% else %}
