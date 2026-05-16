@@ -169,6 +169,14 @@
                                     </p>
                                 </div>
                                 {% endif %}
+                                {% if note.foto_bukti_url %}
+                                <div class="pt-3 mt-2">
+                                    <p class="text-gray-500 mb-2">Foto Bukti Layanan</p>
+                                    <a href="{{ note.foto_bukti_url }}" target="_blank">
+                                        <img src="{{ note.foto_bukti_url }}" alt="Foto Bukti Layanan" class="rounded-lg border-2 border-[#F9A828] shadow-md max-w-full h-auto object-cover" style="max-height: 400px; min-height: 180px;" />
+                                    </a>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
