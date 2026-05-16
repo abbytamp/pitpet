@@ -190,6 +190,9 @@ def groomer_dashboard(request):
 
 @login_required
 def manager_dashboard(request):
+    # Ambil 5 review terbaru
+    from booking.models import BookingReview
+    latest_reviews = BookingReview.objects.select_related('customer', 'booking').order_by('-created_at')[:5]
     if request.user.role != 'manager':
         return redirect('login')
 
@@ -238,10 +241,21 @@ def manager_dashboard(request):
             'total': g['total'],
         })
 
+    # Total booking (semua)
+    total_booking = Booking.objects.all().count()
+    # Total layanan selesai
+    total_selesai = Booking.objects.filter(status=Booking.Status.SERVICE_COMPLETED).count()
+    # Total layanan dibatalkan
+    total_cancelled = Booking.objects.filter(status=Booking.Status.CANCELLED).count()
+
     context = {
         'user': request.user,
         'top_performers': top_performers,
         'periode': {'start': start_date, 'end': end_date},
+        'total_booking': total_booking,
+        'total_selesai': total_selesai,
+        'total_cancelled': total_cancelled,
+        'latest_reviews': latest_reviews,
     }
     return render(request, 'manager_dashboard.html', context)
 

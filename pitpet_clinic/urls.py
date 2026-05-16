@@ -17,6 +17,7 @@ urlpatterns = [
     # API endpoints
     path('api/slots/', booking_views.api_slots, name='api_slots'),
     path('api/bookings/history/all/', booking_views.staff_booking_history_api, name='staff_booking_history_api'),
+    path('api/reports/trend', reports_views.report_trend_api, name='api-trend'),
     path('manager/reports/operational-dashboard-page', reports_views.operational_dashboard_page, name='manager-operational-dashboard-page'),
     path('manager/api/reports/operational-dashboard', reports_views.operational_dashboard, name='manager-api-operational-dashboard'),
     path('manager/api/reports/trend', reports_views.report_trend_api, name='manager-api-trend'),
