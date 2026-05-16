@@ -2,6 +2,9 @@ from django import forms
 from .models import User
 import re
 
+PHONE_PREFIX_PATTERN = r'^08\d{8,10}$'
+PHONE_ERROR_MSG = "Nomor telepon harus dimulai dengan 08 dan berisi 10-12 digit angka."
+
 class LoginForm(forms.Form):
     username = forms.EmailField(widget=forms.EmailInput(attrs={
         'class': 'form-control',
@@ -48,8 +51,8 @@ class RegisterCustomerForm(forms.ModelForm):
 
     def clean_phone_number(self):
         phone_number = self.cleaned_data.get('phone_number')
-        if not re.match(r'^\d+$', phone_number):
-            raise forms.ValidationError("Nomor telepon hanya boleh angka")
+        if not re.match(PHONE_PREFIX_PATTERN, phone_number):
+            raise forms.ValidationError(PHONE_ERROR_MSG)
         return phone_number
 
     def clean(self):
@@ -77,8 +80,8 @@ class RegisterStaffManagerForm(forms.ModelForm):
 
     def clean_phone_number(self):
         phone_number = self.cleaned_data.get('phone_number')
-        if not re.match(r'^\d+$', phone_number):
-            raise forms.ValidationError("Nomor telepon hanya boleh angka")
+        if not re.match(PHONE_PREFIX_PATTERN, phone_number):
+            raise forms.ValidationError(PHONE_ERROR_MSG)
         return phone_number
 
     def clean(self):
@@ -117,8 +120,8 @@ class ProfileForm(forms.ModelForm):
         phone_number = self.cleaned_data.get('phone_number', '').strip()
         if not phone_number:
             raise forms.ValidationError('Nomor Telepon tidak boleh kosong.')
-        if not re.match(r'^\d+$', phone_number):
-            raise forms.ValidationError('Nomor telepon hanya boleh angka')
+        if not re.match(PHONE_PREFIX_PATTERN, phone_number):
+            raise forms.ValidationError(PHONE_ERROR_MSG)
         return phone_number
 
 
