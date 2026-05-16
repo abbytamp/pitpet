@@ -38,8 +38,9 @@ def update_profile_api(request):
     if not phone_number:
         return JsonResponse({"error": "No HP wajib diisi."}, status=400)
 
-    if not phone_number.isdigit():
-        return JsonResponse({"error": "No HP hanya boleh berisi angka."}, status=400)
+    import re
+    if not re.match(r'^08\d{8,10}$', phone_number):
+        return JsonResponse({"error": "Nomor telepon harus dimulai dengan 08 dan berisi 10-12 digit angka."}, status=400)
 
     user = request.user
     user.full_name = full_name
@@ -71,8 +72,9 @@ def edit_profile_view(request):
             messages.error(request, "No HP wajib diisi.")
             return render(request, "user_profile/edit_profile.html")
 
-        if not phone_number.isdigit():
-            messages.error(request, "No HP hanya boleh berisi angka.")
+        import re
+        if not re.match(r'^08\d{8,10}$', phone_number):
+            messages.error(request, "Nomor telepon harus dimulai dengan 08 dan berisi 10-12 digit angka.")
             return render(request, "user_profile/edit_profile.html")
 
         user.full_name = full_name
