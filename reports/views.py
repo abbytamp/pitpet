@@ -15,14 +15,20 @@ from booking.models import Booking
 def manager_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
+        is_api_request = request.path.startswith('/api/') or request.path.startswith('/manager/api/')
+        wants_json = (
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or 'application/json' in request.headers.get('Accept', '')
+        )
+
         if not request.user.is_authenticated:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+            if is_api_request or wants_json:
                 return JsonResponse({"detail": "Authentication required"}, status=401)
             messages.error(request, "Silakan login terlebih dahulu")
             return redirect('login')
 
         if getattr(request.user, "role", None) not in ["manager", "superadmin"]:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+            if is_api_request or wants_json:
                 return JsonResponse({"detail": "Forbidden"}, status=403)
             messages.error(request, "Anda tidak memiliki akses ke halaman ini")
             return redirect('login')
@@ -36,6 +42,8 @@ BULAN_INDONESIA = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
 ]
+
+HARI_SINGKAT = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
 
 
 def get_fixed_range(periode):
@@ -163,7 +171,7 @@ def format_period_label(periode, start_date, end_date):
     return f"{format_indonesia(start_date)} - {format_indonesia(end_date)}"
 
 
-def build_buckets(start_date: date, end_date: date, granularity: str):
+def build_buckets(start_date: date, end_date: date, granularity: str, periode: str | None = None):
     """Return list of buckets where each bucket is (label, bucket_start, bucket_end).
     bucket_end is inclusive date for day/week/month, and for hour granularity bucket_start/ end are ints (hour).
     """
@@ -178,7 +186,10 @@ def build_buckets(start_date: date, end_date: date, granularity: str):
     if granularity == "day":
         cur = start_date
         while cur <= end_date:
-            label = cur.strftime("%d %b")
+            if periode == "mingguan":
+                label = HARI_SINGKAT[cur.weekday()]
+            else:
+                label = cur.strftime("%d %b")
             buckets.append((label, cur, cur))
             cur += timedelta(days=1)
         return buckets
@@ -190,7 +201,7 @@ def build_buckets(start_date: date, end_date: date, granularity: str):
         while cur <= end_date:
             week_start = cur
             week_end = min(cur + timedelta(days=6), end_date)
-            label = f"W{week_idx}"
+            label = f"M{week_idx}"
             buckets.append((label, week_start, week_end))
             cur = week_end + timedelta(days=1)
             week_idx += 1
@@ -350,7 +361,7 @@ def report_trend_api(request):
             else:
                 granularity = "month"
 
-    buckets = build_buckets(start_date, end_date, granularity)
+    buckets = build_buckets(start_date, end_date, granularity, periode)
 
     data = []
 

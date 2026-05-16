@@ -133,6 +133,7 @@ let monthlyBookingsChart;
 let serviceDistributionChart;
 let currentJenisData = 'booking';
 let currentPeriodType = 'bulanan';
+let currentPeriodeLabel = '';
 
 function getDateAsISO(date) {
     const d = new Date(date);
@@ -289,6 +290,7 @@ function getSelectedPeriodRange() {
 
 function setActivePeriodLabel(label) {
     const container = document.getElementById('active-period-label');
+    currentPeriodeLabel = label || '';
     if (container) {
         container.textContent = `Periode: ${label}`;
     }
@@ -296,14 +298,26 @@ function setActivePeriodLabel(label) {
 
 function setTrendTitle(apiResponse) {
     const gran = apiResponse.granularity;
+    const periode = apiResponse.periode;
     const jenisLabel = currentJenisData === 'booking' ? 'Booking' : 'Layanan Selesai';
-    let periodLabel = '';
-    if (apiResponse.start_date && apiResponse.end_date) {
-        periodLabel = apiResponse.start_date === apiResponse.end_date ? formatDateLabel(apiResponse.start_date) : `${formatDateLabel(apiResponse.start_date)} - ${formatDateLabel(apiResponse.end_date)}`;
+    const fallbackLabel = (apiResponse.start_date && apiResponse.end_date)
+        ? (apiResponse.start_date === apiResponse.end_date
+            ? formatDateLabel(apiResponse.start_date)
+            : `${formatDateLabel(apiResponse.start_date)} - ${formatDateLabel(apiResponse.end_date)}`)
+        : '';
+    const contextLabel = currentPeriodeLabel || fallbackLabel;
+
+    let title = `${jenisLabel} - ${contextLabel}`;
+    if (periode === 'harian' || gran === 'hour') {
+        title = `${jenisLabel} per Jam - ${formatDateLabel(apiResponse.start_date)}`;
+    } else if (periode === 'mingguan' || gran === 'day') {
+        title = `${jenisLabel} per Hari - ${contextLabel}`;
+    } else if (periode === 'bulanan' || gran === 'week') {
+        title = `${jenisLabel} per Minggu - ${contextLabel}`;
+    } else if (gran === 'month') {
+        title = `${jenisLabel} per Bulan - ${contextLabel}`;
     }
 
-    const map = { hour: 'per Jam', day: 'per Hari', week: 'per Minggu', month: 'per Bulan' };
-    const title = `${jenisLabel} ${map[gran] || ''}${periodLabel ? ' - ' + periodLabel : ''}`;
     const titleElement = document.getElementById('trend-title');
     if (titleElement) {
         titleElement.textContent = title;
@@ -344,7 +358,7 @@ function updateTrendChart(data) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return context.parsed.y.toString();
+                            return `${context.label}: ${context.parsed.y}`;
                         }
                     }
                 }
@@ -459,7 +473,7 @@ function loadDashboard() {
             }
             return res.json();
         }),
-        fetch(`/manager/api/reports/trend?${params.toString()}&jenis_data=${jenis}`, fetchOptions).then(res => {
+        fetch(`/api/reports/trend?${params.toString()}&jenis_data=${jenis}`, fetchOptions).then(res => {
             if (!res.ok) {
                 if (res.status === 403) throw new Error('Akses ditolak');
                 if (res.status === 401) throw new Error('Silakan login terlebih dahulu');
