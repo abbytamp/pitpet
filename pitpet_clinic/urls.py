@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve as static_serve
 from booking import views as booking_views
 from reports import views as reports_views
 
@@ -24,6 +25,10 @@ urlpatterns = [
     path('manager/api/reports/operational-dashboard', reports_views.operational_dashboard, name='manager-api-operational-dashboard'),
     path('manager/api/reports/trend', reports_views.report_trend_api, name='manager-api-trend'),
     path('recommendations/', include('recommendations.urls')),
+    # Grooming service form photos – explicit route before any wildcard
+    path('grooming_service_forms/<path:filepath>', static_serve, {
+        'document_root': settings.MEDIA_ROOT,
+    }),
 ]
 
 if settings.DEBUG:

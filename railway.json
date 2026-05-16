@@ -1,0 +1,19 @@
+{
+  "version": "1",
+  "services": {
+    "web": {
+      "type": "web",
+      "build": {
+        "context": ".",
+        "builder": "nixpacks"
+      },
+      "volumes": [
+        {
+          "name": "grooming-photos",
+          "mount": "/app/grooming_service_forms",
+          "source": "grooming-photos"
+        }
+      ]
+    }
+  }
+}
