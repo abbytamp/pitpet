@@ -216,8 +216,23 @@ def job_detail(request, booking_id):
             additionals.append({
                 "name": additional.additional_name if additional.additional_name else (additional.additional.name if additional.additional else "-"),
                 "duration": additional.durasi,
+                "harga": additional.harga,
             })
             total_pet_duration += additional.durasi
+
+        # Add grooming_service_form fields if exists
+        grooming_service_form = getattr(item, "grooming_service_form", None)
+        if grooming_service_form:
+            service_form_data = {
+                "kondisi_bulu": grooming_service_form.kondisi_bulu,
+                "kondisi_kulit": grooming_service_form.kondisi_kulit,
+                "kondisi_telinga": grooming_service_form.kondisi_telinga,
+                "kondisi_kuku": grooming_service_form.kondisi_kuku,
+                "perilaku_hewan": grooming_service_form.perilaku_hewan,
+                "catatan_tambahan": grooming_service_form.catatan_tambahan,
+            }
+        else:
+            service_form_data = None
 
         pet_items.append({
             "booking_item_id": item.id,
@@ -226,13 +241,17 @@ def job_detail(request, booking_id):
             "pet_size": get_pet_size_label(item.pet),
             "package_name": item.package_name if item.package_name else (item.package.name if item.package else "-"),
             "package_duration": item.durasi_paket,
+            "package_price": item.harga_paket,
             "additionals": additionals,
             "total_pet_duration": total_pet_duration,
-            "already_has_note": hasattr(item, "grooming_service_form"),
+            "subtotal": item.subtotal,
+            "already_has_note": grooming_service_form is not None,
+            "service_form": service_form_data,
         })
 
     service_type_label = "Home Service" if booking.service_type == "home" else "Clinic Service"
 
+    total_price = sum(item.subtotal for item in booking.items.all())
     context = {
         "booking": booking,
         "owner_name": booking.customer.full_name,
@@ -245,6 +264,7 @@ def job_detail(request, booking_id):
         "status_label": booking.get_status_display(),
         "total_duration": booking.total_durasi,
         "pet_items": pet_items,
+        "total_price": total_price,
         "show_start_service": booking.status == Booking.Status.SCHEDULED,
         "show_complete_service": booking.status == Booking.Status.SERVICE_STARTED,
         "can_start_service": can_start_booking(booking),
@@ -438,7 +458,7 @@ def submit_grooming_service_form(request, booking_id, booking_item_id):
     kondisi_kuku = request.POST.get("kondisi_kuku", "").strip()
     perilaku_hewan = request.POST.get("perilaku_hewan", "").strip()
     catatan_tambahan = request.POST.get("catatan_tambahan", "").strip()
-    foto_bukti_layanan = request.FILES.get("foto_bukti_layanan")
+    foto_bukti_layanan = None  # Field foto sudah tidak digunakan
 
     errors = {}
 
@@ -452,13 +472,7 @@ def submit_grooming_service_form(request, booking_id, booking_item_id):
         errors["kondisi_kuku"] = "Kondisi kuku wajib diisi."
     if not perilaku_hewan:
         errors["perilaku_hewan"] = "Perilaku hewan wajib diisi."
-    if not foto_bukti_layanan:
-        errors["foto_bukti_layanan"] = "Foto bukti layanan wajib diisi."
 
-    if foto_bukti_layanan:
-        content_type = getattr(foto_bukti_layanan, "content_type", "")
-        if not content_type.startswith("image/"):
-            errors["foto_bukti_layanan"] = "File bukti layanan harus berupa gambar."
 
     if errors:
         context = {

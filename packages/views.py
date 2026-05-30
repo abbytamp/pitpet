@@ -22,12 +22,54 @@ def _has_active_booking(package: Package) -> bool:
 @staff_required
 def package_list(request):
     # Prefetch prices biar gak N+1
+
+    from django.db.models import Avg
+    from booking.models import BookingItem, BookingReview
+
     packages = (
         Package.objects
         .filter(is_deleted=False)
         .prefetch_related("prices")
         .order_by("animal_type", "name")
     )
+
+
+
+    # Ambil rating dari BookingItem (paket utama)
+    package_ratings_main = (
+        BookingItem.objects
+        .filter(
+            booking__status='service_completed',
+            booking__payment_status='paid',
+            booking__review__isnull=False
+        )
+        .values('package')
+        .annotate(avg_rating=Avg('booking__review__rating'))
+    )
+    # Ambil rating dari BookingItemAdditional (paket additional)
+    from booking.models import BookingItemAdditional
+    package_ratings_additional = (
+        BookingItemAdditional.objects
+        .filter(
+            booking_item__booking__status='service_completed',
+            booking_item__booking__payment_status='paid',
+            booking_item__booking__review__isnull=False
+        )
+        .values('additional')
+        .annotate(avg_rating=Avg('booking_item__booking__review__rating'))
+    )
+
+    rating_map = {}
+    for pr in package_ratings_main:
+        rating_map[pr['package']] = pr['avg_rating']
+    for pr in package_ratings_additional:
+        if pr['additional'] in rating_map and rating_map[pr['additional']] is not None:
+            rating_map[pr['additional']] = (rating_map[pr['additional']] + pr['avg_rating']) / 2 if pr['avg_rating'] is not None else rating_map[pr['additional']]
+        else:
+            rating_map[pr['additional']] = pr['avg_rating']
+
+    for p in packages:
+        p.avg_rating = rating_map.get(p.id)
 
     cat_packages = [p for p in packages if p.animal_type == "cat"]
     dog_packages = [p for p in packages if p.animal_type == "dog"]
@@ -234,6 +276,10 @@ def package_catalog(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
+
+    from django.db.models import Avg
+    from booking.models import BookingItem
+
     packages = (
         Package.objects
         .filter(is_deleted=False)
@@ -241,10 +287,50 @@ def package_catalog(request):
         .order_by("animal_type", "name")
     )
 
+
+    # Ambil rating dari BookingItem (paket utama)
+    package_ratings_main = (
+        BookingItem.objects
+        .filter(
+            booking__status='service_completed',
+            booking__payment_status='paid',
+            booking__review__isnull=False
+        )
+        .values('package')
+        .annotate(avg_rating=Avg('booking__review__rating'))
+    )
+    # Ambil rating dari BookingItemAdditional (paket additional)
+    from booking.models import BookingItemAdditional
+    package_ratings_additional = (
+        BookingItemAdditional.objects
+        .filter(
+            booking_item__booking__status='service_completed',
+            booking_item__booking__payment_status='paid',
+            booking_item__booking__review__isnull=False
+        )
+        .values('additional')
+        .annotate(avg_rating=Avg('booking_item__booking__review__rating'))
+    )
+
+    rating_map = {}
+    for pr in package_ratings_main:
+        rating_map[pr['package']] = pr['avg_rating']
+    for pr in package_ratings_additional:
+        # Jika sudah ada rating dari BookingItem, gabungkan rata-rata
+        if pr['additional'] in rating_map and rating_map[pr['additional']] is not None:
+            # Ambil rata-rata dari dua sumber
+            rating_map[pr['additional']] = (rating_map[pr['additional']] + pr['avg_rating']) / 2 if pr['avg_rating'] is not None else rating_map[pr['additional']]
+        else:
+            rating_map[pr['additional']] = pr['avg_rating']
+
+    for p in packages:
+        p.avg_rating = rating_map.get(p.id)
+
     cat_packages = [p for p in packages if p.animal_type == "cat"]
     dog_packages = [p for p in packages if p.animal_type == "dog"]
 
     return render(request, "packages/catalog.html", {
         "cat_packages": cat_packages,
         "dog_packages": dog_packages,
+        "show_rating": request.user.is_staff,
     })

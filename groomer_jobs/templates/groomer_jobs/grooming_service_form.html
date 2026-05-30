@@ -5,23 +5,6 @@
 <div class="min-h-screen bg-gray-50">
   <div class="max-w-4xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8">
 
-    <div class="mb-5">
-      <a href="{% url 'groomer_jobs:job_detail' booking.id %}"
-         class="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#34C1D4] transition">
-        <span>&larr;</span>
-        <span>Kembali ke Detail Pekerjaan</span>
-      </a>
-    </div>
-
-    <div class="mb-6">
-      <p class="text-sm font-semibold text-[#34C1D4] tracking-wide uppercase">Pitpet Groomer</p>
-      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
-        Form Layanan Grooming
-      </h1>
-      <p class="text-sm text-gray-500 mt-2">
-        Isi catatan layanan untuk hewan yang sedang ditangani.
-      </p>
-    </div>
 
     {% if messages %}
       <div class="space-y-3 mb-5">
@@ -40,53 +23,6 @@
       </div>
     {% endif %}
 
-    <!-- Informasi Ringkas -->
-    <div class="bg-white border border-gray-200 rounded-3xl shadow-sm p-5 sm:p-6 mb-5">
-      <div class="flex items-center justify-between gap-3 mb-4">
-        <h2 class="text-base sm:text-lg font-bold text-gray-900">
-          Informasi Booking dan Hewan
-        </h2>
-        <span class="inline-flex items-center rounded-full bg-[#34C1D4]/10 px-3 py-1 text-xs font-semibold text-[#2497a8] border border-[#34C1D4]/20">
-          {{ booking.booking_code }}
-        </span>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-          <p class="text-xs font-medium text-gray-500 mb-1">Nama Pemilik</p>
-          <p class="text-sm font-semibold text-gray-900">{{ owner_name }}</p>
-        </div>
-
-        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-          <p class="text-xs font-medium text-gray-500 mb-1">Nama Groomer</p>
-          <p class="text-sm font-semibold text-gray-900">{{ groomer_name }}</p>
-        </div>
-
-        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-          <p class="text-xs font-medium text-gray-500 mb-1">Jenis Layanan</p>
-          <p class="text-sm font-semibold text-gray-900">{{ service_type_label }}</p>
-        </div>
-
-        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-          <p class="text-xs font-medium text-gray-500 mb-1">Jam Layanan</p>
-          <p class="text-sm font-semibold text-gray-900">{{ time_range }}</p>
-        </div>
-
-        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-          <p class="text-xs font-medium text-gray-500 mb-1">Hewan</p>
-          <p class="text-sm font-semibold text-gray-900">
-            {{ pet.name }} ({{ pet.jenis }})
-          </p>
-        </div>
-
-        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-          <p class="text-xs font-medium text-gray-500 mb-1">Paket</p>
-          <p class="text-sm font-semibold text-gray-900">
-            {{ booking_item.package.name }} ({{ booking_item.durasi_paket }} menit)
-          </p>
-        </div>
-      </div>
-    </div>
 
     <!-- Form -->
     <div class="bg-white border border-gray-200 rounded-3xl shadow-sm p-5 sm:p-6">
@@ -200,23 +136,7 @@
           </div>
 
           <div class="md:col-span-2">
-            <label for="foto_bukti_layanan" class="block text-sm font-semibold text-gray-900 mb-2">
-              Foto Bukti Layanan <span class="text-red-500">*</span>
-            </label>
-
-            <div class="rounded-2xl border {% if errors.foto_bukti_layanan %}border-red-300{% else %}border-gray-200{% endif %} bg-gray-50 p-3 sm:p-4">
-              <input id="foto_bukti_layanan"
-                     name="foto_bukti_layanan"
-                     type="file"
-                     accept="image/*"
-                     class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-xl file:border-0 file:bg-[#34C1D4]/10 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-[#2497a8] hover:file:bg-[#34C1D4]/20">
-              <p class="mt-2 text-xs text-gray-500">
-                File harus berupa gambar (jpg, jpeg, png, atau webp).
-              </p>
-              {% if errors.foto_bukti_layanan %}
-                <p class="mt-1.5 text-sm text-red-600">{{ errors.foto_bukti_layanan }}</p>
-              {% endif %}
-            </div>
+            
           </div>
 
         </div>
@@ -286,7 +206,6 @@
     document.getElementById('kondisi_telinga'),
     document.getElementById('kondisi_kuku'),
     document.getElementById('perilaku_hewan'),
-    document.getElementById('foto_bukti_layanan'),
   ];
 
   function isFilled(field) {

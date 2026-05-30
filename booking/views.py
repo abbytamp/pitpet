@@ -1,3 +1,19 @@
+def auto_cancel_expired_scheduled_bookings_customer(user):
+    now = timezone.localtime()
+    scheduled_bookings = Booking.objects.filter(
+        customer=user,
+        status=Booking.Status.SCHEDULED,
+    )
+    expired_ids = []
+    for booking in scheduled_bookings:
+        booking_end = timezone.make_aware(datetime.combine(booking.tanggal, booking.waktu_selesai))
+        if now > booking_end:
+            expired_ids.append(booking.id)
+    if expired_ids:
+        Booking.objects.filter(id__in=expired_ids).update(
+            status=Booking.Status.CANCELLED,
+            updated_at=now,
+        )
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta
@@ -98,8 +114,10 @@ def staff_booking_schedule(request):
         return redirect('login')
 
     # Pilihan tipe layanan dan tanggal
+
     service_type = request.GET.get('service_type', Booking.ServiceType.CLINIC)
     tanggal_str = request.GET.get('tanggal')
+    search_groomer = request.GET.get('search_groomer', '').strip()
     if tanggal_str:
         try:
             tanggal = datetime.strptime(tanggal_str, "%Y-%m-%d").date()
@@ -120,6 +138,7 @@ def staff_booking_schedule(request):
                 'service_type': service_type,
                 'tanggal': tanggal.strftime('%Y-%m-%d'),
                 'is_off_day': True,
+                'search_groomer': search_groomer,
             },
         )
 
@@ -131,6 +150,8 @@ def staff_booking_schedule(request):
         Q(is_deleted=False, service_type=service_type) |
         Q(is_deleted=True, service_type=service_type, deleted_at__gte=datetime.combine(tanggal, datetime.min.time()))
     )
+    if search_groomer:
+        groomers = groomers.filter(user__full_name__icontains=search_groomer)
 
     # Tentukan slot waktu per 30 menit (mengikuti aturan booking)
     from booking.utils import WORK_START, WORK_END, SLOT_MINUTES
@@ -233,6 +254,7 @@ def staff_booking_schedule(request):
         'service_type': service_type,
         'tanggal': tanggal.strftime('%Y-%m-%d'),
         'is_off_day': False,
+        'search_groomer': search_groomer,
     }
     return render(request, 'booking/staff_booking_schedule_list.html', context)
 
@@ -659,6 +681,8 @@ def booking_success(request, booking_id: int):
         customer=request.user,
     )
 
+    from django.contrib import messages
+    messages.success(request, "Booking berhasil dibuat")
     return render(
         request,
         "booking/success.html",
@@ -728,6 +752,7 @@ def my_bookings(request):
     if not _is_customer(request.user):
         return redirect("login")
 
+    auto_cancel_expired_scheduled_bookings_customer(request.user)
     bookings = (
         Booking.objects.select_related("groomer", "groomer__user")
         .prefetch_related("items__pet")
@@ -747,6 +772,7 @@ def reschedule_booking(request, booking_id):
     if not _is_customer(request.user):
         return redirect("login")
 
+    auto_cancel_expired_scheduled_bookings_customer(request.user)
     booking = get_object_or_404(
         Booking.objects.select_related("groomer", "groomer__user")
         .prefetch_related("items__pet", "items__package"),
@@ -791,6 +817,7 @@ def api_reschedule_slots(request, booking_id):
     if not _is_customer(request.user):
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
+    auto_cancel_expired_scheduled_bookings_customer(request.user)
     booking = get_object_or_404(
         Booking.objects.select_related("groomer"),
         id=booking_id,
