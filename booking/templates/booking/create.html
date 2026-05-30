@@ -169,11 +169,34 @@
         </div>
 
         <div class="flex items-center justify-center gap-3">
-            <button type="submit" id="submitBtn" class="px-6 py-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+            <button type="submit" id="submitBtn" class="px-6 py-2.5 rounded-xl bg-[#F5A623] text-white hover:bg-[#d98a0d] transition-colors">
                 Buat Booking
             </button>
             <a href="{% url 'customer_dashboard' %}" class="px-5 py-2 rounded-lg border">Kembali</a>
         </div>
+</section>
+<style>
+/* Border field saat fokus jadi teal */
+input:focus, select:focus, textarea:focus {
+    border-color: #2BBDBD !important;
+    box-shadow: 0 0 0 2px #2BBDBD44 !important;
+    outline: none !important;
+}
+
+/* Slot waktu saat dipilih (active/selected) jadi teal */
+#slotContainer button.selected,
+#slotContainer .slot-btn.selected,
+#slotContainer button.active,
+#slotContainer .slot-btn.active {
+    border-color: #2BBDBD !important;
+    background: #2BBDBD !important;
+    color: #fff !important;
+}
+#slotContainer button,
+#slotContainer .slot-btn {
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+</style>
     </form>
 </section>
 
@@ -217,7 +240,7 @@
 
         <div class="px-6 py-4 border-t flex justify-end gap-3">
             <button type="button" id="modalCancelBtn" class="px-4 py-2 rounded-xl border border-gray-300 text-gray-700">Batal</button>
-            <button type="button" id="modalConfirmBtn" class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Konfirmasi</button>
+            <button type="button" id="modalConfirmBtn" class="px-4 py-2 rounded-xl bg-[#F5A623] text-white hover:bg-[#d98a0d]">Konfirmasi</button>
         </div>
     </div>
 </div>
@@ -586,9 +609,10 @@
                 data.additionals.forEach((add) => {
                     const wrapper = document.createElement('label');
                     wrapper.className = 'flex items-start gap-2 border rounded-lg p-2';
-                    const checked = (state.petConfigs[petId]?.additional_ids || []).map(Number).includes(Number(add.id));
+                    // Only one additional can be selected per pet, so use radio button
+                    const checked = Number(state.petConfigs[petId]?.additional_ids?.[0]) === Number(add.id);
                     wrapper.innerHTML = `
-                        <input type="checkbox" class="additional-checkbox mt-1" value="${add.id}" ${checked ? 'checked' : ''}>
+                        <input type="radio" name="additional-${petId}" class="additional-radio mt-1" value="${add.id}" ${checked ? 'checked' : ''}>
                         <span class="text-sm">${add.name} (${add.duration} min) - Rp ${formatRupiah(add.price)}</span>
                     `;
                     additionalList.appendChild(wrapper);
@@ -618,7 +642,7 @@
             });
 
             additionalList.addEventListener('change', async (event) => {
-                if (!event.target.classList.contains('additional-checkbox')) {
+                if (!event.target.classList.contains('additional-radio')) {
                     return;
                 }
 
@@ -628,8 +652,9 @@
                     return;
                 }
 
-                const selectedAdditional = Array.from(additionalList.querySelectorAll('.additional-checkbox:checked'))
-                    .map((input) => Number(input.value));
+                // Only one additional can be selected per pet
+                const selectedRadio = additionalList.querySelector('.additional-radio:checked');
+                const selectedAdditional = selectedRadio ? [Number(selectedRadio.value)] : [];
 
                 const config = state.petConfigs[petId] || { package_id: null, additional_ids: [] };
                 config.additional_ids = selectedAdditional;
@@ -646,14 +671,14 @@
     function toggleAdditionalAvailability(section, petId) {
         const hasPackage = !!state.petConfigs[petId]?.package_id;
         const hint = section.querySelector('.additional-hint');
-        const checkboxes = section.querySelectorAll('.additional-checkbox');
+        const radios = section.querySelectorAll('.additional-radio');
         const wrappers = section.querySelectorAll('.additional-list label');
 
         if (hint) {
             hint.classList.toggle('hidden', hasPackage);
         }
 
-        checkboxes.forEach((input) => {
+        radios.forEach((input) => {
             input.disabled = !hasPackage;
         });
 
@@ -828,7 +853,7 @@
             return;
         }
 
-        slotMessage.textContent = 'Pilih salah satu slot berikut:';
+    slotMessage.textContent = '';
 
         data.slots.forEach((slot) => {
             const button = document.createElement('button');
@@ -837,9 +862,15 @@
             button.textContent = slot.label.replace(' - ', '-');
             button.addEventListener('click', () => {
                 Array.from(slotContainer.querySelectorAll('button')).forEach((b) => {
-                    b.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                    b.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600', 'selected');
+                    b.style.background = '';
+                    b.style.borderColor = '';
+                    b.style.color = '';
                 });
-                button.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                button.classList.add('selected');
+                button.style.background = '#2BBDBD';
+                button.style.borderColor = '#2BBDBD';
+                button.style.color = '#fff';
                 state.selectedSlot = slot;
                 waktuMulaiInput.value = slot.start;
                 validateSubmit();

@@ -7,148 +7,133 @@
 
     <!-- MAIN CARD -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-
       <!-- HEADER -->
       <div class="bg-[#F9A828] px-6 py-5">
         <h1 class="text-xl font-bold text-white">Detail Pekerjaan</h1>
         <p class="text-white/75 text-sm mt-0.5">Booking #{{ booking.id }}</p>
       </div>
-
       <div class="p-6 space-y-8">
-
-        <!-- Informasi Booking -->
+        <!-- INFORMASI BOOKING -->
         <div>
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-base font-bold text-gray-800">Informasi Booking</h2>
-
             <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold
-              {% if status == 'scheduled' %}bg-blue-100 text-blue-700{% endif %}
-              {% if status == 'service_started' %}bg-yellow-100 text-yellow-700{% endif %}
-              {% if status == 'service_completed' %}bg-green-100 text-green-700{% endif %}
-            ">
+                {% if status == 'service_completed' %}bg-green-100 text-green-800
+                {% elif status == 'service_started' %}bg-blue-100 text-blue-800
+                {% elif status == 'scheduled' %}bg-yellow-100 text-yellow-800
+                {% elif status == 'cancelled' %}bg-red-100 text-red-700
+                {% else %}bg-[#2BBDBD] text-white
+                {% endif %}">
               {{ status_label }}
             </span>
           </div>
-
           <div class="border border-gray-100 rounded-xl overflow-hidden">
             <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
               <span class="text-sm text-gray-500">Nama Customer</span>
-              <span class="text-sm font-semibold text-gray-800 text-right">{{ owner_name }}</span>
+              <span class="text-sm font-semibold text-gray-800">{{ owner_name }}</span>
             </div>
-
             <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-              <span class="text-sm text-gray-500">Jenis Layanan</span>
-              <span class="text-sm font-semibold text-gray-800 text-right">{{ service_type_label }}</span>
+              <span class="text-sm text-gray-500">Tanggal Booking</span>
+              <span class="text-sm font-semibold text-gray-800">{{ booking.tanggal|date:"d M Y" }}</span>
             </div>
-
-            {% if booking.service_type == "home" %}
-            <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-              <span class="text-sm text-gray-500">Nomor Telepon</span>
-              <span class="text-sm font-semibold text-gray-800 text-right">{{ owner_phone }}</span>
-            </div>
-
-            <div class="flex justify-between items-start gap-4 px-4 py-3 border-b border-gray-100">
-              <span class="text-sm text-gray-500">Alamat</span>
-              <span class="text-sm font-semibold text-gray-800 text-right">{{ address|default:"-" }}</span>
-            </div>
-            {% endif %}
-
             <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
               <span class="text-sm text-gray-500">Jam Layanan</span>
-              <span class="text-sm font-semibold text-gray-800 text-right">{{ time_range }}</span>
+              <span class="text-sm font-semibold text-gray-800">{{ time_range }}</span>
             </div>
-
-            <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
-              <span class="text-sm text-gray-500">Total Durasi</span>
-              <span class="text-sm font-semibold text-gray-800 text-right">{{ total_duration }} menit</span>
-            </div>
-
-            <div class="flex justify-between items-start gap-4 px-4 py-3">
-              <span class="text-sm text-gray-500">Catatan Booking</span>
-              <span class="text-sm font-semibold text-gray-800 text-right whitespace-pre-line">
-                {{ booking_note|default:"-" }}
-              </span>
+            <div class="flex justify-between items-center px-4 py-3">
+              <span class="text-sm text-gray-500">Jenis Layanan</span>
+              <span class="text-sm font-semibold text-gray-800">{{ service_type_label }}</span>
             </div>
           </div>
         </div>
-
-        {% if messages %}
-        <div class="space-y-3 mb-4 sm:mb-6">
-          {% for message in messages %}
-            <div class="rounded-xl border px-4 py-3 text-sm
-              {% if message.tags == 'success' %}
-                border-green-200 bg-green-50 text-green-700
-              {% elif message.tags == 'error' %}
-                border-red-200 bg-red-50 text-red-700
-              {% else %}
-                border-gray-200 bg-gray-50 text-gray-700
-              {% endif %}">
-              {{ message }}
-            </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Detail Hewan & Layanan -->
+        <!-- DETAIL HEWAN & LAYANAN -->
         <div>
           <h2 class="text-base font-bold text-gray-800 mb-3">Detail Hewan & Layanan</h2>
-
           <div class="space-y-4">
             {% for item in pet_items %}
             <div class="border border-gray-100 rounded-xl overflow-hidden">
               <div class="bg-[#FFF8EC] px-4 py-3 border-b border-gray-100">
-                <p class="font-bold text-sm text-amber-900">
-                  {{ item.pet_name }}
-                </p>
-                <p class="text-xs text-amber-700 mt-0.5">
-                  {{ item.pet_type }}{% if item.pet_size %} ({{ item.pet_size }}){% endif %}
-                </p>
+                <p class="font-bold text-sm text-amber-900">{{ item.pet_name }}</p>
+                <p class="text-xs text-amber-700 mt-0.5">{{ item.pet_type }}</p>
               </div>
-
               <div class="px-4 py-3 space-y-2.5 text-sm">
-                <div class="flex justify-between gap-4">
+                <div class="flex justify-between">
                   <span class="text-gray-500">Paket</span>
-                  <span class="font-semibold text-gray-800 text-right">
-                    {{ item.package_name }} - {{ item.package_duration }} menit
-                  </span>
+                  <span class="font-semibold text-gray-800">{{ item.package_name }}</span>
                 </div>
-
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Durasi</span>
+                  <span class="font-semibold text-gray-800">{{ item.package_duration }} menit</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Harga Paket</span>
+                  <span class="font-semibold text-gray-800">Rp {{ item.package_price|floatformat:0 }}</span>
+                </div>
                 {% if item.additionals %}
-                  {% for additional in item.additionals %}
-                  <div class="flex justify-between gap-4">
-                    <span class="text-gray-500">Additional Paket</span>
-                    <span class="font-semibold text-gray-800 text-right">
-                      {{ additional.name }} - {{ additional.duration }} menit
-                    </span>
+                <div class="pt-1">
+                  <p class="text-gray-500 mb-2">Additional</p>
+                  <div class="space-y-1.5">
+                    {% for additional in item.additionals %}
+                    <div class="flex justify-between border border-gray-100 rounded-lg px-3 py-2">
+                      <span class="text-gray-700">{{ additional.name }}</span>
+                      <span class="font-medium text-gray-800">Rp {{ additional.harga|floatformat:0 }}</span>
+                    </div>
+                    {% endfor %}
                   </div>
-                  {% endfor %}
+                </div>
                 {% endif %}
-
-                <div class="flex justify-between gap-4 pt-2 border-t border-gray-100">
-                  <span class="text-gray-500">Total Durasi {{ item.pet_name }}</span>
-                  <span class="font-bold text-[#F9A828] text-right">
-                    {{ item.total_pet_duration }} menit
-                  </span>
+                <div class="flex justify-between pt-2 border-t border-gray-100">
+                  <span class="text-gray-500">Total Durasi</span>
+                  <span class="font-bold text-[#F9A828]">{{ item.total_pet_duration }} menit</span>
                 </div>
-
-                <div class="pt-3 flex justify-end">
-                  {% if can_show_pet_note_button %}
-                    {% if item.already_has_note %}
-                      <span class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-green-50 text-green-700 border border-green-200">
-                        Sudah Diisi
-                      </span>
-                    {% else %}
-                      <a href="{% url 'groomer_jobs:grooming_service_form' booking.id item.booking_item_id %}"
-                        class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition">
-                        Isi Form Layanan
-                      </a>
-                    {% endif %}
-                  {% elif item.already_has_note %}
-                    <span class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-green-50 text-green-700 border border-green-200">
-                      Sudah Diisi
-                    </span>
-                  {% endif %}
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Subtotal</span>
+                  <span class="font-bold text-[#F9A828]">Rp {{ item.subtotal|floatformat:0 }}</span>
                 </div>
+                {% if status == 'service_completed' and item.service_form %}
+                <div class="mt-4 border-t border-gray-200 pt-3">
+                  <h3 class="text-base font-bold text-gray-800 mb-3">Catatan Grooming</h3>
+                  <div class="border border-gray-100 rounded-xl overflow-hidden">
+                    <div class="bg-[#FFF8EC] px-4 py-3 border-b border-gray-100">
+                      <p class="font-bold text-sm text-amber-900">{{ item.pet_name }}</p>
+                    </div>
+                    <div class="px-4 py-3 space-y-2.5 text-sm">
+                      <div class="flex justify-between border-b border-gray-100 pb-3">
+                        <span class="text-gray-500">Kondisi Kulit</span>
+                        <span class="font-semibold text-gray-800">{{ item.service_form.kondisi_kulit }}</span>
+                      </div>
+                      <div class="flex justify-between border-b border-gray-100 pb-3">
+                        <span class="text-gray-500">Kondisi Telinga</span>
+                        <span class="font-semibold text-gray-800">{{ item.service_form.kondisi_telinga }}</span>
+                      </div>
+                      <div class="flex justify-between border-b border-gray-100 pb-3">
+                        <span class="text-gray-500">Kondisi Kuku</span>
+                        <span class="font-semibold text-gray-800">{{ item.service_form.kondisi_kuku }}</span>
+                      </div>
+                      <div class="flex justify-between {% if item.service_form.catatan_tambahan %}border-b border-gray-100 pb-3{% endif %}">
+                        <span class="text-gray-500">Perilaku</span>
+                        <span class="font-semibold text-gray-800">{{ item.service_form.perilaku_hewan }}</span>
+                      </div>
+                      {% if item.service_form.catatan_tambahan %}
+                      <div class="pt-3">
+                        <p class="text-gray-500 mb-0">Catatan</p>
+                        <p class="font-semibold text-gray-800 break-words whitespace-pre-line leading-tight">
+                          {{ item.service_form.catatan_tambahan }}
+                        </p>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+                {% if can_show_pet_note_button and not item.already_has_note %}
+                <div class="flex justify-end mt-3">
+                  <a href="{% url 'groomer_jobs:grooming_service_form' booking.id item.booking_item_id %}"
+                     class="inline-block px-4 py-2 rounded-xl bg-[#2BBDBD] text-white text-sm font-semibold shadow-sm hover:brightness-95 transition">
+                    Isi Form Layanan
+                  </a>
+                </div>
+                {% endif %}
               </div>
             </div>
             {% empty %}
@@ -156,9 +141,12 @@
               Belum ada data hewan pada booking ini.
             </div>
             {% endfor %}
+      <div class="flex justify-between items-center mt-6 border-t pt-4 border-gray-200">
+        <span class="text-base font-bold text-gray-800">Total Harga</span>
+        <span class="text-lg font-bold text-[#F9A828]">Rp {{ total_price|floatformat:0 }}</span>
+      </div>
           </div>
         </div>
-
       </div>
     </div>
 
@@ -319,16 +307,16 @@ function closeAllFormsCompletedModal() {
       <input type="hidden" name="action" id="statusActionInput">
 
       <div class="flex flex-col sm:flex-row items-center gap-3">
-        <button type="button"
-                onclick="closeStatusModal()"
-                class="w-full py-3 px-4 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-black transition text-sm">
-          Batal
-        </button>
+  <button type="button"
+    onclick="closeStatusModal()"
+    class="w-full py-3 px-4 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-black transition text-sm">
+    Batal
+  </button>
 
-        <button type="submit"
-                class="w-full py-3 px-4 rounded-xl font-semibold bg-green-500 hover:bg-green-600 text-white transition text-sm">
-          Konfirmasi
-        </button>
+  <button type="submit"
+    class="w-full py-3 px-4 rounded-xl font-semibold bg-[#2BBDBD] hover:bg-[#2497a8] text-white transition text-sm">
+    Konfirmasi
+  </button>
       </div>
     </form>
   </div>
