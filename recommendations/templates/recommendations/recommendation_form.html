@@ -4,13 +4,12 @@
 {% block content %}
 <div class="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
 
-  <!-- Header -->
   <div class="mb-6">
     <h1 class="text-3xl font-bold text-gray-900">
       Form Rekomendasi Paket
     </h1>
     <p class="text-gray-500 mt-1">
-      Isi kondisi hewan peliharaanmu agar sistem dapat merekomendasikan paket grooming yang paling sesuai.
+      Pilih hewan dan isi kondisi masing-masing hewan untuk mendapatkan rekomendasi paket grooming.
     </p>
   </div>
 
@@ -18,153 +17,147 @@
     <form method="POST" action="{% url 'recommendations:recommendation_form' %}" class="space-y-5">
       {% csrf_token %}
 
-      {% if form.non_field_errors %}
+      {% if errors.selected_pet_ids %}
         <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {% for error in form.non_field_errors %}
-            <p>{{ error }}</p>
-          {% endfor %}
+          <p>{{ errors.selected_pet_ids }}</p>
         </div>
       {% endif %}
 
-      <!-- Jenis Hewan -->
       <section class="rounded-2xl border border-gray-200 bg-white p-5">
         <div class="mb-4">
           <label class="block text-sm font-semibold text-gray-800">
-            1. Pilih Jenis Hewan <span class="text-red-500">*</span>
+            1. Pilih Hewan <span class="text-red-500">*</span>
           </label>
           <p class="text-sm text-gray-500 mt-1">
-            Pilih jenis hewan yang ingin direkomendasikan paket grooming-nya.
+            Kamu dapat memilih satu atau lebih hewan untuk mendapatkan rekomendasi.
           </p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="radio" name="animal_type" value="dog"
-                   class="h-4 w-4"
-                   {% if form.animal_type.value == "dog" %}checked{% endif %}>
-            <span class="text-sm font-medium text-gray-800">Anjing</span>
-          </label>
+        <button type="button" id="petSelectButton"
+          class="w-full border rounded-xl px-4 py-3 text-left text-sm text-gray-700 flex justify-between items-center bg-white hover:bg-gray-50 transition">
+          <span id="petSelectLabel">Select</span>
+          <span class="text-gray-400">&#9662;</span>
+        </button>
 
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="radio" name="animal_type" value="cat"
-                   class="h-4 w-4"
-                   {% if form.animal_type.value == "cat" %}checked{% endif %}>
-            <span class="text-sm font-medium text-gray-800">Kucing</span>
-          </label>
-        </div>
-
-        {% if form.animal_type.errors %}
-          <p class="text-sm text-red-600 mt-3">{{ form.animal_type.errors.0 }}</p>
-        {% endif %}
-      </section>
-
-      <!-- Kondisi Bulu -->
-      <section class="rounded-2xl border border-gray-200 bg-white p-5">
-        <div class="mb-4">
-          <label class="block text-sm font-semibold text-gray-800">
-            2. Kondisi Bulu
-          </label>
-          <p class="text-sm text-gray-500 mt-1">
-            Pilih satu atau lebih kondisi bulu yang sesuai.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="checkbox" name="fur_conditions" value="thick_long_fur"
-                   class="h-4 w-4"
-                   {% if "thick_long_fur" in form.fur_conditions.value %}checked{% endif %}>
-            <span class="text-sm text-gray-800">Bulu tebal/panjang</span>
-          </label>
-
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="checkbox" name="fur_conditions" value="dull_shedding_fur"
-                   class="h-4 w-4"
-                   {% if "dull_shedding_fur" in form.fur_conditions.value %}checked{% endif %}>
-            <span class="text-sm text-gray-800">Bulu rontok/kusam</span>
-          </label>
-
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="checkbox" name="fur_conditions" value="matted_fur"
-                   class="h-4 w-4"
-                   {% if "matted_fur" in form.fur_conditions.value %}checked{% endif %}>
-            <span class="text-sm text-gray-800">Bulu kusut/gimbal</span>
-          </label>
+        <div id="petDropdownPanel" class="mt-2 border rounded-xl p-3 space-y-2 hidden max-h-56 overflow-y-auto">
+          {% for pet in pets %}
+            <label class="border rounded-lg p-3 flex items-start gap-2 cursor-pointer hover:bg-gray-50 transition">
+              <input type="checkbox"
+                     name="selected_pet_ids"
+                     class="pet-checkbox mt-1"
+                     value="{{ pet.id }}"
+                     data-pet-id="{{ pet.id }}"
+                     data-pet-name="{{ pet.name }}"
+                     data-pet-jenis="{{ pet.jenis|lower }}"
+                     data-pet-berat="{{ pet.berat }}"
+                     {% if pet.id in selected_pet_ids %}checked{% endif %}>
+              <span class="text-sm">
+                <span class="font-medium block">
+                  {{ pet.name }}
+                  {% if pet.id in blocked_pet_ids %}
+                    <span class="ml-1 text-xs font-normal text-amber-700">
+                      (ada booking aktif)
+                    </span>
+                  {% endif %}
+                </span>
+                <span class="text-gray-600">{{ pet.jenis }} | {{ pet.berat }} kg</span>
+              </span>
+            </label>
+          {% empty %}
+            <p class="text-sm text-gray-600">Belum ada data hewan. Tambahkan hewan terlebih dahulu di profile.</p>
+          {% endfor %}
         </div>
       </section>
 
-      <!-- Kondisi Kulit -->
-      <section class="rounded-2xl border border-gray-200 bg-white p-5">
-        <div class="mb-4">
-          <label class="block text-sm font-semibold text-gray-800">
-            3. Kondisi Kulit
-          </label>
-          <p class="text-sm text-gray-500 mt-1">
-            Pilih satu atau lebih kondisi kulit yang sesuai.
-          </p>
-        </div>
+      <div id="perPetConditionContainer" class="space-y-5">
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="checkbox" name="skin_conditions" value="fleas"
-                   class="h-4 w-4"
-                   {% if "fleas" in form.skin_conditions.value %}checked{% endif %}>
-            <span class="text-sm text-gray-800">Berkutu</span>
-          </label>
+        {% for item in pet_form_items %}
+          {% with pet=item.pet %}
+          <section class="pet-condition-section rounded-2xl border border-gray-200 bg-white p-5 hidden"
+                  data-pet-id="{{ pet.id }}">
+            <div class="mb-5">
+              <h2 class="text-base font-semibold text-gray-900">
+                Kondisi {{ pet.name }} - {{ pet.jenis }}{% if pet.jenis|lower == "dog" %}, {{ pet.berat }} kg{% endif %}
+              </h2>
+              <p class="text-sm text-gray-500 mt-1">
+                Pilih minimal satu kondisi untuk hewan ini.
+              </p>
+            </div>
 
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="checkbox" name="skin_conditions" value="fungus_irritation"
-                   class="h-4 w-4"
-                   {% if "fungus_irritation" in form.skin_conditions.value %}checked{% endif %}>
-            <span class="text-sm text-gray-800">Berjamur/iritasi</span>
-          </label>
-        </div>
-      </section>
+            {% if item.error %}
+              <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <p>{{ item.error }}</p>
+              </div>
+            {% endif %}
 
-      <!-- Kondisi Lainnya -->
-      <section class="rounded-2xl border border-gray-200 bg-white p-5">
-        <div class="mb-4">
-          <label class="block text-sm font-semibold text-gray-800">
-            4. Kondisi Lainnya
-          </label>
-          <p class="text-sm text-gray-500 mt-1">
-            Pilih satu atau lebih kondisi lainnya yang sesuai.
-          </p>
-        </div>
+            <div class="space-y-5">
+              <div>
+                <label class="block text-sm font-semibold text-gray-800 mb-2">
+                  Kondisi Bulu
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {% for value, label in fur_condition_choices %}
+                    <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+                      <input type="checkbox"
+                             name="fur_conditions_{{ pet.id }}"
+                             value="{{ value }}"
+                             class="h-4 w-4"
+                             {% if value in item.conditions %}checked{% endif %}>
+                      <span class="text-sm text-gray-800">{{ label }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="checkbox" name="additional_conditions" value="long_nails"
-                   class="h-4 w-4"
-                   {% if "long_nails" in form.additional_conditions.value %}checked{% endif %}>
-            <span class="text-sm text-gray-800">Kuku panjang</span>
-          </label>
+              <div>
+                <label class="block text-sm font-semibold text-gray-800 mb-2">
+                  Kondisi Kulit
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {% for value, label in skin_condition_choices %}
+                    <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+                      <input type="checkbox"
+                             name="skin_conditions_{{ pet.id }}"
+                             value="{{ value }}"
+                             class="h-4 w-4"
+                             {% if value in item.conditions %}checked{% endif %}>
+                      <span class="text-sm text-gray-800">{{ label }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
 
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="checkbox" name="additional_conditions" value="dirty_ears"
-                   class="h-4 w-4"
-                   {% if "dirty_ears" in form.additional_conditions.value %}checked{% endif %}>
-            <span class="text-sm text-gray-800">Telinga kotor</span>
-          </label>
+              <div>
+                <label class="block text-sm font-semibold text-gray-800 mb-2">
+                  Kondisi Lainnya
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {% for value, label in additional_condition_choices %}
+                    <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
+                      <input type="checkbox"
+                             name="additional_conditions_{{ pet.id }}"
+                             value="{{ value }}"
+                             class="h-4 w-4"
+                             {% if value in item.conditions %}checked{% endif %}>
+                      <span class="text-sm text-gray-800">{{ label }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </section>
+          {% endwith %}
+        {% endfor %}
 
-          <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition">
-            <input type="checkbox" name="additional_conditions" value="styling"
-                   class="h-4 w-4"
-                   {% if "styling" in form.additional_conditions.value %}checked{% endif %}>
-            <span class="text-sm text-gray-800">Ingin styling/potong model</span>
-          </label>
-        </div>
-      </section>
+      </div>
 
-      <!-- Catatan -->
       <div class="rounded-2xl bg-orange-50 border border-orange-100 px-5 py-4">
         <p class="text-sm text-gray-600">
           <span class="font-semibold text-gray-800">Catatan:</span>
-          Jenis hewan wajib dipilih dan minimal satu kondisi harus dicentang agar sistem dapat menampilkan rekomendasi paket.
+          Pilih minimal satu hewan dan minimal satu kondisi untuk setiap hewan yang dipilih.
         </p>
       </div>
 
-      <!-- Buttons -->
       <div class="flex items-center gap-3 pt-1">
         <button type="submit"
                 class="px-6 py-3 rounded-xl font-semibold text-white bg-[#F5A623] hover:bg-orange-500 transition">
@@ -181,4 +174,55 @@
   </div>
 
 </div>
+
+<script>
+(function () {
+  const petSelectButton = document.getElementById('petSelectButton');
+  const petSelectLabel = document.getElementById('petSelectLabel');
+  const petDropdownPanel = document.getElementById('petDropdownPanel');
+  const petCheckboxes = Array.from(document.querySelectorAll('.pet-checkbox'));
+  const sections = Array.from(document.querySelectorAll('.pet-condition-section'));
+
+  function updatePetSelectLabel() {
+    const names = petCheckboxes
+      .filter((checkbox) => checkbox.checked)
+      .map((checkbox) => checkbox.dataset.petName);
+
+    petSelectLabel.textContent = names.length ? names.join(', ') : 'Select';
+  }
+
+  function updatePetSections() {
+    const selectedIds = new Set(
+      petCheckboxes
+        .filter((checkbox) => checkbox.checked)
+        .map((checkbox) => checkbox.dataset.petId)
+    );
+
+    sections.forEach((section) => {
+      const petId = section.dataset.petId;
+      section.classList.toggle('hidden', !selectedIds.has(petId));
+    });
+  }
+
+  petSelectButton.addEventListener('click', () => {
+    petDropdownPanel.classList.toggle('hidden');
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!petDropdownPanel.contains(event.target) && !petSelectButton.contains(event.target)) {
+      petDropdownPanel.classList.add('hidden');
+    }
+  });
+
+  petCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      updatePetSelectLabel();
+      updatePetSections();
+    });
+  });
+
+  updatePetSelectLabel();
+  updatePetSections();
+})();
+</script>
 {% endblock %}
