@@ -382,6 +382,13 @@ def booking_create(request):
     }
 
     if request.method == "GET":
+        recommendation_prefill = request.session.pop("booking_prefill_from_recommendations", None)
+
+        if recommendation_prefill:
+            context["old"] = {
+                "booking_payload": json.dumps(recommendation_prefill),
+            }
+
         return render(request, "booking/create.html", context)
 
     errors = {}
