@@ -1,11 +1,23 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .decorators import staff_required
-from .models import Package, PackagePrice
+from .models import Package, PackagePrice, RECOMMENDATION_TAG_CHOICES
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseBadRequest
 from .forms import PackageForm
+
+def _attach_recommendation_tag_labels(packages):
+    tag_label_map = dict(RECOMMENDATION_TAG_CHOICES)
+
+    for package in packages:
+        tags = package.recommendation_tags or []
+        package.recommendation_tag_labels = [
+            tag_label_map.get(tag, tag)
+            for tag in tags
+        ]
+
+    return packages
 
 # Ketentuan edit paket
 def _has_active_booking(package: Package) -> bool:
@@ -70,6 +82,8 @@ def package_list(request):
 
     for p in packages:
         p.avg_rating = rating_map.get(p.id)
+        
+    _attach_recommendation_tag_labels(packages)
 
     cat_packages = [p for p in packages if p.animal_type == "cat"]
     dog_packages = [p for p in packages if p.animal_type == "dog"]
@@ -103,6 +117,7 @@ def package_store(request):
             package_type=data["package_type"],
             description=data["description"],
             duration_min=int(data["duration_min"]),
+            recommendation_tags=data.get("recommendation_tags") or [],
             is_all_size=is_all_size,
             is_deleted=False,
         )
@@ -145,6 +160,7 @@ def package_edit(request, package_id: int):
         "package_type": pkg.package_type,
         "description": pkg.description,
         "duration_min": str(pkg.duration_min),
+        "recommendation_tags": pkg.recommendation_tags or [],
         "price_cat": pkg.cat_price if pkg.animal_type == "cat" else None,
         "price_all_size": pkg.price_s if pkg.is_all_size else None,
         "price_s": pkg.price_s if pkg.animal_type == "dog" and not pkg.is_all_size else None,
@@ -176,6 +192,7 @@ def package_update(request, package_id: int):
             "package_type": pkg.package_type,
             "description": pkg.description,
             "duration_min": str(pkg.duration_min),
+            "recommendation_tags": pkg.recommendation_tags or [],
             "price_cat": pkg.cat_price if pkg.animal_type == "cat" else None,
             "price_all_size": pkg.price_s if pkg.is_all_size else None,
             "price_s": pkg.price_s if pkg.animal_type == "dog" and not pkg.is_all_size else None,
@@ -211,6 +228,7 @@ def package_update(request, package_id: int):
         pkg.name = data["name"]
         pkg.description = data["description"]
         pkg.duration_min = int(data["duration_min"])
+        pkg.recommendation_tags = data.get("recommendation_tags") or []
         pkg.is_all_size = pkg.animal_type == "dog" and pkg.package_type == "additional"
         pkg.save()
 
