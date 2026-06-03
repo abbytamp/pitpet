@@ -25,8 +25,8 @@ urlpatterns = [
     path('manager/api/reports/operational-dashboard', reports_views.operational_dashboard, name='manager-api-operational-dashboard'),
     path('manager/api/reports/trend', reports_views.report_trend_api, name='manager-api-trend'),
     path('recommendations/', include('recommendations.urls')),
-    # Grooming service form photos – explicit route before any wildcard
-    path('grooming_service_forms/<path:filepath>', static_serve, {
+    # Grooming service form photos – must come before any catch-all pattern
+    path('grooming_service_forms/<path:path>', static_serve, {
         'document_root': settings.MEDIA_ROOT,
     }),
 ]
