@@ -1,96 +1,8 @@
 from packages.models import Package
 
-LIGHT_CAT_CONDITIONS = {"long_nails", "dirty_ears"}
 
+LIGHT_CONDITIONS = {"long_nails", "dirty_ears"}
 SKIN_CONDITIONS = {"fleas", "fungus_irritation"}
-
-RECOMMENDATION_RULES = {
-    "cat": {
-        # Kondisi bulu
-        "thick_long_fur": {
-            "include": ["daily grooming", "full package", "premium shampoo", "lion cut", "styling", "potong", "model"],
-            "exclude": ["kutu", "flea", "tick", "jamur", "fungal", "anti fungal"],
-        },
-        "dull_shedding_fur": {
-            "include": ["daily grooming", "full package", "degreaser", "premium shampoo"],
-            "exclude": ["kutu", "flea", "tick", "jamur", "fungal", "anti fungal"],
-        },
-        "matted_fur": {
-            "include": ["full package","premium shampoo", "styling", "potong", "model"],
-            "exclude": ["kutu", "flea", "tick", "jamur", "fungal", "anti fungal"],
-        },
-
-        # Kondisi kulit
-        "fleas": {
-            "include": ["kutu", "flea", "tick"],
-            "exclude_if_single": ["jamur", "fungal", "anti fungal", "iritasi"],
-        },
-        "fungus_irritation": {
-            "include": ["jamur", "fungal", "anti fungal", "iritasi"],
-            "exclude_if_single": ["kutu", "flea", "tick"],
-        },
-
-        # Kondisi lainnya
-        "long_nails": {
-            "include": ["nail", "kuku", "dry grooming", "daily grooming", "full package"],
-            "exclude": ["kutu", "flea", "tick", "jamur", "fungal", "anti fungal"],
-        },
-        "dirty_ears": {
-            "include": ["ear", "telinga", "dry grooming", "daily grooming", "full package"],
-            "exclude": ["kutu", "flea", "tick", "jamur", "fungal", "anti fungal"],
-        },
-        "styling": {
-            "include": ["full package", "styling", "lion cut", "potong", "model"],
-        },
-    },
-
-    "dog": {
-        # Kondisi bulu
-        "thick_long_fur": {
-            "include": ["dry grooming", "hair trimming", "full package", "pitpet styling", "coat styling", "premium shampoo"],
-        },
-        "dull_shedding_fur": {
-            "include": ["full package", "premium shampoo", "deep cleansing", "final touch"],
-        },
-        "matted_fur": {
-            "include": ["dry grooming", "hair trimming", "full package", "pitpet styling", "coat styling", "styling"],
-        },
-
-        # Kondisi kulit
-        "fleas": {
-            "include": ["kutu", "flea", "tick"],
-            "exclude_if_single": ["jamur", "fungal", "anti fungal", "iritasi"],
-        },
-        "fungus_irritation": {
-            "include": ["jamur", "fungal", "anti fungal", "iritasi"],
-            "exclude_if_single": ["kutu", "flea", "tick"],
-        },
-
-        # Kondisi lainnya
-        "long_nails": {
-            "include": ["nail", "kuku", "dry grooming", "full package"],
-            "exclude": ["kutu", "flea", "tick", "jamur", "fungal", "anti fungal"],
-        },
-        "dirty_ears": {
-            "include": ["ear", "telinga", "dry grooming", "full package"],
-            "exclude": ["kutu", "flea", "tick", "jamur", "fungal", "anti fungal"],
-        },
-        "styling": {
-            "include": ["full package", "pitpet styling", "coat styling", "cukur", "styling"],
-        },
-    },
-}
-
-
-COMBINATION_RULES = {
-    ("fleas", "fungus_irritation"): {
-        "include_all_groups": [
-            ["kutu", "flea", "tick"],
-            ["jamur", "fungal", "anti fungal", "iritasi"],
-        ],
-    }
-}
-
 
 FALLBACK_RULES = {
     "cat": ["full package", "daily grooming"],
@@ -102,12 +14,16 @@ def _package_text(package):
     return f"{package.name} {package.description}".lower()
 
 
-def _contains_any(text, keywords):
-    return any(keyword.lower() in text for keyword in keywords)
+def _is_dry_grooming(package):
+    return "dry grooming" in _package_text(package)
 
 
-def _contains_all_keyword_groups(text, keyword_groups):
-    return all(_contains_any(text, group) for group in keyword_groups)
+def _is_daily_grooming(package):
+    return "daily grooming" in _package_text(package)
+
+
+def _is_full_package(package):
+    return "full package" in _package_text(package)
 
 
 def _add_package(package, recommended, recommended_ids):
@@ -116,7 +32,14 @@ def _add_package(package, recommended, recommended_ids):
         recommended_ids.add(package.id)
 
 
-def _find_fallback_grooming_package(packages, animal_type):
+def _selected_only_light_conditions(selected_conditions_set):
+    """
+    True jika customer hanya memilih: kuku panjang, telinga kotor, kuku panjang + telinga kotor
+    """
+    return bool(selected_conditions_set) and selected_conditions_set.issubset(LIGHT_CONDITIONS)
+
+
+def _find_fallback_grooming_package(packages, animal_type, selected_conditions_set):
     fallback_keywords = FALLBACK_RULES.get(animal_type, [])
 
     grooming_packages = [
@@ -127,48 +50,120 @@ def _find_fallback_grooming_package(packages, animal_type):
     for keyword in fallback_keywords:
         for package in grooming_packages:
             if keyword in _package_text(package):
+                # Dry Grooming hanya boleh fallback kalau kondisi hanya kuku/telinga.
+                if _is_dry_grooming(package) and not _selected_only_light_conditions(selected_conditions_set):
+                    continue
+
                 return package
 
-    return grooming_packages[0] if grooming_packages else None
+    for package in grooming_packages:
+        if _is_dry_grooming(package) and not _selected_only_light_conditions(selected_conditions_set):
+            continue
 
-def skip_cat_light_condition(animal_type, condition, selected_conditions_set):
+        return package
+
+    return None
+
+
+def _get_effective_matched_tags(package_tags, selected_conditions_set):
     """
-    Untuk kucing:
-    - Jika hanya pilih kuku panjang dan/atau telinga kotor,
-      Dry Grooming/Daily Grooming/Full Package tetap direkomendasikan.
-    - Jika kuku/telinga dipilih bersama kondisi lain, rule kuku/telinga dilewati
-      karena paket dari kondisi lain biasanya sudah mencakup nail trimming/ear cleaning.
+    Ambil tag yang cocok dengan kondisi customer.
+    - Jika customer memilih kondisi lain selain kuku/telinga, tag kuku/telinga diabaikan agar paket seperti
+      Dry Grooming tidak ikut muncul hanya karena ada nail trimming / ear cleaning.
     """
-    if animal_type != "cat":
+    matched_tags = package_tags.intersection(selected_conditions_set)
+
+    if not matched_tags:
+        return set()
+
+    if not _selected_only_light_conditions(selected_conditions_set):
+        matched_tags = matched_tags - LIGHT_CONDITIONS
+
+    return matched_tags
+
+
+def _has_exact_skin_match(package_tags, selected_conditions_set):
+    """
+    Jika kondisi berkutu + jamur, hanya paket yang punya kedua tag yang muncul.
+    """
+    selected_skin_conditions = selected_conditions_set.intersection(SKIN_CONDITIONS)
+    package_skin_tags = package_tags.intersection(SKIN_CONDITIONS)
+
+    if not selected_skin_conditions:
+        return True
+
+    if not package_skin_tags:
+        return True
+
+    # Jika user pilih kutu + jamur, paket skin harus punya dua-duanya.
+    if selected_skin_conditions == SKIN_CONDITIONS:
+        return SKIN_CONDITIONS.issubset(package_skin_tags)
+
+    # Jika user hanya pilih salah satu skin condition, paket skin tidak boleh punya tag skin lain.
+    return package_skin_tags == selected_skin_conditions
+
+
+def _should_skip_grooming_when_skin_selected(package, matched_tags, selected_conditions_set):
+    """
+    Jika ada kondisi kulit, paket grooming umum yang hanya match kondisi non-skin tidak ikut muncul.
+    """
+    selected_skin_conditions = selected_conditions_set.intersection(SKIN_CONDITIONS)
+
+    if not selected_skin_conditions:
         return False
 
-    if condition not in LIGHT_CAT_CONDITIONS:
+    if package.package_type != Package.PackageType.GROOMING:
         return False
 
-    return not selected_conditions_set.issubset(LIGHT_CAT_CONDITIONS)
+    has_skin_tag_match = bool(matched_tags.intersection(SKIN_CONDITIONS))
 
-def skip_general_grooming_when_skin_selected(package, condition, has_skin_condition):
+    return not has_skin_tag_match
+
+
+def _should_skip_dry_grooming(package, selected_conditions_set):
     """
-    Jika ada kondisi kulit, paket grooming umum dari kondisi non-skin tidak perlu ditampilkan
+    Dry Grooming hanya muncul jika kondisi yang dipilih hanya: kuku panjang, telinga kotor, kuku panjang + telinga kotor
+    Jika ada kondisi lain seperti bulu tebal, bulu kusut, kutu, jamur, atau styling, Dry Grooming tidak ikut direkomendasikan.
     """
-    if not has_skin_condition:
+    if not _is_dry_grooming(package):
         return False
 
-    if condition in SKIN_CONDITIONS:
-        return False
+    return not _selected_only_light_conditions(selected_conditions_set)
 
-    return package.package_type == Package.PackageType.GROOMING
+
+def _recommendation_priority(package, selected_conditions_set):
+    """
+    - Untuk kondisi kuku/telinga, Dry Grooming ditampilkan paling awal, lalu Daily Grooming, dan Full Package.
+    - Paket additional selalu paling akhir.
+    """
+    is_additional = package.package_type == Package.PackageType.ADDITIONAL
+
+    if is_additional:
+        return 100
+
+    if _selected_only_light_conditions(selected_conditions_set):
+        if _is_dry_grooming(package):
+            return 0
+        if _is_daily_grooming(package):
+            return 1
+        if _is_full_package(package):
+            return 2
+
+    return 10
+
 
 def get_recommended_packages(animal_type, selected_conditions):
     """
-    Hybrid rule-based recommendation:
-    - membaca keyword dari nama paket + deskripsi paket.
-    - menggunakan include rule untuk mencari paket yang relevan.
-    - menggunakan exclude rule agar rekomendasi tidak overlap.
-    - jika ada kondisi kulit, paket grooming umum dari kondisi non-skin tidak ikut muncul, tapi paket additional/styling tetap muncul.
-    - khusus fleas + fungus_irritation, sistem mencari paket yang mengandung keyword kutu dan jamur sekaligus.
-    - hanya mengambil paket aktif dan sesuai jenis hewan.
-    - additional package tidak boleh menjadi satu-satunya rekomendasi.
+    - Paket dipilih berdasarkan recommendation_tags yang dipilih oleh staff.
+    - Hanya mengambil paket aktif dan sesuai jenis hewan.
+    - Paket muncul jika recommendation tag cocok dengan kondisi customer.
+    - Kuku panjang / telinga kotor hanya menarik paket jika dipilih sendiri atau berdua saja.
+    - Dry Grooming hanya muncul untuk kondisi kuku panjang/telinga kotor saja.
+    - Jika kondisi berkutu + jamur, hanya muncul paket yang punya kedua tag saja.
+    - Jika ada kondisi kulit, grooming umum yang hanya match kondisi non-kulit tidak muncul.
+    - Paket additional tidak boleh menjadi satu-satunya rekomendasi.
+    - Jika tidak ada rekomendasi spesifik, tampilkan grooming umum sebagai fallback.
+    - Additional selalu ditampilkan paling akhir.
     """
 
     selected_conditions = selected_conditions or []
@@ -184,76 +179,39 @@ def get_recommended_packages(animal_type, selected_conditions):
     recommended = []
     recommended_ids = set()
 
-    animal_rules = RECOMMENDATION_RULES.get(animal_type, {})
-    has_skin_condition = bool(selected_conditions_set.intersection(SKIN_CONDITIONS))
+    for package in packages:
+        package_tags = set(package.recommendation_tags or [])
 
-    # Special rule:
-    # Jika customer memilih Berkutu + Berjamur/Iritasi,
-    # prioritaskan paket yang mengandung keyword kutu dan jamur sekaligus.
-    skip_individual_skin_treatment = False
-
-    for condition_combo, combo_rule in COMBINATION_RULES.items():
-        if set(condition_combo).issubset(selected_conditions_set):
-            skip_individual_skin_treatment = True
-
-            for package in packages:
-                text = _package_text(package)
-
-                if _contains_all_keyword_groups(text, combo_rule["include_all_groups"]):
-                    _add_package(package, recommended, recommended_ids)
-
-    # Rule per kondisi
-    for condition in selected_conditions:
-        # Jika sudah ada combo kutu+jamur, tidak pakai Mandi Kutu dan Mandi Jamur secara terpisah.
-        if skip_individual_skin_treatment and condition in SKIN_CONDITIONS:
+        if _should_skip_dry_grooming(package, selected_conditions_set):
             continue
-        
-        # Untuk kucing, skip rule kuku/telinga jika customer juga memilih kondisi bulu/kulit lain.
-        if skip_cat_light_condition(
-            animal_type=animal_type,
-            condition=condition,
+
+        matched_tags = _get_effective_matched_tags(
+            package_tags=package_tags,
+            selected_conditions_set=selected_conditions_set,
+        )
+
+        if not matched_tags:
+            continue
+
+        if not _has_exact_skin_match(package_tags, selected_conditions_set):
+            continue
+
+        if _should_skip_grooming_when_skin_selected(
+            package=package,
+            matched_tags=matched_tags,
             selected_conditions_set=selected_conditions_set,
         ):
             continue
 
-        rule = animal_rules.get(condition)
+        _add_package(package, recommended, recommended_ids)
 
-        if not rule:
-            continue
+    fallback_grooming = _find_fallback_grooming_package(
+        packages=packages,
+        animal_type=animal_type,
+        selected_conditions_set=selected_conditions_set,
+    )
 
-        include_keywords = rule.get("include", [])
-        exclude_keywords = rule.get("exclude", [])
-        exclude_if_single_keywords = rule.get("exclude_if_single", [])
-
-        for package in packages:
-            text = _package_text(package)
-
-            if not _contains_any(text, include_keywords):
-                continue
-
-            if exclude_keywords and _contains_any(text, exclude_keywords):
-                continue
-
-            # Exclusion khusus untuk kondisi kulit tunggal:
-            # - Berkutu saja tidak boleh menarik paket jamur.
-            # - Jamur saja tidak boleh menarik paket kutu.
-            if condition in ["fleas", "fungus_irritation"]:
-                if exclude_if_single_keywords and _contains_any(text, exclude_if_single_keywords):
-                    continue
-                
-            # Jika ada kutu/jamur, skip grooming umum dari kondisi non-skin.
-            if skip_general_grooming_when_skin_selected(
-                package=package,
-                condition=condition,
-                has_skin_condition=has_skin_condition,
-            ):
-                continue
-
-            _add_package(package, recommended, recommended_ids)
-
-    fallback_grooming = _find_fallback_grooming_package(packages, animal_type)
-
-    # Jika tidak ada hasil spesifik, tampilkan paket grooming umum.
+    # Jika tidak ada hasil spesifik, tampilkan grooming umum.
     if not recommended and fallback_grooming:
         _add_package(fallback_grooming, recommended, recommended_ids)
 
@@ -264,7 +222,13 @@ def get_recommended_packages(animal_type, selected_conditions):
     )
 
     if recommended and not has_grooming_package and fallback_grooming:
-        if fallback_grooming.id not in recommended_ids:
-            recommended.insert(0, fallback_grooming)
+        _add_package(fallback_grooming, recommended, recommended_ids)
+
+    recommended.sort(
+        key=lambda package: (
+            _recommendation_priority(package, selected_conditions_set),
+            package.name.lower(),
+        )
+    )
 
     return recommended

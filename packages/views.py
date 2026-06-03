@@ -1,11 +1,23 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .decorators import staff_required
-from .models import Package, PackagePrice
+from .models import Package, PackagePrice, RECOMMENDATION_TAG_CHOICES
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseBadRequest
 from .forms import PackageForm
+
+def _attach_recommendation_tag_labels(packages):
+    tag_label_map = dict(RECOMMENDATION_TAG_CHOICES)
+
+    for package in packages:
+        tags = package.recommendation_tags or []
+        package.recommendation_tag_labels = [
+            tag_label_map.get(tag, tag)
+            for tag in tags
+        ]
+
+    return packages
 
 # Ketentuan edit paket
 def _has_active_booking(package: Package) -> bool:
@@ -22,12 +34,56 @@ def _has_active_booking(package: Package) -> bool:
 @staff_required
 def package_list(request):
     # Prefetch prices biar gak N+1
+
+    from django.db.models import Avg
+    from booking.models import BookingItem, BookingReview
+
     packages = (
         Package.objects
         .filter(is_deleted=False)
         .prefetch_related("prices")
         .order_by("animal_type", "name")
     )
+
+
+
+    # Ambil rating dari BookingItem (paket utama)
+    package_ratings_main = (
+        BookingItem.objects
+        .filter(
+            booking__status='service_completed',
+            booking__payment_status='paid',
+            booking__review__isnull=False
+        )
+        .values('package')
+        .annotate(avg_rating=Avg('booking__review__rating'))
+    )
+    # Ambil rating dari BookingItemAdditional (paket additional)
+    from booking.models import BookingItemAdditional
+    package_ratings_additional = (
+        BookingItemAdditional.objects
+        .filter(
+            booking_item__booking__status='service_completed',
+            booking_item__booking__payment_status='paid',
+            booking_item__booking__review__isnull=False
+        )
+        .values('additional')
+        .annotate(avg_rating=Avg('booking_item__booking__review__rating'))
+    )
+
+    rating_map = {}
+    for pr in package_ratings_main:
+        rating_map[pr['package']] = pr['avg_rating']
+    for pr in package_ratings_additional:
+        if pr['additional'] in rating_map and rating_map[pr['additional']] is not None:
+            rating_map[pr['additional']] = (rating_map[pr['additional']] + pr['avg_rating']) / 2 if pr['avg_rating'] is not None else rating_map[pr['additional']]
+        else:
+            rating_map[pr['additional']] = pr['avg_rating']
+
+    for p in packages:
+        p.avg_rating = rating_map.get(p.id)
+        
+    _attach_recommendation_tag_labels(packages)
 
     cat_packages = [p for p in packages if p.animal_type == "cat"]
     dog_packages = [p for p in packages if p.animal_type == "dog"]
@@ -61,6 +117,7 @@ def package_store(request):
             package_type=data["package_type"],
             description=data["description"],
             duration_min=int(data["duration_min"]),
+            recommendation_tags=data.get("recommendation_tags") or [],
             is_all_size=is_all_size,
             is_deleted=False,
         )
@@ -103,6 +160,7 @@ def package_edit(request, package_id: int):
         "package_type": pkg.package_type,
         "description": pkg.description,
         "duration_min": str(pkg.duration_min),
+        "recommendation_tags": pkg.recommendation_tags or [],
         "price_cat": pkg.cat_price if pkg.animal_type == "cat" else None,
         "price_all_size": pkg.price_s if pkg.is_all_size else None,
         "price_s": pkg.price_s if pkg.animal_type == "dog" and not pkg.is_all_size else None,
@@ -134,6 +192,7 @@ def package_update(request, package_id: int):
             "package_type": pkg.package_type,
             "description": pkg.description,
             "duration_min": str(pkg.duration_min),
+            "recommendation_tags": pkg.recommendation_tags or [],
             "price_cat": pkg.cat_price if pkg.animal_type == "cat" else None,
             "price_all_size": pkg.price_s if pkg.is_all_size else None,
             "price_s": pkg.price_s if pkg.animal_type == "dog" and not pkg.is_all_size else None,
@@ -169,6 +228,7 @@ def package_update(request, package_id: int):
         pkg.name = data["name"]
         pkg.description = data["description"]
         pkg.duration_min = int(data["duration_min"])
+        pkg.recommendation_tags = data.get("recommendation_tags") or []
         pkg.is_all_size = pkg.animal_type == "dog" and pkg.package_type == "additional"
         pkg.save()
 
@@ -234,6 +294,10 @@ def package_catalog(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
+
+    from django.db.models import Avg
+    from booking.models import BookingItem
+
     packages = (
         Package.objects
         .filter(is_deleted=False)
@@ -241,10 +305,50 @@ def package_catalog(request):
         .order_by("animal_type", "name")
     )
 
+
+    # Ambil rating dari BookingItem (paket utama)
+    package_ratings_main = (
+        BookingItem.objects
+        .filter(
+            booking__status='service_completed',
+            booking__payment_status='paid',
+            booking__review__isnull=False
+        )
+        .values('package')
+        .annotate(avg_rating=Avg('booking__review__rating'))
+    )
+    # Ambil rating dari BookingItemAdditional (paket additional)
+    from booking.models import BookingItemAdditional
+    package_ratings_additional = (
+        BookingItemAdditional.objects
+        .filter(
+            booking_item__booking__status='service_completed',
+            booking_item__booking__payment_status='paid',
+            booking_item__booking__review__isnull=False
+        )
+        .values('additional')
+        .annotate(avg_rating=Avg('booking_item__booking__review__rating'))
+    )
+
+    rating_map = {}
+    for pr in package_ratings_main:
+        rating_map[pr['package']] = pr['avg_rating']
+    for pr in package_ratings_additional:
+        # Jika sudah ada rating dari BookingItem, gabungkan rata-rata
+        if pr['additional'] in rating_map and rating_map[pr['additional']] is not None:
+            # Ambil rata-rata dari dua sumber
+            rating_map[pr['additional']] = (rating_map[pr['additional']] + pr['avg_rating']) / 2 if pr['avg_rating'] is not None else rating_map[pr['additional']]
+        else:
+            rating_map[pr['additional']] = pr['avg_rating']
+
+    for p in packages:
+        p.avg_rating = rating_map.get(p.id)
+
     cat_packages = [p for p in packages if p.animal_type == "cat"]
     dog_packages = [p for p in packages if p.animal_type == "dog"]
 
     return render(request, "packages/catalog.html", {
         "cat_packages": cat_packages,
         "dog_packages": dog_packages,
+        "show_rating": request.user.is_staff,
     })

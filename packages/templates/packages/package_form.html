@@ -152,6 +152,33 @@
         </div>
       </div>
 
+      <!-- Recommendation Tags -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          Recommendation Tags
+        </label>
+        <p class="text-sm text-gray-500 mb-3">
+          Pilih kondisi hewan yang sesuai dengan paket ini. Tag ini akan digunakan untuk menampilkan rekomendasi paket kepada customer.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {% for value, label in form.recommendation_tags.field.choices %}
+            <label class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 cursor-pointer hover:bg-gray-50 transition">
+              <input type="checkbox"
+                    name="recommendation_tags"
+                    value="{{ value }}"
+                    class="h-4 w-4"
+                    {% if value in form.recommendation_tags.value %}checked{% endif %}>
+              <span class="text-sm text-gray-800">{{ label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+
+        {% if form.recommendation_tags.errors %}
+          <p class="text-sm text-red-600 mt-2">{{ form.recommendation_tags.errors.0 }}</p>
+        {% endif %}
+      </div>
+
       <!-- Buttons -->
       <div class="flex items-center gap-3 pt-2">
         <button type="submit"

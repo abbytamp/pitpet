@@ -9,6 +9,16 @@ class ActivePackageManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(is_deleted=False)
 
+RECOMMENDATION_TAG_CHOICES = [
+    ("thick_long_fur", "Bulu tebal/panjang"),
+    ("dull_shedding_fur", "Bulu rontok/kusam"),
+    ("matted_fur", "Bulu kusut/gimbal"),
+    ("fleas", "Berkutu"),
+    ("fungus_irritation", "Berjamur/iritasi"),
+    ("long_nails", "Kuku panjang"),
+    ("dirty_ears", "Telinga kotor"),
+    ("styling", "Ingin styling/potong model"),
+]
 
 class Package(models.Model):
     class AnimalType(models.TextChoices):
@@ -30,6 +40,7 @@ class Package(models.Model):
     package_type = models.CharField(max_length=10, choices=PackageType.choices, default=PackageType.GROOMING)
     description = models.TextField()
     duration_min = models.IntegerField(choices=Duration.choices)
+    recommendation_tags = models.JSONField(default=list, blank=True)
     is_all_size = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)

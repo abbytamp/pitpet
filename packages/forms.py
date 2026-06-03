@@ -1,5 +1,5 @@
 from django import forms
-from .models import Package
+from .models import Package, RECOMMENDATION_TAG_CHOICES
 
 DURATION_CHOICES = [(30, "30 menit"), (60, "60 menit"), (90, "90 menit"), (120, "120 menit")]
 ANIMAL_CHOICES = [("cat", "Kucing"), ("dog", "Anjing")]
@@ -11,6 +11,12 @@ class PackageForm(forms.Form):
     package_type = forms.ChoiceField(required=True, choices=PACKAGE_TYPE_CHOICES)
     description = forms.CharField(required=True, widget=forms.Textarea)
     duration_min = forms.ChoiceField(required=True, choices=DURATION_CHOICES)
+    
+    recommendation_tags = forms.MultipleChoiceField(
+        choices=RECOMMENDATION_TAG_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+    )
 
     # price fields (declare semua, nanti validasinya conditional)
     price_cat = forms.IntegerField(required=False, min_value=1)

@@ -13,170 +13,253 @@
     </p>
   </div>
 
-  <!-- Info rekomendasi -->
-  <div class="mb-8 rounded-2xl bg-[#FFF8ED] border border-orange-100 px-5 py-4">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      
-      <div>
-        <p class="text-sm text-gray-500">Jenis hewan</p>
-        <p class="font-semibold text-gray-900">
-          {% if animal_type == "cat" %}
-            Kucing
-          {% elif animal_type == "dog" %}
-            Anjing
-          {% else %}
-            -
-          {% endif %}
-        </p>
-      </div>
-
-      <div>
-        <p class="text-sm text-gray-500">Jumlah rekomendasi</p>
-        <p class="font-semibold text-gray-900">
-          {{ recommended_packages|length }} paket
-        </p>
-      </div>
-
-      <div>
-        <p class="text-sm text-gray-500 mb-2">Kondisi yang dipilih</p>
-        <div class="flex flex-wrap gap-2">
-          {% for condition in selected_condition_labels %}
-            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-white text-gray-700 border border-orange-100">
-              {{ condition }}
-            </span>
-          {% endfor %}
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  {% if recommended_packages %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {% for p in recommended_packages %}
-
-        {% if p.animal_type == "cat" %}
-          <!-- Card Kucing: sama dengan catalog -->
-          <div class="glass p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition">
-            <div class="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <h3 class="text-lg font-bold text-gray-900">{{ p.name }}</h3>
-                <p class="text-sm text-gray-500">Kucing • {{ p.duration_min }} menit</p>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-700">
-                  Cat
-                </span>
-
-                {% if p.package_type == "additional" %}
-                  <span class="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">
-                    Additional
-                  </span>
-                {% endif %}
-              </div>
-            </div>
-
-            <p class="text-sm text-gray-600 mb-4 line-clamp-3">
-              {{ p.description }}
-            </p>
-
-            <div class="mt-auto">
-              <p class="text-xl font-bold text-gray-900">
-                {% if p.cat_price %}
-                  Rp {{ p.cat_price }}
-                {% else %}
-                  Rp -
-                {% endif %}
-              </p>
-            </div>
-          </div>
-
-        {% elif p.animal_type == "dog" %}
-          <!-- Card Anjing: sama dengan catalog -->
-          <div class="glass p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition">
-            <div class="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <h3 class="text-lg font-bold text-gray-900">{{ p.name }}</h3>
-                <p class="text-sm text-gray-500">Anjing • {{ p.duration_min }} menit</p>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-700">
-                  Dog
-                </span>
-
-                {% if p.package_type == "additional" %}
-                  <span class="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">
-                    Styling
-                  </span>
-                {% endif %}
-
-                {% if p.is_all_size %}
-                  <span class="text-xs font-semibold px-3 py-1 rounded-full bg-pink-100 text-pink-600 border border-pink-200">
-                    All Size
-                  </span>
-                {% endif %}
-              </div>
-            </div>
-
-            <p class="text-sm text-gray-600 mb-4 line-clamp-3">
-              {{ p.description }}
-            </p>
-
-            <div class="mt-auto">
-              {% if p.is_all_size %}
-                <p class="text-xs text-gray-500 mb-2">Harga</p>
-                <div class="bg-gray-50 rounded-xl px-4 py-3">
-                  <p class="text-xl font-bold text-gray-900">Rp {{ p.price_s|default:"-" }}</p>
-                </div>
-              {% else %}
-                <p class="text-xs text-gray-500 mb-2">Harga berdasarkan ukuran</p>
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                  <div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
-                    <span class="text-gray-600">S</span>
-                    <span class="font-semibold text-gray-900">Rp {{ p.price_s|default:"-" }}</span>
-                  </div>
-                  <div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
-                    <span class="text-gray-600">M</span>
-                    <span class="font-semibold text-gray-900">Rp {{ p.price_m|default:"-" }}</span>
-                  </div>
-                  <div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
-                    <span class="text-gray-600">L</span>
-                    <span class="font-semibold text-gray-900">Rp {{ p.price_l|default:"-" }}</span>
-                  </div>
-                  <div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
-                    <span class="text-gray-600">XL</span>
-                    <span class="font-semibold text-gray-900">Rp {{ p.price_xl|default:"-" }}</span>
-                  </div>
-                </div>
-              {% endif %}
-            </div>
-          </div>
-        {% endif %}
-
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="glass p-8 rounded-3xl shadow-sm border border-gray-100">
-      <p class="text-gray-600">
-        Belum ada rekomendasi paket yang tersedia saat ini.
-      </p>
+  {% if errors.booking %}
+    <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+      <p class="text-sm font-medium text-red-700">{{ errors.booking }}</p>
     </div>
   {% endif %}
 
-  <!-- Footer buttons -->
-  <div class="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <a href="{% url 'recommendations:recommendation_form' %}"
-       class="inline-flex items-center justify-center py-3 px-6 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-gray-800 transition">
-      Back
-    </a>
+  <!-- Info -->
+  {% if is_multiple_pets or has_additional_recommendation %}
+    <div class="mb-8 rounded-2xl bg-[#FFF8ED] border border-orange-100 px-5 py-4">
+      <h3 class="text-sm font-semibold text-gray-900 mb-2">Catatan:</h3>
+      <ul class="list-disc pl-5 space-y-1 text-sm text-gray-700">
+        {% if is_multiple_pets %}
+          <li>
+            Pilih satu paket grooming untuk setiap hewan yang tidak memiliki booking aktif, lalu klik tombol
+            <span class="font-semibold">Book Selected Packages</span>.
+          </li>
+          <li>
+            Hewan dengan booking aktif tidak dapat dipilih untuk booking baru.
+          </li>
+        {% endif %}
 
-    <a href="{% url 'booking:create' %}"
-       class="inline-flex items-center justify-center py-3 px-6 rounded-xl font-semibold text-white bg-[#F5A623] hover:bg-orange-500 transition">
-      Book Now
-    </a>
-  </div>
+        {% if has_additional_recommendation %}
+          <li>
+            Paket additional/styling dapat ditambahkan pada halaman booking setelah memilih paket grooming utama.
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  {% endif %}
 
+  <form method="POST" action="{% url 'recommendations:recommendation_book' %}">
+    {% csrf_token %}
+
+    <div class="space-y-8">
+      {% for result in recommendation_results %}
+        <section class="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
+
+          <!-- Pet Header -->
+          <div class="mb-6 pb-5 border-b border-gray-100">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 class="text-2xl font-bold text-gray-900">
+                    🐾 {{ result.pet.name }}
+                  </h2>
+
+                  <span class="text-sm font-medium text-gray-500">
+                    {{ result.pet.jenis }}{% if result.pet_size %}, {{ result.pet_size }}{% endif %}
+                  </span>
+
+                  {% if result.is_blocked %}
+                    <span class="text-xs font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200">
+                      Ada booking aktif
+                    </span>
+                  {% endif %}
+                </div>
+
+                <div class="flex flex-wrap gap-2 mt-3">
+                  {% for condition in result.selected_condition_labels %}
+                    <span class="text-xs font-semibold px-3 py-1 rounded-full bg-[#FFF8ED] text-gray-700 border border-orange-100">
+                      {{ condition }}
+                    </span>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            {% if result.is_blocked %}
+              <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
+                <p class="text-sm text-red-700">
+                  Hewan ini sedang memiliki booking aktif atau booking selesai yang belum dibayar, sehingga belum dapat dibuatkan booking baru.
+                </p>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Package Cards -->
+          {% if result.recommended_packages %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {% for p in result.recommended_packages %}
+
+                <div class="glass p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition flex flex-col">
+                  <div class="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <h3 class="text-lg font-bold text-gray-900">{{ p.name }}</h3>
+
+                      {% if p.animal_type == "cat" %}
+                        <p class="text-sm text-gray-500">Kucing • {{ p.duration_min }} menit</p>
+                      {% elif p.animal_type == "dog" %}
+                        <p class="text-sm text-gray-500">Anjing • {{ p.duration_min }} menit</p>
+                      {% endif %}
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap justify-end">
+                      {% if p.animal_type == "cat" %}
+                        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-700">
+                          Cat
+                        </span>
+                      {% elif p.animal_type == "dog" %}
+                        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+                          Dog
+                        </span>
+                      {% endif %}
+
+                      {% if p.package_type == "additional" %}
+                        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">
+                          {% if p.animal_type == "cat" %}
+                            Additional
+                          {% else %}
+                            Styling
+                          {% endif %}
+                        </span>
+                      {% endif %}
+
+                      {% if p.animal_type == "dog" and p.is_all_size %}
+                        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-pink-100 text-pink-600 border border-pink-200">
+                          All Size
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <p class="text-sm text-gray-600 mb-4 line-clamp-3">
+                    {{ p.description }}
+                  </p>
+
+                  <div class="{% if p.package_type == 'grooming' %}mt-auto{% else %}mt-2{% endif %}">
+                    {% if p.animal_type == "cat" %}
+                      <p class="text-xs text-gray-500 mb-2">Harga</p>
+                      <div class="bg-gray-50 rounded-xl px-4 py-3">
+                        <p class="text-xl font-bold text-gray-900">
+                          {% if p.cat_price %}
+                            Rp {{ p.cat_price }}
+                          {% else %}
+                            Rp -
+                          {% endif %}
+                        </p>
+                      </div>
+                    {% elif p.animal_type == "dog" %}
+                      {% if p.is_all_size %}
+                        <p class="text-xs text-gray-500 mb-2">Harga</p>
+                        <div class="bg-gray-50 rounded-xl px-4 py-3">
+                          <p class="text-xl font-bold text-gray-900">Rp {{ p.price_s|default:"-" }}</p>
+                        </div>
+                      {% else %}
+                        <p class="text-xs text-gray-500 mb-2">Harga berdasarkan ukuran</p>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                          <div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
+                            <span class="text-gray-600">S</span>
+                            <span class="font-semibold text-gray-900">Rp {{ p.price_s|default:"-" }}</span>
+                          </div>
+                          <div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
+                            <span class="text-gray-600">M</span>
+                            <span class="font-semibold text-gray-900">Rp {{ p.price_m|default:"-" }}</span>
+                          </div>
+                          <div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
+                            <span class="text-gray-600">L</span>
+                            <span class="font-semibold text-gray-900">Rp {{ p.price_l|default:"-" }}</span>
+                          </div>
+                          <div class="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
+                            <span class="text-gray-600">XL</span>
+                            <span class="font-semibold text-gray-900">Rp {{ p.price_xl|default:"-" }}</span>
+                          </div>
+                        </div>
+                      {% endif %}
+                    {% endif %}
+
+                    <!-- Action -->
+                    <div class="mt-5">
+                      {% if p.package_type == "grooming" %}
+                        {% if is_multiple_pets %}
+                          <label class="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl font-semibold border transition
+                                        {% if result.is_blocked %}
+                                          border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed
+                                        {% else %}
+                                          border-gray-300 bg-white hover:bg-gray-50 cursor-pointer
+                                        {% endif %}">
+                            <input type="radio"
+                                  name="package_id_{{ result.pet.id }}"
+                                  value="{{ p.id }}"
+                                  class="h-4 w-4"
+                                  {% if result.is_blocked %}disabled{% endif %}>
+                            <span>
+                              {% if result.is_blocked %}
+                                Tidak dapat dipilih
+                              {% else %}
+                                Pilih paket ini
+                              {% endif %}
+                            </span>
+                          </label>
+                        {% else %}
+                          <button type="submit"
+                                  name="package_id"
+                                  value="{{ p.id }}"
+                                  {% if result.is_blocked %}disabled{% endif %}
+                                  class="w-full inline-flex items-center justify-center px-5 py-3 rounded-xl font-semibold transition
+                                        {% if result.is_blocked %}
+                                          bg-gray-200 text-gray-500 cursor-not-allowed
+                                        {% else %}
+                                          text-white bg-[#F5A623] hover:bg-orange-500
+                                        {% endif %}">
+                            {% if result.is_blocked %}
+                              Tidak dapat booking
+                            {% else %}
+                              Book Now
+                            {% endif %}
+                          </button>
+                        {% endif %}
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="glass p-8 rounded-3xl shadow-sm border border-gray-100">
+              <p class="text-gray-600">
+                Belum ada rekomendasi paket untuk hewan ini.
+              </p>
+            </div>
+          {% endif %}
+        </section>
+      {% endfor %}
+    </div>
+
+    <!-- Footer actions -->
+    <div class="mt-10 flex items-center gap-3">
+      <a href="{% url 'recommendations:recommendation_form' %}"
+         class="inline-flex items-center justify-center py-3 px-6 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-gray-800 transition">
+        Back
+      </a>
+
+      {% if is_multiple_pets %}
+        <button type="submit"
+                {% if not has_bookable_pet %}disabled{% endif %}
+                class="inline-flex items-center justify-center py-3 px-6 rounded-xl font-semibold transition
+                       {% if not has_bookable_pet %}
+                         bg-gray-200 text-gray-500 cursor-not-allowed opacity-70
+                       {% else %}
+                         text-white bg-[#F5A623] hover:bg-orange-500
+                       {% endif %}">
+          Book Selected Packages
+        </button>
+      {% endif %}
+    </div>
+
+  </form>
 </div>
 {% endblock %}
